@@ -11,6 +11,6 @@ func run() -> void:
 	for panel_name in ["header", "sidebar", "mission_panel", "needs_panel"]:
 		var panel: Control = scene.get(panel_name)
 		print(panel_name, " rect=", panel.get_rect(), " min=", panel.get_combined_minimum_size())
-	var sane: bool = scene.header.size.y < 160 and scene.sidebar.size.x < 350 and scene.mission_panel.size.y < 350
+	var sane: bool = scene.header.size.y < 160 and scene.sidebar.size.x < 350 and scene.mission_panel.size.y < 350 and scene.sidebar.position.y + scene.sidebar.size.y <= scene.get_viewport().get_visible_rect().size.y
 	print("Desktop layout: ", "PASS" if sane else "FAIL")
 	quit(0 if sane else 1)

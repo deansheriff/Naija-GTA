@@ -3,6 +3,7 @@ extends Node2D
 const Simulation = preload("res://core/simulation.gd")
 const Neighborhood = preload("res://world/neighborhood_2d.gd")
 const Cloud = preload("res://core/cloud.gd")
+const StreetDialogue = preload("res://core/street_dialogue.gd")
 const SAVE_PATH = "user://street-life-v1.json"
 const CLOUD_CACHE_PATH = "user://cloud-character-cache-v1.json"
 const INK = Color("193c32")
@@ -50,6 +51,7 @@ var benchmark_time := 0.0
 var suggested_preset := "Measuring…"
 var current_place := "street"
 var last_dialog := ""
+var park_met := false
 
 func _ready() -> void:
 	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
@@ -95,6 +97,7 @@ func _process(delta: float) -> void:
 		_save()
 	toast_remaining -= delta
 	toast_label.visible = toast_remaining > 0
+	world.conversation_focus = modal != null
 	if modal == null:
 		_move_player(delta)
 	if benchmark_time < 8 and delta < 0.25:
@@ -152,6 +155,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				_toast("Walk closer to a venue, or choose one from Explore.")
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and modal == null:
 		var point := world.get_global_mouse_position()
+		if world.crew_hit(point):
+			if world.hero.position.distance_to(Neighborhood.PLACES.park.position) < 170:
+				_open_park()
+			else:
+				_travel("park")
+			return
 		if world.walkable(point):
 			destination = point
 			destination_place = "street"
@@ -255,9 +264,13 @@ func _build_hud() -> void:
 	balances_column.add_child(wallet_label)
 	balances_column.add_child(clock_label)
 	sidebar = _panel()
-	var side := _column(sidebar)
+	var side_scroll := ScrollContainer.new()
+	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sidebar.add_child(side_scroll)
+	var side := _column(side_scroll)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side.add_child(_label("YOUR NEIGHBORHOOD", 13, MUTED))
-	for key in ["food", "repair", "home", "square", "bus"]:
+	for key in ["food", "repair", "home", "square", "park", "bus"]:
 		var info: Dictionary = Neighborhood.PLACES[key]
 		var button := _button(info.name, _travel.bind(key))
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -427,7 +440,7 @@ func _travel(place: String) -> void:
 
 func _open_explore() -> void:
 	_dialog("One street. Plenty of possibilities.", "Choose a place and your character will walk there.")
-	for key in ["food", "repair", "home", "square", "bus"]:
+	for key in ["food", "repair", "home", "square", "park", "bus"]:
 		modal_body.add_child(_button(Neighborhood.PLACES[key].name, _travel.bind(key)))
 
 func _open_place(place: String) -> void:
@@ -460,11 +473,49 @@ func _open_place(place: String) -> void:
 			button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			colors.add_child(button)
 	elif place == "square":
-		_open_poll()
+		_dialog("The community square", "Benches, football arguments, and everybody's afternoon gist. The park crew hangs out beside the noticeboard.")
+		modal_body.add_child(_button("Talk with the park crew", _travel.bind("park"), true))
+		modal_body.add_child(_button("Neighborhood improvement poll", _open_poll))
+	elif place == "park":
+		_open_park()
 	elif place == "bus":
-		_dialog("The street is moving", "This prototype is one walkable neighborhood. More districts and transport routes come after performance testing.")
+		_dialog("Danfo stop", "The conductor calls for passengers while danfos, cars and kekes pass the street. Your ride to another district will come with the transport milestone.")
+		modal_body.add_child(_button("Ask the conductor about the street", _conductor_gist, true))
 		modal_body.add_child(_button("Visit the community square", _travel.bind("square"), true))
 		modal_body.add_child(_button("Go home", _travel.bind("home")))
+
+func _open_park() -> void:
+	_open_park_page("return" if park_met else "intro")
+
+func _open_park_page(page: String) -> void:
+	if page == "leave":
+		_close_modal()
+		world.say("chidi", "Chidi: Safe journey, neighbor. See you around.")
+		return
+	if page == "repair":
+		_travel("repair")
+		return
+	if page == "poll":
+		_open_poll()
+		return
+	var entry: Dictionary = StreetDialogue.PARK[page]
+	_dialog("Gist at the park", "Three street toughs claim this corner: Razor, Smallie and Chidi. Choose how you want to speak with them.")
+	modal_body.add_child(_label(entry.speaker, 14, GOLD))
+	modal_body.add_child(_label(entry.line, 22, CREAM))
+	for i in range(entry.choices.size()):
+		var choice: Array = entry.choices[i]
+		modal_body.add_child(_button(choice[0], _park_reply.bind(choice[1]), i == 0))
+
+func _park_reply(next_page: String) -> void:
+	if next_page != "leave" and next_page != "distance":
+		park_met = true
+	world.park_familiar = park_met
+	_open_park_page(next_page)
+
+func _conductor_gist() -> void:
+	_dialog("A word with the conductor", "CONDUCTOR: Yemi's workshop is up there. Amaka has food ready. That crew at the park? Plenty of talk, but they'll point you the right way. Keep clear of the road when the traffic comes.")
+	modal_body.add_child(_button("Meet the park crew", _travel.bind("park"), true))
+	modal_body.add_child(_button("Find something to eat", _travel.bind("food")))
 
 func _hello() -> void:
 	if cloud.enabled():
@@ -659,7 +710,7 @@ func _open_poll() -> void:
 func _preset(quality: String, manual: bool = true) -> void:
 	sim.data.settings.quality = quality
 	sim.data.settings.shadows = quality != "Low"
-	sim.data.settings.effects = quality != "Low"
+	sim.data.settings.effects = true
 	sim.data.settings.distance = 0 if quality == "Low" else 1 if quality == "Medium" else 2
 	sim.data.settings.fps = 30 if quality != "High" else 60
 	sim.data.settings.manual = manual
@@ -684,6 +735,7 @@ func _open_settings() -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		presets.add_child(button)
 	modal_body.add_child(_label("First-run suggestion: " + suggested_preset + " · measure on real phones before treating this as a benchmark.", 14, MUTED))
+	modal_body.add_child(_label("Street life: fewer vehicles and walkers on Low; a larger crowd on High. Turn Ambient animation off to pause traffic and pedestrians.", 14, MUTED))
 	for item in [["shadows", "Shadows"], ["effects", "Ambient animation"], ["data_saver", "Data Saver"]]:
 		var key: String = item[0]
 		var toggle := CheckButton.new()

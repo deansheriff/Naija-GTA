@@ -12,6 +12,8 @@ Use this repository with **Docker Compose**, branch `main`, base directory `/`, 
 
 Visit `/play/` on the deployed domain. Greet Amaka, practice at Yemi's bench, complete the radio gig, and customize your home accent. Desktop: WASD/arrows, click the street, E nearby, Tab/Enter for menus. Phones: Explore and venue buttons.
 
+Version **0.3** adds passing danfos, cars and kekes, walking pedestrians with pauses, a bus conductor, and Razor, Smallie and Chidi at the park. Use **Park crew** in Explore/the sidebar, tap a crew member, or press E nearby for branching conversations. Nearby NPCs exchange authored speech bubbles. Traffic yields to the player; Low uses fewer moving actors and Ambient animation can pause movement. See [the street-life milestone](docs/MILESTONE_2.md).
+
 The web build discovers the same-origin API. Activities, fictional coins, skills, profile, home accent, private gig drafts and practice-poll choice are saved on the server. In Settings → Cloud save, keep your private **save access code** to open the same character on another browser or Android device. Lost codes cannot be recovered yet. Graphics settings stay on each device. Local prototype balances are never imported into cloud saves.
 
 Android: build `build/android/naija-street-life-debug.apk`, then enter your deployed HTTPS game domain in Cloud save. This is a native Godot APK, not a WebView wrapper. Physical-device/native HTTPS testing remains necessary; the debug package is not a Play release.
