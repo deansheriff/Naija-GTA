@@ -1,0 +1,43 @@
+name: Verify game server and Docker deployment
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_DB: nsl_test
+          POSTGRES_USER: nsl
+          POSTGRES_PASSWORD: disposable-ci-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U nsl -d nsl_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+        working-directory: server
+      - run: npm run check && npm test && npm run build
+        working-directory: server
+        env:
+          TEST_DATABASE_URL: postgresql://nsl:disposable-ci-password@localhost:5432/nsl_test
+      - run: docker build -t naija-street-life:test .
+      - name: Container starts with PostgreSQL and serves the game
+        run: |
+          docker run -d --name nsl-smoke --network host -e DATABASE_URL=postgresql://nsl:disposable-ci-password@localhost:5432/nsl_test naija-street-life:test
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:8787/api/health; then break; fi
+            sleep 2
+          done
+          curl --fail http://localhost:8787/api/health
+          curl --fail http://localhost:8787/play/ -o /tmp/game.html
+          grep -q NSLPrivateStore /tmp/game.html
+          docker stop nsl-smoke

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Naija Street Life</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#193c32;color:#f4efdb;font-family:system-ui,sans-serif;overflow:hidden}canvas{display:block;width:100%;height:100%;touch-action:none}canvas:focus{outline:none}#loading{position:fixed;inset:0;display:grid;place-content:center;text-align:center;padding:24px;background:#193c32;z-index:2}h1{font-size:clamp(30px,6vw,52px);letter-spacing:-.05em;margin:10px 0;color:#d4ed85}p{max-width:440px;line-height:1.6;color:#b2c2b7}small{letter-spacing:.15em;color:#edc06d}progress{width:min(320px,80vw);height:8px;accent-color:#d4ed85;margin:20px auto}a{color:#d4ed85}#error{white-space:pre-wrap;color:#edc06d}
+</style>
+<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+<meta name="description" content="Naija Street Life playable prototype: build your life, shape your street.">
+</head>
+<body>
+<canvas id="canvas" tabindex="0" aria-label="Naija Street Life illustrated game. Use arrows or WASD to walk; E to interact; Tab to navigate menus.">Your browser needs WebGL 2 and WebAssembly. <a href="../">Return to the guide</a>.</canvas>
+<div id="loading" role="status" aria-live="polite"><small>NAIJA STREET LIFE · EARLY BUILD</small><h1>Your street is loading.</h1><p>A little room. A familiar face. A fresh start.</p><progress id="progress"></progress><p id="message">Downloading the game engine…</p><p id="error"></p><a href="../">Back to the guide</a></div>
+<script>
+window.NSLSaveStore = {
+  write(payload) {try {localStorage.setItem('nsl-local-v1',payload);return true;}catch {return false;}},
+  read() {try {return localStorage.getItem('nsl-local-v1') || '';}catch {return '';}},
+  available() {try {const key='nsl-storage-probe';localStorage.setItem(key,'1');localStorage.removeItem(key);return true;}catch {return false;}},
+  preserveInvalid(payload) {try {localStorage.setItem('nsl-local-v1.invalid-'+Date.now(),payload);}catch {}}
+};
+window.NSLPrivateStore = {
+  read() {try {return localStorage.getItem('nsl-cloud-v1') || '';}catch {return '';}},
+  write(payload) {try {localStorage.setItem('nsl-cloud-v1',payload);return true;}catch {return false;}}
+};
+// Ship a ~9MB gzip file on static hosts, then stream-decompress it for Godot.
+// No response headers, third-party CDN, or oversized raw-WASM upload needed.
+const fetchOriginal = window.fetch.bind(window);
+window.fetch = async function(input, init) {
+  const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+  // Godot updates several files as a unit; never mix a cached engine/pack with a new shell.
+  if (url.origin === location.origin) init = {...init, cache: 'no-store'};
+  if (url.origin === location.origin && url.pathname.endsWith('/index.wasm')) {
+    if (!('DecompressionStream' in window)) throw new Error('Use a current Chrome, Edge, Firefox or Safari browser to play this build.');
+    const response = await fetchOriginal(url.href + '.gz', init);
+    if (!response.ok) throw new Error('The engine download failed. Try again when your connection returns.');
+    return new Response(response.body.pipeThrough(new DecompressionStream('gzip')), {headers: {'Content-Type': 'application/wasm'}});
+  }
+  return fetchOriginal(input, init);
+};
+</script>
+<script src="index.js?v=e3f56ee40e6f"></script>
+<script>
+const config = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":4050088,"index.wasm":37700666},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+config.onPrintError = (...args) => {console.log('NSL engine error:', ...args);console.error(...args);};
+const loadStart = performance.now();
+const engine = new Engine(config);
+const overlay = document.getElementById('loading');
+const progress = document.getElementById('progress');
+const message = document.getElementById('message');
+const missing = Engine.getMissingFeatures({threads: false});
+function fail(error) {document.getElementById('error').textContent = error.message || String(error); message.textContent = 'Unable to start this build.'; console.error(error);}
+if(missing.length) fail(new Error('This browser is missing: ' + missing.join(', ')));
+else (async () => {
+  try {
+    const response=await fetchOriginal('/api/health',{cache:'no-store',signal:AbortSignal.timeout(2000)});
+    if(response.ok && (await response.json()).application==='naija-street-life') window.NSLCloudURL=location.origin+'/api';
+  }catch {}
+  return engine.startGame({onProgress(current,total){if(total>0){progress.max=total;progress.value=current;message.textContent='Preparing the neighborhood… '+Math.min(100,Math.round(current/total*100))+'%';}}});
+})().then(()=>{console.log('NSL startup_ms',Math.round(performance.now()-loadStart));overlay.remove();document.getElementById('canvas').focus();},fail);
+</script>
+</body></html>

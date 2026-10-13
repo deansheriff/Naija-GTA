@@ -1,0 +1,16 @@
+import {mkdirSync, existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {createApp} from './app.js';
+import {Store} from './store.js';
+import {PostgresStore} from './postgres.js';
+const production = process.env.NODE_ENV === 'production';
+if (production && !process.env.DATABASE_URL) throw new Error('Production requires DATABASE_URL; refusing ephemeral/local SQLite.');
+mkdirSync('data', {recursive: true});
+const store = process.env.DATABASE_URL ? await PostgresStore.open(process.env.DATABASE_URL) : new Store('data/development.sqlite');
+const staticRoot = resolve(process.env.STATIC_ROOT ?? '../web/dist');
+const app = createApp(store, {staticRoot: existsSync(staticRoot) ? staticRoot : undefined, mode: production ? 'self-hosted' : 'local-development'});
+const port = Number(process.env.PORT ?? 8787);
+if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT is invalid');
+await app.listen({host: process.env.HOST ?? (production ? '0.0.0.0' : '127.0.0.1'), port});
+console.log(`Naija Street Life listening on port ${port}; storage: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'development SQLite'}`);
+for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => {void app.close();});

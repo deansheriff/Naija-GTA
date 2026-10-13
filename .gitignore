@@ -1,0 +1,17 @@
+.godot/
+.tools/
+build/
+node_modules/
+.openai/
+*.keystore
+*.log
+.env*
+!.env.example
+browser/
+research/
+server/data/
+*.sqlite*
+*.db
+docs/screenshots/milestone0-*
+docs/MILESTONE_0.md
+server/dist/

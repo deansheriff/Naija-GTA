@@ -1,0 +1,11 @@
+**
+!Dockerfile
+!server/
+!server/**
+server/node_modules/
+server/data/
+server/dist/
+!web/
+!web/dist/
+!web/dist/**
+server/.env*
