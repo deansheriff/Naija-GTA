@@ -6,10 +6,14 @@ if (-not (Test-Path -LiteralPath $enginePath)) { throw 'Run python scripts/fetch
 $gamePath = Join-Path $projectRoot 'game'
 & $enginePath --headless --path $gamePath --editor --import --quit
 if ($LASTEXITCODE -ne 0) { throw 'Godot import failed.' }
+& $enginePath --headless --path $gamePath --script (Join-Path $PSScriptRoot 'measure_sprite_atlases.gd')
+if ($LASTEXITCODE -ne 0) { throw 'Sprite alpha measurement failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/simulation_test.gd
 if ($LASTEXITCODE -ne 0) { throw 'Simulation checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/street_activity_test.gd
 if ($LASTEXITCODE -ne 0) { throw 'Street activity checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/actor_visual_test.gd
+if ($LASTEXITCODE -ne 0) { throw 'Actor/nature checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/layout_test.gd
 if ($LASTEXITCODE -ne 0) { throw 'Scene layout check failed.' }
 if ($Target -eq 'test') { exit 0 }

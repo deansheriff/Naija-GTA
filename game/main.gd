@@ -121,7 +121,7 @@ func _move_player(delta: float) -> void:
 	if Input.is_physical_key_pressed(KEY_D): motion.x += 1
 	if motion.length() > 0:
 		walking = false
-		world.hero.position += motion.normalized() * delta * 220
+		world.hero.position += motion.normalized() * delta * 160
 	elif walking:
 		var remaining: Vector2 = destination - world.hero.position
 		if remaining.length() < 4:
@@ -130,10 +130,9 @@ func _move_player(delta: float) -> void:
 			_open_place(destination_place)
 		else:
 			motion = remaining.normalized()
-			world.hero.position += motion * minf(delta * 340, remaining.length())
+			world.hero.position += motion * minf(delta * 180, remaining.length())
 	world.hero.position.x = clampf(world.hero.position.x, 100, 1440)
 	world.hero.position.y = clampf(world.hero.position.y, 420, 960)
-	world.move_animation(motion)
 	if get_viewport().get_visible_rect().size.x < 850:
 		world.resize_view(get_viewport().get_visible_rect().size)
 
@@ -735,8 +734,8 @@ func _open_settings() -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		presets.add_child(button)
 	modal_body.add_child(_label("First-run suggestion: " + suggested_preset + " · measure on real phones before treating this as a benchmark.", 14, MUTED))
-	modal_body.add_child(_label("Street life: fewer vehicles and walkers on Low; a larger crowd on High. Turn Ambient animation off to pause traffic and pedestrians.", 14, MUTED))
-	for item in [["shadows", "Shadows"], ["effects", "Ambient animation"], ["data_saver", "Data Saver"]]:
+	modal_body.add_child(_label("Low keeps fewer vehicles, people and animals. Medium/High add gentle foliage gusts. Ambient animation pauses street activity; your own walking cycle always works.", 14, MUTED))
+	for item in [["shadows", "Soft shadows"], ["effects", "Ambient animation"], ["data_saver", "Data Saver"]]:
 		var key: String = item[0]
 		var toggle := CheckButton.new()
 		toggle.text = item[1]
