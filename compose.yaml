@@ -4,7 +4,11 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgresql://nsl:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}@postgres:5432/nsl
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: nsl
+      PGDATABASE: nsl
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in Coolify}
     expose:
       - "8787"
     depends_on:

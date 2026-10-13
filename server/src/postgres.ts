@@ -1,7 +1,7 @@
 import {randomBytes, randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
-import {Pool} from 'pg';
+import {Pool, type PoolConfig} from 'pg';
 import {applyIntent, initialState, RuleError, type Intent} from './rules.js';
 import {hash, canonical, lifetime, type Character} from './store.js';
 import type {GameStore, Session, Snapshot} from './contract.js';
@@ -9,8 +9,8 @@ export interface SqlConnection {query(text: string, values?: unknown[]): Promise
 export interface SqlPool extends SqlConnection {connect(): Promise<SqlConnection>; end(): Promise<void>}
 export class PostgresStore implements GameStore {
   constructor(readonly pool: SqlPool, private clock: () => number = Date.now) {}
-  static async open(url: string) {
-    const store = new PostgresStore(new Pool({connectionString: url, max: 10}));
+  static async open(config: PoolConfig) {
+    const store = new PostgresStore(new Pool({...config, max: 10}));
     await store.migrate(); return store;
   }
   async migrate() {

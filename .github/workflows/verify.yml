@@ -41,3 +41,14 @@ jobs:
           curl --fail http://localhost:8787/play/ -o /tmp/game.html
           grep -q NSLPrivateStore /tmp/game.html
           docker stop nsl-smoke
+      - name: Compose starts with punctuation in the database password
+        env:
+          POSTGRES_PASSWORD: 'disposable-ci:@/?#%$[] password'
+        run: |
+          docker compose up -d --build --wait --wait-timeout 120
+          docker compose exec -T app node --input-type=module -e "const r = await fetch('http://localhost:8787/api/health'); const health = await r.json(); if (!r.ok || !health.ok) process.exit(1); const play = await fetch('http://localhost:8787/play/'); if (!play.ok || !(await play.text()).includes('NSLPrivateStore')) process.exit(1);"
+      - name: Clean up disposable Compose test stack
+        if: always()
+        run: docker compose down --volumes
+        env:
+          POSTGRES_PASSWORD: 'disposable-ci:@/?#%$[] password'

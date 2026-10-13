@@ -6,13 +6,25 @@ The recommended deployment is **Docker Compose**: the root `Dockerfile` builds o
 
 1. Create a Git-based Application using `https://github.com/deansheriff/Naija-GTA`, branch `main`.
 2. Choose **Docker Compose**, Base Directory `/`, Compose Location `/compose.yaml`. Use the normal Coolify-managed deployment, not Raw mode.
-3. Set the required secret `POSTGRES_PASSWORD`. Use a long random hexadecimal value so it is also safe inside the PostgreSQL connection URL. Never commit the real password. For example, generate one locally with `openssl rand -hex 32`.
+3. Set the required secret `POSTGRES_PASSWORD` to the database's existing password, or a long random value for a new database. Never commit the real password. For example, generate a new one locally with `openssl rand -hex 32`. Compose passes the password separately as `PGPASSWORD`; no URL encoding is needed. Enter the raw value without surrounding quotes in Coolify's Normal view. If it contains `$`, select Literal interpolation so Coolify preserves it.
 4. In **Domains**, select service **app**, and enter `https://game.your-domain.example:8787`. Replace the hostname with your actual game domain. The `:8787` suffix selects the internal container port; visitors still use ordinary HTTPS, without a port suffix.
 5. Deploy and check the build/runtime logs. `/api/health` should return `ok: true`; `/` is the landing page and `/play/` opens the game.
 
 No Godot editor, Java, Android SDK, Node or PostgreSQL installation is required on the Coolify host. The repository includes the tested browser export under `web/dist`; Docker compiles the TypeScript backend during the image build. APKs are local/downloadable release artifacts, not required to run the cloud stack.
 
-Alternatively choose **Dockerfile**, Base Directory `/`, Dockerfile `/Dockerfile`, exposed port `8787`, and provide `DATABASE_URL` for an existing private PostgreSQL database. The Dockerfile alone does not create a database. Production startup refuses to fall back to SQLite.
+Alternatively choose **Dockerfile**, Base Directory `/`, Dockerfile `/Dockerfile`, exposed port `8787`, and set `PGHOST`, `PGPORT` (default `5432`), `PGUSER`, `PGDATABASE` and raw `PGPASSWORD` for an existing private PostgreSQL database. Its hostname must be reachable from the app container; the Compose hostname `postgres` applies only to the bundled Compose stack. `DATABASE_URL` remains supported when `PGHOST` is absent; percent-encode credentials in that URL. The Dockerfile alone does not create a database. Production startup refuses to fall back to SQLite.
+
+## Fix an `ERR_INVALID_URL` startup failure
+
+This happens before a database connection is made: the PostgreSQL driver cannot parse `DATABASE_URL`. A password containing URL separators, surrounding quotes, or an incorrectly assembled variable can cause it. It is not a Cloudflare routing error.
+
+For the repository's Compose stack:
+
+1. Redeploy the latest `main` with build pack **Docker Compose** and `/compose.yaml`. The app now receives separate PostgreSQL fields instead of assembling a URL from a raw password.
+2. Keep `POSTGRES_PASSWORD` equal to the password used when your database was first initialized. Remove any manually added `DATABASE_URL` override; the new Compose fields take precedence if an old URL remains.
+3. Save the environment settings and redeploy. Check the app runtime logs and `https://YOUR-GAME-DOMAIN/api/health` for `ok: true`.
+
+For a Dockerfile deployment, supply the separate fields listed above for your existing database, then redeploy. Do not delete the database volume or generate a replacement password to fix URL parsing. Changing an environment variable does not rotate an initialized PostgreSQL role's password. Do not share full connection URLs or passwords in troubleshooting logs.
 
 ## Your existing Cloudflare setup
 
@@ -48,4 +60,6 @@ After changing `game/`, run `scripts/build.ps1 -Target web` and commit the updat
 
 - [Coolify Docker Compose deployment](https://coolify.io/docs/applications/builds/docker-compose)
 - [Coolify Dockerfile deployment](https://coolify.io/docs/applications/builds/dockerfile)
+- [Coolify environment variables](https://coolify.io/docs/applications/configuration/environment-variables)
+- [node-postgres connection configuration](https://node-postgres.com/features/connecting)
 - [Cloudflare Tunnel published applications](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/routing-to-tunnel/)

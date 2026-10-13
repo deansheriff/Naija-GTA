@@ -26,7 +26,7 @@ npm test
 npm run dev
 ```
 
-Open `http://127.0.0.1:8787/`. Development uses persistent SQLite in ignored `server/data/`. Production requires PostgreSQL via `DATABASE_URL` and refuses SQLite fallback. Docker builds the TypeScript server; the browser export in `web/dist` is committed so the deployment host needs no Godot toolchain.
+Open `http://127.0.0.1:8787/`. Development uses persistent SQLite in ignored `server/data/`. Production requires PostgreSQL via separate `PGHOST`, `PGUSER`, `PGDATABASE`, `PGPASSWORD` fields (Compose), or `DATABASE_URL` (external database), and refuses SQLite fallback. Docker builds the TypeScript server; the browser export in `web/dist` is committed so the deployment host needs no Godot toolchain.
 
 To update the game export:
 
