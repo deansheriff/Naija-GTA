@@ -1,0 +1,195 @@
+PROJECT: NAIJA STREET LIFE — STORY MODE
+TITLE OF THE STORY: "UP NEPA!"
+FULL BILLING: "Naija Street Life: Up NEPA!"
+TAGLINE: "When the light comes back, everybody will see what you did."
+
+NAMING
+The platform is called "Naija Street Life." Use that name in all documents,
+file names, UI text and code. The reference game lagoslife.app is a
+competitor we studied; never use its name or branding for ours.
+
+ROLE
+You are the lead narrative designer and gameplay writer for Naija Street Life,
+a Nigerian open-world comedy-crime game. Think GTA V's three-protagonist
+structure, but the energy is pure Lagos: loud, quick-witted, chaotic, warm, and
+funny at every turn. Your job is to turn the seed below into a full story mode
+that players will quote on WhatsApp.
+
+TONE
+- Comedy first, with heart underneath. The player should laugh every few
+  minutes and care about these people by the end.
+- Humor comes from character, situation and Nigerian everyday absurdity
+  (power cuts, go-slow, POS network failure, fuel queues, aso-ebi pressure,
+  prosperity-gospel radio, relatives with "small request").
+- Punch up and sideways: at big men, bureaucracy, hustle culture and
+  self-deception. Do not mock ethnic groups, religions, disabilities or poverty.
+- Dialogue mixes English, Pidgin, and light Yoruba/Igbo/Hausa where natural.
+  Keep it readable for non-native players. Mark all slang for a native-speaker
+  review before shipping.
+- Action stays cartoonish and slapstick: vehicular chaos, chases, arguments
+  that turn into brawls, never gore.
+
+THE SETUP
+A lavish Lekki owambe wedding. Mid-ceremony, NEPA takes the light. In the
+two seconds of blackout, a Ghana-must-go bag holding the campaign war chest of
+Chief Dr. Sir Barr. Olusegun "Double Chop" Adebayo-Williams (a fictional,
+many-titled politician running for Local Government Chairman of the fictional
+Agbado-Ketu Central) vanishes. The light returns, the whole hall shouts
+"UP NEPA!", and the Chief's men start searching for the bag.
+
+Our three heroes each touch the mess by accident:
+- The bag ends up under a seat in a danfo.
+- The danfo's passenger was a staff member of a canteen owner who is owed
+  money by the Chief.
+- A broke content creator livestreamed the whole blackout and his video shows
+  faces. The Chief's people now want the bag, the phone and the people.
+
+THE THREE PROTAGONISTS (switchable, like GTA V)
+
+1) TUNDE "BABA GOD DEY" ADEYEMI, 34, danfo driver
+- Owns one rattling yellow bus named "Baba God Dey," held together by prayer,
+  tape and spite. Dream: a fleet called "Baba God Dey Express."
+- Personality: loud, fearless, philosophical about traffic, argues about
+  football and politics with every passenger. Allergic to road wardens.
+- Flaw: cannot resist a shortcut, even when it is on fire.
+- Stat: Blood Pressure. It rises with go-slow, wardens and bad passengers.
+- Special ability: "Go-Slow Whisperer." Time slows and hidden bypass routes
+  light up; passengers can be talked into anything via the Conductor Combo.
+- Signature gag: passengers continue loud arguments in the back during
+  action scenes and sometimes help or sabotage the player.
+- Music: Fuji and street Afrobeats.
+
+2) NGOZI "AUNTY BOSS" EZE, 41, canteen queen, POS agent, ajo organizer
+- Runs a mama-put canteen, a POS point and a rotating savings circle that
+  intimidates banks. Dream: a catering empire and a hotel with her name on it.
+- Personality: motherly, ruthless, can end a man with one sentence and then
+  feed him. Everyone owes her money; she remembers the exact amount.
+- Flaw: cannot forgive a debt, even a ₦200 one, even during a heist.
+- Stat: Aunty Aura. High aura makes NPCs back down, haggle or confess.
+- Special ability: "The Stare" (NPCs freeze, confess or hand over the thing)
+  and "Ajo Network" (call in favors from market women across the city: fast
+  travel by "a trusted keke," hide-outs, free food, intel).
+- Signature gag: she negotiates with villains like she is selling tomatoes.
+- Music: Highlife and gospel-tinged Afrobeats.
+
+3) KELECHI "KC VIBES" NWOSU, 23, aspiring skit maker and influencer
+- Lives in a crowded Yaba apartment, pretends to live on the Island, is
+  Aunty Boss's nephew and owes Tunde three months of bus fares.
+- Dream: go viral and japa. Every plan is a content plan.
+- Personality: charming, anxious, always filming, genuinely brave at the worst
+  possible moment.
+- Flaw: cannot resist a perfect shot, even when running for his life.
+- Stat: Hype and Phone Battery. Battery drains constantly. NEPA never helps.
+- Special ability: "Go Live" (filming makes crowds react, rally or turn on
+  an enemy; high Hype opens doors) and "Gist" (spreads rumors that change what
+  NPCs believe about a person or event).
+- Signature gag: narrates his life like a skit, begs strangers to "like and
+  subscribe," and keeps losing signal at dramatic moments.
+- Music: Amapiano and street-pop.
+
+SWITCHING MECHANIC
+Players switch characters through a group chat called "Family Meeting 🔥."
+Switching plays a short funny chat exchange ("Where are you?" "Dey come."
+"Which one is 'dey come'?"). Unplayed characters keep living. When the player
+switches back, something funny or terrible has happened (the danfo got
+towed, Aunty Boss started a dispute, KC went viral for the wrong reason).
+
+PLOT STRUCTURE
+
+PROLOGUE: "Owambe, Owambe" (tutorial, play all three)
+Money-spraying mechanic, aso-ebi dress-code fashion check, jollof queue
+politics, MC chaos, then the blackout. The crowd shouts "UP NEPA!" as the
+light snaps on for two seconds, the bag is gone, and the title card drops:
+"Naija Street Life: Up NEPA!"
+
+ACT 1: "Light Out" (each hero gets an intro, then they collide)
+- Tunde: "Baba God Dey." A day of passengers with strong opinions. He finds
+  the bag when a passenger skips paying "because I no get change."
+- Aunty Boss: "Ajo Day." Collect contributions from stubborn debtors; the POS
+  network keeps failing ("Network don fail, come back tomorrow").
+- KC: "Four Percent." His livestream has 40,000 viewers, his phone is at 4%
+  and there is no light to charge it. A frantic hunt for power.
+- Convergence: "Family Meeting." All three argue in Aunty Boss's canteen over
+  generator noise about what to do with the bag and who is guilty.
+
+ACT 2: "Spread" (solo arcs, co-op missions, escalating chaos)
+Example missions:
+- "Generator Wars": a night run across the city to move a generator and
+  diesel while rival neighborhoods defend theirs.
+- "Japa Interview": KC faces a visa-interview mini-game with an absurd
+  officer; the stakes decide whether he leaves or stays.
+- "Danfo Chase": Tunde is chased through go-slow with a bus full of
+  opinionated passengers who each vote on every turn.
+- "Aso-Ebi Infiltration": the heroes sneak into the Chief's mother's 90th
+  birthday party dressed as guests, with strict dress codes and relatives who
+  ask personal questions.
+- "Small Small Money": the bag's cash must be moved through hundreds of POS
+  agents in small amounts so the bank does not flag it, using Aunty Boss's
+  network.
+- "Fuel Queue Standoff": a negotiation and slapstick brawl at a petrol
+  station.
+- "Viral": KC's Gist and Go Live change public opinion, and the news-driven
+  gossip system reacts.
+
+ACT 3: "Election Day"
+The Chief's election is live (hook into the poll system). Rumors, real
+votes, bribes and promises swing the result. Finale: "Up NEPA!" The heroes
+time a power restoration at the exact moment to expose the Chief live on
+stage, with every light, speaker and phone on.
+
+ENDINGS (player's choices decide)
+A) Honest: the money is returned to the community as a transformer and
+   borehole; the heroes stay broke but respected.
+B) Hustle: the player keeps the bag; money and trouble multiply, friendships
+   crack.
+C) Japa: KC leaves; Tunde and Aunty Boss's story continues; sad-funny.
+D) Secret ending: the bag's real prize is the Chief's diary of receipts and
+   promises, and the money was mostly old notes.
+
+SAMPLE SCENE (use for tone)
+INT. OWAMBE HALL — NIGHT
+MC: (on mic) Ladies and gentlemen, the groom's mother will now dance for the
+third time!
+[POWER CUTS. Darkness. A beat.]
+CROWD: NEPAAAAA!
+MC: Please remain calm, we have a generator!
+[Long pause. Distant chugging.]
+MC: ...The generator is also in the dark.
+[LIGHT SNAPS ON for two seconds. The bag is gone. DARK again.]
+TUNDE: (shouting) Madam, I carry people, I no carry bag!
+AUNTY BOSS: (calm, from the dark) Whoever is holding my ₦8,000, I can see you.
+KC: (whispering, filming) Guys, this is not a drill. Smash like and subscribe.
+[LIGHT RETURNS. Everyone is frozen mid-pose.]
+CROWD: UP NEPAAAA!
+
+SYSTEM INTEGRATION (tie into the rest of Naija Street Life)
+- Job/gig board: each hero has side hustles (Tunde: ride/delivery gigs;
+  Aunty Boss: catering and POS gigs; KC: content and skit gigs).
+- Poll/election system: powers Act 3 and optional side elections.
+- Jev AI: handles ambient NPC decisions and side-mission improvisation.
+  Story-critical NPCs and beats stay scripted so the plot cannot break.
+- News API: radio, WhatsApp gist and NPC banter react to real events; story
+  scenes must never depend on them.
+- Data/airtime mini-games: reuse story mini-games (visa interview, ajo
+  collection, danfo conversation) as reward games.
+- Graphics settings: provide a low-bandwidth cutscene mode.
+- Assets (Blender): the danfo "Baba God Dey," the Ghana-must-go bag, Aunty
+  Boss's POS umbrella, KC's ring light and tripod, generators, owambe hall,
+  and the three hero models.
+
+CONTENT RULES
+- All people, brands, agencies and places are fictional. Use invented names
+  for banks, telecoms, road wardens and government bodies.
+- No real politicians, no invented quotes from real people.
+- No glorifying fraud or scams. Hustlers can be scrappy but the story should
+  not teach crime.
+- Keep violence slapstick and out of gore.
+
+DELIVERABLES (in this order; stop after step 1 for my approval)
+1. Story bible: premise, themes, three character sheets with voices, arcs,
+   relationships and secrets, recurring gags and catchphrases, world rules.
+2. Full mission list with objectives, set pieces, comedic beats and rewards.
+3. Ability and progression spec for the three characters.
+4. Scripts for the Prologue and all Act 1 missions.
+5. Dialogue banks: ambient chatter, mission failures, switching-chat messages.
+6. Integration spec for the systems listed above.

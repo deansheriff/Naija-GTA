@@ -20,11 +20,11 @@ func _init() -> void:
 	# Full-width pavement routes, staggered in both directions. The 240-unit
 	# margins keep the whole sprite outside the clipped street during recycling.
 	var routes = [
-		[Vector2(320, 456), 1, 0.025],
-		[Vector2(925, 471), -1, 0.025],
+		[Vector2(320, 466), 1, 0.025],
+		[Vector2(925, 481), -1, 0.025],
 		[Vector2(760, 932), 1, 0.014],
 		[Vector2(305, 960), -1, 0.014],
-		[Vector2(650, 473), 1, 0.025],
+		[Vector2(650, 483), 1, 0.025],
 		[Vector2(1150, 922), -1, 0.014],
 	]
 	for i in range(routes.size()):

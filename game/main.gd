@@ -42,6 +42,7 @@ var modal_body: VBoxContainer
 var modal_scroll: ScrollContainer
 var destination := Vector2.ZERO
 var walking := false
+var walking_route := PackedVector2Array()
 var destination_place := ""
 var save_timer := 0.0
 var ui_timer := 0.0
@@ -121,18 +122,28 @@ func _move_player(delta: float) -> void:
 	if Input.is_physical_key_pressed(KEY_D): motion.x += 1
 	if motion.length() > 0:
 		walking = false
-		world.hero.position += motion.normalized() * delta * 160
+		walking_route.clear()
+		world.move_player(motion.normalized() * minf(delta, 0.1) * 160)
 	elif walking:
-		var remaining: Vector2 = destination - world.hero.position
-		if remaining.length() < 4:
+		var budget: float = minf(delta, 0.1) * 180
+		while not walking_route.is_empty() and budget > 0:
+			var remaining: Vector2 = walking_route[0] - world.hero.position
+			if remaining.length() < 0.5:
+				walking_route.remove_at(0)
+				continue
+			var step: float = minf(budget, remaining.length())
+			var before: Vector2 = world.hero.position
+			world.move_player(remaining.normalized() * step)
+			budget -= step
+			if before.distance_to(world.hero.position) < 0.01:
+				walking = false
+				walking_route.clear()
+				_toast("That route is blocked. Choose another spot on the pavement.")
+				break
+		if walking and walking_route.is_empty():
 			walking = false
 			current_place = destination_place
 			_open_place(destination_place)
-		else:
-			motion = remaining.normalized()
-			world.hero.position += motion * minf(delta * 180, remaining.length())
-	world.hero.position.x = clampf(world.hero.position.x, 100, 1440)
-	world.hero.position.y = clampf(world.hero.position.y, 420, 960)
 	if get_viewport().get_visible_rect().size.x < 850:
 		world.resize_view(get_viewport().get_visible_rect().size)
 
@@ -161,9 +172,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				_travel("park")
 			return
 		if world.walkable(point):
-			destination = point
-			destination_place = "street"
-			walking = true
+			_walk_to(point, "street")
+		else:
+			_toast("Choose clear pavement or a shop doorway.")
 
 func _theme() -> Theme:
 	var theme := Theme.new()
@@ -432,10 +443,19 @@ func _travel(place: String) -> void:
 	_close_modal()
 	if not Neighborhood.PLACES.has(place):
 		return
-	destination = Neighborhood.PLACES[place].position
+	if _walk_to(Neighborhood.PLACES[place].position, place):
+		_toast("Heading to " + Neighborhood.PLACES[place].name + "…")
+
+func _walk_to(point: Vector2, place: String) -> bool:
+	var route: PackedVector2Array = world.route_to(point)
+	if route.is_empty():
+		_toast("There is no clear route to that spot. Try the pavement or a doorway.")
+		return false
+	destination = point
 	destination_place = place
+	walking_route = route
 	walking = true
-	_toast("Heading to " + Neighborhood.PLACES[place].name + "…")
+	return true
 
 func _open_explore() -> void:
 	_dialog("One street. Plenty of possibilities.", "Choose a place and your character will walk there.")

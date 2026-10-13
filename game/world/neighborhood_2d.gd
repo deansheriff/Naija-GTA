@@ -4,8 +4,9 @@ extends Node2D
 const StreetActivity = preload("res://core/street_activity.gd")
 const Dialogue = preload("res://core/street_dialogue.gd")
 const ActorVisual = preload("res://core/actor_visual.gd")
+const DistrictLayout = preload("res://world/district_layout.gd")
+const ModularScenery = preload("res://world/modular_scenery.gd")
 const STREET_ATLAS = preload("res://assets/street-life-atlas.png")
-const BACKGROUND = preload("res://assets/street-painted.png")
 const HERO_SHEET = preload("res://assets/hero-walk-v04.png")
 const HERO_IDLE_SHEET = preload("res://assets/hero-idle-v04.png")
 const PEDESTRIAN_SHEET = preload("res://assets/pedestrians-v04.png")
@@ -14,14 +15,16 @@ const TRAFFIC_SHEET = preload("res://assets/traffic-v04.png")
 
 const SIZE = Vector2(1536, 1024)
 const PLACES = {
-	"food": {"name": "Amaka's kitchen", "position": Vector2(405, 438)},
-	"repair": {"name": "Yemi's workshop", "position": Vector2(780, 438)},
-	"home": {"name": "Your little corner", "position": Vector2(1220, 438)},
+	"food": {"name": "Amaka's kitchen", "position": Vector2(405, 400)},
+	"repair": {"name": "Yemi's workshop", "position": Vector2(780, 400)},
+	"home": {"name": "Your little corner", "position": Vector2(1220, 400)},
 	"square": {"name": "Community square", "position": Vector2(430, 785)},
 	"park": {"name": "Park crew", "position": Vector2(725, 882)},
-	"bus": {"name": "Bus stop", "position": Vector2(1180, 800)},
+	"bus": {"name": "Bus stop", "position": Vector2(1035, 870)},
 }
 var camera: Camera2D
+var layout = DistrictLayout.new()
+var scenery: Node2D
 var hero: Node2D
 var hero_sprite
 var home_flag: Polygon2D
@@ -33,8 +36,6 @@ var pedestrian_nodes: Array[Node2D] = []
 var dog_nodes: Array[Node2D] = []
 var bird_nodes: Array[Node2D] = []
 var leaf_nodes: Array[Polygon2D] = []
-var foliage_nodes: Array[CanvasItem] = []
-var wind_material: ShaderMaterial
 var sprite_bounds: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/sprite-bounds-v04.json"))
 var previous_hero_position := Vector2.ZERO
 var crew: Dictionary = {}
@@ -58,25 +59,20 @@ func _ready() -> void:
 	bounds.clip_contents = true
 	bounds.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bounds)
-	var background := Sprite2D.new()
-	background.texture = BACKGROUND
-	background.centered = false
-	background.scale = SIZE / background.texture.get_size()
-	bounds.add_child(background)
-	wind_material = ShaderMaterial.new()
-	wind_material.shader = preload("res://world/foliage_wind.gdshader")
-	foliage_nodes.append(background)
+	scenery = ModularScenery.new()
+	bounds.add_child(scenery)
 	camera = Camera2D.new()
 	camera.position = SIZE / 2
 	add_child(camera)
 	people = Node2D.new()
 	people.y_sort_enabled = true
 	bounds.add_child(people)
+	scenery.build(people, sprite_bounds)
 	hero = _person(Vector2(768, 635), "hero")
 	people.add_child(hero)
 	hero_sprite = hero.get_node("Sprite")
 	previous_hero_position = hero.position
-	for item in [[Vector2(314, 339), 0], [Vector2(752, 337), 1]]:
+	for item in [[Vector2(301, 350), 0], [Vector2(676, 350), 1]]:
 		var actor := _still_person(item[0], preload("res://assets/neighbors.png"), sprite_bounds["neighbors.png"][item[1]], 100)
 		people.add_child(actor)
 		actors.append(actor)
@@ -84,15 +80,6 @@ func _ready() -> void:
 	speakers.yemi = actors[1]
 	_build_street_life()
 	_build_nature(bounds)
-	# Shopkeepers work inside their stalls, behind the serving/work benches.
-	_foreground([Vector2(194, 309), Vector2(362, 315), Vector2(377, 336), Vector2(373, 385), Vector2(194, 374)], 419)
-	_foreground([Vector2(671, 303), Vector2(801, 315), Vector2(805, 370), Vector2(683, 383)], 419)
-	# Reuse painted foreground pixels as occluders, so passing cars go behind
-	# the tree canopy and bus shelter rather than driving over their roofs.
-	_foreground([Vector2(0, 376), Vector2(76, 367), Vector2(325, 423), Vector2(385, 475), Vector2(404, 575), Vector2(285, 657), Vector2(175, 695), Vector2(0, 726)], 730)
-	_foreground([Vector2(1016, 557), Vector2(1055, 530), Vector2(1397, 568), Vector2(1458, 540), Vector2(1536, 560), Vector2(1536, 610), Vector2(1034, 582)], 805)
-	_foreground([Vector2(1092, 671), Vector2(1130, 598), Vector2(1450, 602), Vector2(1536, 655), Vector2(1536, 839), Vector2(1400, 826), Vector2(1110, 777), Vector2(1087, 735)], 805)
-	_foreground([Vector2(1025, 574), Vector2(1036, 574), Vector2(1036, 773), Vector2(1025, 773)], 805)
 	for key in PLACES:
 		var label := Label.new()
 		label.text = PLACES[key].name
@@ -115,22 +102,6 @@ func _atlas_region(rect: Rect2, sheet: Texture2D = STREET_ATLAS) -> AtlasTexture
 	texture.atlas = sheet
 	texture.region = rect
 	return texture
-
-func _foreground(points: Array, ground_y: float) -> void:
-	var anchor := Node2D.new()
-	anchor.position.y = ground_y
-	var painted := Polygon2D.new()
-	var polygon := PackedVector2Array()
-	var uv := PackedVector2Array()
-	for point in points:
-		polygon.append(point - anchor.position)
-		uv.append(point)
-	painted.polygon = polygon
-	painted.uv = uv
-	painted.texture = BACKGROUND
-	foliage_nodes.append(painted)
-	anchor.add_child(painted)
-	people.add_child(anchor)
 
 func _build_street_life() -> void:
 	var vehicle_regions: Array = sprite_bounds["traffic-v04.png"]
@@ -173,7 +144,7 @@ func _build_street_life() -> void:
 		people.add_child(actor)
 		crew[item[0]] = actor
 		speakers[item[0]] = actor
-	# Conductor belongs to the parked background danfo, not a moving vehicle.
+	# Conductor belongs to the parked modular danfo, not a moving vehicle.
 	var conductor := _person(Vector2(1044, 832), "office_worker", 100)
 	people.add_child(conductor)
 	actors.append(conductor)
@@ -315,17 +286,16 @@ func _process(delta: float) -> void:
 	for i in range(crew.size()):
 		crew.values()[i].get_node("Sprite").rotation = sin(clock * 0.9 + i * 2.0) * 0.025 if animate and detailed_motion else 0.0
 	home_flag.rotation = sin(clock * 1.2) * 0.02 if animate and detailed_motion else 0.0
-	_tick_wind()
+	_tick_wind(delta)
 	_tick_chatter(delta)
 
-func _tick_wind() -> void:
+func _tick_wind(delta: float) -> void:
 	var gust: float = street.gust_strength() if animate and detailed_motion else 0.0
-	wind_material.set_shader_parameter("phase", street.elapsed)
-	wind_material.set_shader_parameter("gust", gust)
+	scenery.tick(delta, hero.position, street.elapsed, gust)
 	var phase: float = fposmod(street.elapsed + 1.0, 19.0)
 	for i in range(leaf_nodes.size()):
 		leaf_nodes[i].visible = gust > 0.02 and animate and detailed_motion
-		leaf_nodes[i].position = Vector2(320 + i * 13 + phase * 35, 507 + i * 18 + phase * 7 + sin(phase * 2 + i) * 8)
+		leaf_nodes[i].position = Vector2(190 + i * 13 + phase * 35, 590 + i * 18 + phase * 7 + sin(phase * 2 + i) * 8)
 		leaf_nodes[i].rotation = phase * 1.5 + i
 		leaf_nodes[i].modulate.a = gust * 0.7
 
@@ -359,7 +329,9 @@ func resize_view(size: Vector2) -> void:
 	if size.x < 850:
 		factor = size.y / SIZE.y
 	camera.zoom = Vector2.ONE * factor
-	camera.position = Vector2(clampf(hero.position.x, 480, 1056), clampf(hero.position.y, 512, 680)) if size.x < 850 else SIZE / 2
+	# Interior feet can be above the old pavement limit. Follow them upward
+	# in portrait so the player's head stays below the objective panel.
+	camera.position = Vector2(clampf(hero.position.x, 480, 1056), clampf(hero.position.y, 360, 680)) if size.x < 850 else SIZE / 2
 
 func set_wall(color: String) -> void:
 	if home_flag != null:
@@ -369,6 +341,7 @@ func apply_settings(settings: Dictionary) -> void:
 	animate = settings.effects
 	detailed_motion = settings.quality != "Low"
 	street.configure(settings)
+	scenery.apply_settings(settings)
 	for i in range(actors.size()):
 		actors[i].visible = true
 		actors[i].get_child(0).visible = settings.shadows
@@ -382,7 +355,6 @@ func apply_settings(settings: Dictionary) -> void:
 		dog_nodes[i].visible = i < street.dog_count
 		dog_nodes[i].get_child(0).visible = settings.shadows
 	for i in range(bird_nodes.size()): bird_nodes[i].visible = i < street.bird_count
-	for node in foliage_nodes: node.material = wind_material if animate and detailed_motion else null
 	for actor in crew.values():
 		actor.get_child(0).visible = settings.shadows
 	hero.get_child(0).visible = settings.shadows
@@ -390,4 +362,10 @@ func apply_settings(settings: Dictionary) -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 func walkable(point: Vector2) -> bool:
-	return Rect2(100, 420, 1340, 540).has_point(point)
+	return layout.walkable(point)
+
+func move_player(displacement: Vector2) -> void:
+	hero.position = layout.move(hero.position, displacement)
+
+func route_to(point: Vector2) -> PackedVector2Array:
+	return layout.route(hero.position, point)

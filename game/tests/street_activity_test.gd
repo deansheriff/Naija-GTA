@@ -58,7 +58,7 @@ func _initialize() -> void:
 	check(crossings.all(func(count): return count >= 2), "Every pedestrian walks off the scene repeatedly in both travel directions")
 	var bounded := true
 	for walker in street.walkers:
-		if walker.position.y > 500 and walker.position.y < 800:
+		if walker.position.y > 486 + walker.position.x * Activity.ROAD_SLOPE and walker.position.y < 655 + walker.position.x * Activity.ROAD_SLOPE:
 			bounded = false
 	for vehicle in street.vehicles:
 		bounded = bounded and vehicle.x >= Activity.START_X and vehicle.x < Activity.END_X
