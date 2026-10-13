@@ -23,7 +23,10 @@ const PLACES = {
 	"bus": {"name": "Bus stop", "position": Vector2(1035, 870)},
 }
 var camera: Camera2D
-var layout = DistrictLayout.new()
+var layout: RefCounted
+var places: Dictionary = {}
+var district_id := 0
+var travel_chunk := false
 var scenery: Node2D
 var hero: Node2D
 var hero_sprite
@@ -54,25 +57,30 @@ var clock := 0.0
 var animate := true
 
 func _ready() -> void:
+	if layout == null: layout = DistrictLayout.new()
+	places = layout.places.duplicate(true)
+	street.apply_layout(layout)
 	var bounds := Control.new()
 	bounds.size = SIZE
-	bounds.clip_contents = true
+	bounds.clip_contents = not travel_chunk
 	bounds.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bounds)
 	scenery = ModularScenery.new()
 	bounds.add_child(scenery)
 	camera = Camera2D.new()
 	camera.position = SIZE / 2
+	camera.enabled = not travel_chunk
 	add_child(camera)
 	people = Node2D.new()
 	people.y_sort_enabled = true
 	bounds.add_child(people)
-	scenery.build(people, sprite_bounds)
+	scenery.build(people, sprite_bounds, layout)
 	hero = _person(Vector2(768, 635), "hero")
 	people.add_child(hero)
 	hero_sprite = hero.get_node("Sprite")
+	hero.visible = not travel_chunk
 	previous_hero_position = hero.position
-	for item in [[Vector2(301, 350), 0], [Vector2(676, 350), 1]]:
+	for item in [[places.food.position + Vector2(-104, -50), 0], [places.repair.position + Vector2(-104, -50), 1]]:
 		var actor := _still_person(item[0], preload("res://assets/neighbors.png"), sprite_bounds["neighbors.png"][item[1]], 100)
 		people.add_child(actor)
 		actors.append(actor)
@@ -80,22 +88,36 @@ func _ready() -> void:
 	speakers.yemi = actors[1]
 	_build_street_life()
 	_build_nature(bounds)
-	for key in PLACES:
+	for key in places:
 		var label := Label.new()
-		label.text = PLACES[key].name
+		label.text = places[key].name
 		label.add_theme_font_size_override("font_size", 19)
 		label.add_theme_color_override("font_color", Color("fff6d6"))
 		label.add_theme_color_override("font_outline_color", Color("183e33"))
 		label.add_theme_constant_override("outline_size", 8)
-		label.position = PLACES[key].position - Vector2(90, 112)
+		label.position = places[key].position - Vector2(90, 112)
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(label)
 	home_flag = Polygon2D.new()
 	home_flag.polygon = PackedVector2Array([Vector2(0, 0), Vector2(43, 0), Vector2(43, 55), Vector2(21, 43), Vector2(0, 55)])
-	home_flag.position = Vector2(1150, 438)
+	home_flag.position = places.home.position + Vector2(-70, 38)
+	home_flag.visible = district_id == 0 and not travel_chunk
 	add_child(home_flag)
 	set_wall("sage")
 	_build_speech()
+	if travel_chunk:
+		street.wrap_agents = false
+		scenery.parked_bus.hide()
+		for tree in scenery.tree_nodes: tree.z_index = 3
+		# Actors can cross tile seams and leave the moving camera naturally.
+		# Recycling at the original fixed-screen boundary would visibly pop.
+		for group in [pedestrian_nodes, vehicle_nodes, dog_nodes]:
+			for actor in group: actor.z_index = 1
+		# Opposing traffic uses its own lane; the guided bus has a clear lane.
+		for vehicle in street.vehicles:
+			vehicle.lane = 1
+			vehicle.direction = -1
+		for car in vehicle_nodes: car.get_node("Sprite").flip_h = true
 
 func _atlas_region(rect: Rect2, sheet: Texture2D = STREET_ATLAS) -> AtlasTexture:
 	var texture := AtlasTexture.new()
@@ -108,7 +130,7 @@ func _build_street_life() -> void:
 	for vehicle in street.vehicles:
 		var car := Node2D.new()
 		car.position = street.vehicle_position(vehicle)
-		car.rotation = atan(StreetActivity.ROAD_SLOPE)
+		car.rotation = atan(layout.road_slope)
 		var shadow := _shadow(Vector2(vehicle.width * 0.43, 9))
 		shadow.position.y = -3
 		car.add_child(shadow)
@@ -140,6 +162,7 @@ func _build_street_life() -> void:
 		["chidi", Vector2(788, 892), 2],
 	]
 	for item in crew_data:
+		if district_id != 0 or travel_chunk: continue
 		var actor := _still_person(item[1], STREET_ATLAS, sprite_bounds["street-life-atlas.png"][item[2]], 100)
 		people.add_child(actor)
 		crew[item[0]] = actor
@@ -300,7 +323,16 @@ func _tick_wind(delta: float) -> void:
 		leaf_nodes[i].modulate.a = gust * 0.7
 
 func _tick_chatter(delta: float) -> void:
-	var near_park: bool = hero.position.distance_to(PLACES.park.position) < 170
+	if travel_chunk: return
+	if district_id != 0:
+		chatter_timer -= delta
+		if chatter_timer <= 0 and not conversation_focus:
+			chatter_timer = 6.0
+			say("conductor", "Conductor: Home street, Market Road, Palm Junction. Choose your stop.")
+		if conversation_focus or speech_remaining <= 0: speech.hide()
+		speech_remaining -= delta
+		return
+	var near_park: bool = hero.position.distance_to(places.park.position) < 170
 	if near_park and not park_near and not conversation_focus:
 		say("razor", "Razor: Neighbor! Come gist, or keep moving." if park_familiar else "Razor: New face! Come gist, or keep moving.")
 	park_near = near_park

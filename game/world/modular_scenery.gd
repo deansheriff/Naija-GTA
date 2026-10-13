@@ -14,9 +14,12 @@ var building_nodes: Array[Node2D] = []
 var tree_nodes: Array[Node2D] = []
 var detailed_motion := true
 var animate := true
+var district: RefCounted
+var parked_bus: Node2D
 
-func build(sorted_world: Node2D, sprite_bounds: Dictionary) -> void:
-	for building in Layout.BUILDINGS:
+func build(sorted_world: Node2D, sprite_bounds: Dictionary, generated_layout: RefCounted = null) -> void:
+	district = generated_layout if generated_layout != null else Layout.new()
+	for building in district.buildings:
 		var front := Vector2(building.footprint.get_center().x, building.footprint.end.y)
 		var shell := Node2D.new()
 		shell.name = building.id + "_shell"
@@ -48,17 +51,18 @@ func build(sorted_world: Node2D, sprite_bounds: Dictionary) -> void:
 		facade.add_child(sign_anchor)
 		_box(sign_anchor, Rect2(-118, -80, 100, 25), Color("264c40"))
 		var sign_text := Label.new()
-		sign_text.text = ["AMAKA · FOOD", "YEMI · REPAIRS", "HOME"][building.kind]
+		sign_text.text = ["AMAKA · FOOD", "YEMI · REPAIRS", "HOME"][building.kind] if district.seed_value == 0 else ["CANTEEN", "REPAIRS", "COURTYARD"][building.kind]
 		sign_text.add_theme_font_size_override("font_size", 10)
 		sign_text.add_theme_color_override("font_color", Color("f4efdb"))
 		sign_text.position = Vector2(-113, -74)
 		sign_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		sign_anchor.add_child(sign_text)
-	for item in Layout.FURNITURE: _furniture(sorted_world, item)
-	for at in Layout.TREES: _tree(sorted_world, at)
+	for item in district.furniture: _furniture(sorted_world, item)
+	for at in district.trees: _tree(sorted_world, at)
 	var bus := Node2D.new()
+	parked_bus = bus
 	bus.name = "ParkedDanfo"
-	bus.position = Vector2(Layout.PARKED_BUS.get_center().x, Layout.PARKED_BUS.end.y)
+	bus.position = Vector2(district.bus_rect.get_center().x, district.bus_rect.end.y)
 	var shadow := _ellipse(bus, Vector2(125, 13), Color(0.09, 0.15, 0.11, 0.3))
 	decorative_shadows.append(shadow)
 	for x in [-76, 76]:
@@ -142,7 +146,7 @@ func _ellipse(parent: Node, radius: Vector2, color: Color) -> Polygon2D:
 	return _shape(parent, points, color)
 
 func tick(delta: float, player: Vector2, elapsed: float, gust: float) -> void:
-	for building in Layout.BUILDINGS:
+	for building in district.buildings:
 		var reveal: bool = building.footprint.grow(25).has_point(player)
 		roofs[building.id].modulate.a = move_toward(roofs[building.id].modulate.a, 0.08 if reveal else 1.0, delta * 4)
 	for i in range(canopies.size()):
@@ -154,30 +158,41 @@ func apply_settings(settings: Dictionary) -> void:
 	for shadow in decorative_shadows: shadow.visible = settings.shadows
 
 func _draw() -> void:
+	if district == null: return
 	# Reusable ground/road/sidewalk layers, independent of buildings and props.
-	draw_rect(Rect2(Vector2.ZERO, Layout.SIZE), Color("cfbc92"))
-	draw_rect(Rect2(0, 0, 1536, 310), Color("879b71"))
+	draw_rect(Rect2(Vector2.ZERO, Layout.SIZE), district.ground_color)
+	draw_rect(Rect2(0, 0, 1536, 310), district.grass_color)
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 505
+	rng.seed = 505 + district.seed_value
 	for i in range(1400):
 		var at := Vector2(rng.randf_range(0, 1536), rng.randf_range(0, 1024))
 		draw_line(at, at + Vector2(rng.randf_range(1, 6), 0), Color(0.36, 0.31, 0.20, 0.10), 1)
 	for x in range(0, 1600, 48):
 		for y in [340, 390, 440, 760, 810, 860, 910, 960]:
 			draw_rect(Rect2(x + (24 if y % 100 == 10 else 0), y, 47, 49), Color(0.85, 0.80, 0.65, 0.13), false, 1)
-	draw_colored_polygon(PackedVector2Array([Vector2(0, 486), Vector2(1536, 555), Vector2(1536, 724), Vector2(0, 655)]), Color("7a8174"))
+	if district.junction_x >= 0:
+		draw_rect(Rect2(district.junction_x - district.junction_width / 2, 0, district.junction_width, 580), Color("7a8174"))
+		for side in [-1, 1]: draw_line(Vector2(district.junction_x + side * district.junction_width / 2, 0), Vector2(district.junction_x + side * district.junction_width / 2, 470), Color("acaa8e"), 8)
+		for y in range(0, 440, 70): draw_line(Vector2(district.junction_x, y), Vector2(district.junction_x, y + 32), Color("d8cfac"), 3)
+		for x in range(int(district.junction_x - 40), int(district.junction_x + 40), 16): draw_rect(Rect2(x, 456, 9, 25), Color("d8d2b9"))
+	var rise: float = Layout.SIZE.x * district.road_slope
+	draw_colored_polygon(PackedVector2Array([Vector2(0, 486), Vector2(1536, 486 + rise), Vector2(1536, 655 + rise), Vector2(0, 655)]), Color("7a8174"))
 	for i in range(700):
 		var x := rng.randf_range(0, 1536)
-		var y := rng.randf_range(492, 650) + x * 0.045
+		var y: float = rng.randf_range(492, 650) + x * district.road_slope
 		draw_line(Vector2(x, y), Vector2(x + 3, y), Color(0.16, 0.21, 0.17, 0.14), 1)
 	for y in [486, 655]:
-		draw_line(Vector2(0, y), Vector2(1536, y + 69), Color("acaa8e"), 12, true)
-		draw_line(Vector2(0, y + 6), Vector2(1536, y + 75), Color("4b6655"), 2, true)
+		if y == 486 and district.junction_x >= 0:
+			for segment in [[0, district.junction_x - district.junction_width / 2], [district.junction_x + district.junction_width / 2, 1536]]:
+				draw_line(Vector2(segment[0], y), Vector2(segment[1], y), Color("acaa8e"), 12, true)
+		else:
+			draw_line(Vector2(0, y), Vector2(1536, y + rise), Color("acaa8e"), 12, true)
+			draw_line(Vector2(0, y + 6), Vector2(1536, y + rise + 6), Color("4b6655"), 2, true)
 	for x in range(0, 1536, 110):
-		draw_line(Vector2(x, 571 + x * 0.045), Vector2(x + 52, 573.3 + x * 0.045), Color("d8cfac"), 4, true)
-	for y in range(519, 658, 22):
+		draw_line(Vector2(x, 571 + x * district.road_slope), Vector2(x + 52, 571 + (x + 52) * district.road_slope), Color("d8cfac"), 4, true)
+	for y in range(int(492 + 740 * district.road_slope), int(649 + 740 * district.road_slope), 22):
 		draw_colored_polygon(PackedVector2Array([Vector2(730, y), Vector2(798, y + 3), Vector2(798, y + 13), Vector2(730, y + 10)]), Color("d8d2b9"))
 	draw_rect(Rect2(260, 732, 380, 163), Color("a8ac7b"))
-	for building in Layout.BUILDINGS:
+	for building in district.buildings:
 		draw_rect(building.footprint.grow(5), Color("877c5f"))
 		draw_rect(building.footprint, Color("caba92"))

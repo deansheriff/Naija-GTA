@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "engine": "4.6.3",
   "files": [
     {
@@ -20,7 +20,7 @@
     {
       "name": "index.html",
       "bytes": 5553,
-      "sha256": "a39fba71cc8ec38733caa3b07312dd1247a13bc5f6ff11afa18cd08804869210"
+      "sha256": "127ca2906367bca5d6cc09dd515e70746c500f7d1356eab94d98cfde7d906b94"
     },
     {
       "name": "index.icon.png",
@@ -34,8 +34,8 @@
     },
     {
       "name": "index.pck",
-      "bytes": 10112304,
-      "sha256": "e37815ba3df71a6a3b69d55ed21b9dd454ebdbdffb3db1e5951777079512602b"
+      "bytes": 10130508,
+      "sha256": "90a0bb5ac56638c78af8b8072a5a7011a745e62af52b65199fe44c02a9968a4d"
     },
     {
       "name": "index.png",

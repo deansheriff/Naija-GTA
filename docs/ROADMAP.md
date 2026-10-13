@@ -12,13 +12,17 @@ Implemented: consistent player facing and visibly changing leg poses, distance-b
 
 The first authored reference block is implemented in 0.5.0: independent ground/road/sidewalk layers, painted building shells and separate roofs, tree trunks/canopies, benches, counters, noticeboard and parked bus. Keyboard movement uses solid footprints; click/venue travel plans a clear route through the front doorway. Approached roofs fade to reveal the room and working shopkeepers. The elevated side camera, grounded vehicles, wildlife and continuous pedestrian crossings remain.
 
-Next within this foundation: reusable road intersections and seeded layout rules for connected roads, safe paths and sensible building/tree placement. Roads must connect; buildings and trees must not obstruct entries or spawn over pavement. Validate doorway connectivity and ambient corridors for every supported seed. Keep named NPCs, objectives and shops reachable at every graphics tier. Performance gates require frame-time/memory measurements on actual mobile browsers and Android devices. The authored block is not yet a procedural city.
+Version 0.6 adds deterministic seeded destination blocks and reserved northbound T-junction modules. Building order/positions, trees, furniture and surface colors vary within validated lots; roads connect and door/corridor clearance is preserved. The home block retains its starter venues. This is a bounded district kit, not an unrestricted procedural city. Performance gates still require frame-time/memory measurements on actual mobile browsers and Android devices.
 
 Story benefit: the same modular rooms and entrances will support Ngozi's canteen, KC's apartment, wedding staging and bus-stop scenes without baking all geometry into a background painting.
 
 ## 0.6 — Vehicle travel and streamed scenery
 
-Implement boarding, routes, departure/arrival and a camera that follows the vehicle from above and the side. Load/unload district chunks along the road, with seeds/versioned world layout so a route is reproducible. Add traffic crossings, road-aware dog behavior and pedestrian avoidance. Essential traffic/animal cues remain on Low; optional crowd density, foliage effects and richer art depend on measured budgets.
+Implemented in 0.6.0: walk to the stop, board a guided danfo ride, pull onto the road, cruise through seeded scenery and park at the destination. Home street, Market Road and Palm Junction use a shared world seed/layout version. The camera follows from above and the side in both desktop and portrait. At most three nearby transit chunks are active; incoming scenery loads before it enters view, and obsolete chunks unload behind the camera. Transit chunks skip unused navigation grids. Skip retains the arrival animation; cancelling returns to the starting stop. Essential bus movement/tire contact remains on Low with ambient animation disabled.
+
+New districts are walkable. Starter venue shortcuts queue a ride back to Home street before continuing on foot. The transport prototype is free and does not change server balances, missions or unlocks. Travel/location is local session state; reopening starts on Home street. Dogs keep clear of the main traffic lanes; pedestrians step around the player where pavement clearance allows, then return to their through route.
+
+Next transport extensions: player-controlled driving, lane changes, vehicles turning through junctions, traffic-aware main-road crossing decisions, richer passenger conversations and authoritative location/transport consequences if needed. Physical-device frame-time/memory/thermal gates remain pending. The current guided ride is not a shared-world traffic or rigid-body simulation.
 
 ## 0.7 — NPC routines and persistent relationships
 

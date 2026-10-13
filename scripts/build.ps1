@@ -20,6 +20,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Street activity checks failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Actor/nature checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/district_layout_test.gd
 if ($LASTEXITCODE -ne 0) { throw 'District collision/navigation checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/world_travel_test.gd
+if ($LASTEXITCODE -ne 0) { throw 'Seeded world/vehicle travel checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/layout_test.gd
 if ($LASTEXITCODE -ne 0) { throw 'Scene layout check failed.' }
 if ($Target -eq 'test') { exit 0 }

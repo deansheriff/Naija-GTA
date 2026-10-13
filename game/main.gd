@@ -4,6 +4,9 @@ const Simulation = preload("res://core/simulation.gd")
 const Neighborhood = preload("res://world/neighborhood_2d.gd")
 const Cloud = preload("res://core/cloud.gd")
 const StreetDialogue = preload("res://core/street_dialogue.gd")
+const WorldPlan = preload("res://world/world_plan.gd")
+const DistrictLayout = preload("res://world/district_layout.gd")
+const JourneyView = preload("res://world/journey_view.gd")
 const SAVE_PATH = "user://street-life-v1.json"
 const CLOUD_CACHE_PATH = "user://cloud-character-cache-v1.json"
 const INK = Color("193c32")
@@ -53,6 +56,14 @@ var suggested_preset := "Measuring…"
 var current_place := "street"
 var last_dialog := ""
 var park_met := false
+var district_id := 0
+var pending_district := -1
+var pending_venue := ""
+var journey_view: Node2D
+var journey_panel: PanelContainer
+var journey_label: Label
+var journey_status: Label
+var journey_bar: ProgressBar
 
 func _ready() -> void:
 	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
@@ -99,7 +110,7 @@ func _process(delta: float) -> void:
 	toast_remaining -= delta
 	toast_label.visible = toast_remaining > 0
 	world.conversation_focus = modal != null
-	if modal == null:
+	if modal == null and journey_view == null:
 		_move_player(delta)
 	if benchmark_time < 8 and delta < 0.25:
 		benchmark_time += delta
@@ -123,6 +134,10 @@ func _move_player(delta: float) -> void:
 	if motion.length() > 0:
 		walking = false
 		walking_route.clear()
+		if pending_district >= 0:
+			pending_district = -1
+			pending_venue = ""
+			_toast("Ride request cancelled.")
 		world.move_player(motion.normalized() * minf(delta, 0.1) * 160)
 	elif walking:
 		var budget: float = minf(delta, 0.1) * 180
@@ -148,14 +163,23 @@ func _move_player(delta: float) -> void:
 		world.resize_view(get_viewport().get_visible_rect().size)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if journey_view != null:
+		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE: _cancel_ride()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
 			_close_modal()
+			if pending_district >= 0:
+				walking = false
+				walking_route.clear()
+				pending_district = -1
+				pending_venue = ""
+				_toast("Ride request cancelled.")
 		if event.keycode == KEY_E and modal == null:
 			var nearest := ""
 			var distance := 100.0
-			for key in Neighborhood.PLACES:
-				var value: float = world.hero.position.distance_to(Neighborhood.PLACES[key].position)
+			for key in world.places:
+				var value: float = world.hero.position.distance_to(world.places[key].position)
 				if value < distance:
 					nearest = key
 					distance = value
@@ -279,13 +303,15 @@ func _build_hud() -> void:
 	sidebar.add_child(side_scroll)
 	var side := _column(side_scroll)
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	side.add_child(_label("YOUR NEIGHBORHOOD", 13, MUTED))
-	for key in ["food", "repair", "home", "square", "park", "bus"]:
+	side.add_child(_label("HOME STREET VENUES", 13, MUTED))
+	for key in ["food", "repair", "home", "square", "park"]:
 		var info: Dictionary = Neighborhood.PLACES[key]
 		var button := _button(info.name, _travel.bind(key))
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		side.add_child(button)
 	side.add_child(HSeparator.new())
+	side.add_child(_button("Local danfo stop", _travel.bind("bus")))
+	side.add_child(_button("Ride between districts", _open_routes, true))
 	side.add_child(_button("My profile", _open_profile))
 	side.add_child(_button("Gig board", _open_market))
 	side.add_child(_button("Graphics & settings", _open_settings))
@@ -337,6 +363,24 @@ func _build_hud() -> void:
 		button.add_theme_font_size_override("font_size", 15)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		mobile_nav.add_child(button)
+	journey_panel = _panel()
+	var ride := _column(journey_panel)
+	journey_label = _label("", 20, LIME)
+	journey_status = _label("", 15, MUTED)
+	journey_bar = ProgressBar.new()
+	journey_bar.show_percentage = false
+	journey_bar.custom_minimum_size.y = 8
+	ride.add_child(journey_label)
+	ride.add_child(journey_status)
+	ride.add_child(journey_bar)
+	var controls := HBoxContainer.new()
+	ride.add_child(controls)
+	controls.add_child(_button("Skip to arrival", _skip_ride))
+	controls.add_child(_button("Return to starting stop", _cancel_ride))
+	for button in controls.get_children():
+		button.add_theme_font_size_override("font_size", 14)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	journey_panel.hide()
 
 func _resize() -> void:
 	var physical := DisplayServer.window_get_size()
@@ -370,6 +414,10 @@ func _resize() -> void:
 	toast_label.position = Vector2(16, 326) if small else Vector2(290, 122)
 	toast_label.size = Vector2(size.x - 32, 56) if small else Vector2(size.x - 604, 56)
 	world.resize_view(size)
+	journey_panel.position = Vector2(16, size.y - 184) if small else Vector2(size.x / 2 - 290, size.y - 184)
+	journey_panel.size = Vector2(size.x - 32, 168) if small else Vector2(580, 168)
+	if journey_view != null: journey_view.resize_view(size)
+	_travel_visibility()
 	if modal != null:
 		_layout_modal()
 
@@ -388,6 +436,14 @@ func _refresh() -> void:
 	if activity_panel.visible:
 		activity_label.text = "%s · %ss" % [Simulation.ACTIONS[sim.data.active.code].name, ceili(sim.data.active.remaining)]
 		activity_bar.value = 100 * (1 - sim.data.active.remaining / sim.data.active.total)
+	brand_subtitle.text = WorldPlan.profile(district_id).name + " · Your neighborhood"
+	if journey_view != null:
+		var trip = journey_view.model
+		journey_label.text = WorldPlan.profile(trip.origin).name + " to " + WorldPlan.profile(trip.destination).name
+		journey_status.text = {"departing": "Boarded · Pulling away from the stop", "cruising": "On the road · Next stop ahead", "arriving": "Arriving · Pulling in", "complete": "Arrived"}.get(trip.state, "On the road")
+		journey_bar.value = trip.progress() * 100
+		brand_subtitle.text = "On the danfo · " + WorldPlan.profile(trip.destination).name
+	_travel_visibility()
 
 func _settle_layout() -> void:
 	# Containers measure wrapped text after their first layout pass.
@@ -443,7 +499,10 @@ func _travel(place: String) -> void:
 	_close_modal()
 	if not Neighborhood.PLACES.has(place):
 		return
-	if _walk_to(Neighborhood.PLACES[place].position, place):
+	if district_id != 0 and place != "bus":
+		_request_ride(0, place)
+		return
+	if _walk_to(world.places[place].position, place):
 		_toast("Heading to " + Neighborhood.PLACES[place].name + "…")
 
 func _walk_to(point: Vector2, place: String) -> bool:
@@ -451,6 +510,9 @@ func _walk_to(point: Vector2, place: String) -> bool:
 	if route.is_empty():
 		_toast("There is no clear route to that spot. Try the pavement or a doorway.")
 		return false
+	if place != "board":
+		pending_district = -1
+		pending_venue = ""
 	destination = point
 	destination_place = place
 	walking_route = route
@@ -458,12 +520,23 @@ func _walk_to(point: Vector2, place: String) -> bool:
 	return true
 
 func _open_explore() -> void:
-	_dialog("One street. Plenty of possibilities.", "Choose a place and your character will walk there.")
-	for key in ["food", "repair", "home", "square", "park", "bus"]:
+	_dialog(WorldPlan.profile(district_id).name, "Walk to the local danfo stop, or ride to another district. Starter venues are on Home street.")
+	modal_body.add_child(_button("Ride between districts", _open_routes, true))
+	modal_body.add_child(_button("Walk to the local danfo stop", _travel.bind("bus")))
+	modal_body.add_child(_label("HOME STREET VENUES", 13, GOLD))
+	for key in ["food", "repair", "home", "square", "park"]:
 		modal_body.add_child(_button(Neighborhood.PLACES[key].name, _travel.bind(key)))
 
 func _open_place(place: String) -> void:
+	if place == "board":
+		_begin_ride()
+		return
 	if place == "street":
+		return
+	if district_id != 0 and place != "bus":
+		_dialog(world.places[place].name, "A stop in " + WorldPlan.profile(district_id).name + ". Amaka, Yemi and your starter activities are on Home street.")
+		modal_body.add_child(_button("Return to Home street", _request_ride.bind(0, ""), true))
+		modal_body.add_child(_button("Find the local danfo stop", _travel.bind("bus")))
 		return
 	if place == "food":
 		_dialog("Amaka's kitchen", "A warm plate, a familiar face, and time to catch your breath.")
@@ -498,10 +571,95 @@ func _open_place(place: String) -> void:
 	elif place == "park":
 		_open_park()
 	elif place == "bus":
-		_dialog("Danfo stop", "The conductor calls for passengers while danfos, cars and kekes pass the street. Your ride to another district will come with the transport milestone.")
-		modal_body.add_child(_button("Ask the conductor about the street", _conductor_gist, true))
-		modal_body.add_child(_button("Visit the community square", _travel.bind("square"), true))
-		modal_body.add_child(_button("Go home", _travel.bind("home")))
+		_open_routes()
+
+func _open_routes() -> void:
+	_dialog("Danfo routes · " + WorldPlan.profile(district_id).name, "Choose a stop. Your character walks to the boarding point before the ride. Rides are free in this prototype.")
+	for profile in WorldPlan.DISTRICTS:
+		if profile.id == district_id: continue
+		modal_body.add_child(_button("Ride to " + profile.name, _request_ride.bind(profile.id, ""), true))
+		modal_body.add_child(_label(profile.description, 15, MUTED))
+	if district_id == 0: modal_body.add_child(_button("Ask the conductor about the street", _conductor_gist))
+
+func _request_ride(target: int, then_visit: String = "") -> bool:
+	if journey_view != null or not WorldPlan.valid(target) or target == district_id: return false
+	_close_modal()
+	pending_district = target
+	pending_venue = then_visit
+	if not _walk_to(world.places.bus.position, "board"):
+		pending_district = -1
+		pending_venue = ""
+		return false
+	_toast("Heading to the stop for " + WorldPlan.profile(target).name + "…")
+	return true
+
+func _begin_ride() -> void:
+	if not WorldPlan.valid(pending_district) or world.hero.position.distance_to(world.places.bus.position) > 4: return
+	journey_view = JourneyView.new()
+	add_child(journey_view)
+	if not journey_view.begin(district_id, pending_district, sim.data.settings):
+		journey_view.queue_free()
+		journey_view = null
+		return
+	journey_view.arrived.connect(_arrive)
+	world.hide()
+	world.process_mode = Node.PROCESS_MODE_DISABLED
+	toast_remaining = 0
+	_resize()
+	_refresh()
+
+func _arrive(target: int) -> void:
+	if journey_view == null: return
+	var visit := pending_venue
+	journey_view.queue_free()
+	journey_view = null
+	world.queue_free()
+	world = Neighborhood.new()
+	district_id = target
+	world.district_id = target
+	world.layout = DistrictLayout.new(WorldPlan.profile(target).seed)
+	add_child(world)
+	world.hero.position = world.places.bus.position
+	world.previous_hero_position = world.hero.position
+	world.park_familiar = park_met
+	world.set_wall(sim.data.wall)
+	world.apply_settings(sim.data.settings)
+	world.camera.make_current()
+	pending_district = -1
+	pending_venue = ""
+	current_place = "bus"
+	_resize()
+	_refresh()
+	_toast("Arrived at " + WorldPlan.profile(target).name + ". Walk around or choose another route.")
+	if not visit.is_empty(): _travel(visit)
+
+func _skip_ride() -> void:
+	if journey_view != null: journey_view.skip()
+
+func _cancel_ride() -> void:
+	if journey_view == null: return
+	journey_view.queue_free()
+	journey_view = null
+	pending_district = -1
+	pending_venue = ""
+	current_place = "bus"
+	world.process_mode = Node.PROCESS_MODE_INHERIT
+	world.show()
+	world.camera.make_current()
+	_resize()
+	_refresh()
+	_toast("Returned to the starting stop.")
+
+func _travel_visibility() -> void:
+	if journey_panel == null: return
+	var riding := journey_view != null
+	var small: bool = get_viewport().get_visible_rect().size.x < 850
+	journey_panel.visible = riding
+	sidebar.visible = not riding and not small
+	mission_panel.visible = not riding
+	needs_panel.visible = not riding
+	mobile_nav.visible = not riding and small
+	if riding: activity_panel.hide()
 
 func _open_park() -> void:
 	_open_park_page("return" if park_met else "intro")
@@ -739,6 +897,7 @@ func _preset(quality: String, manual: bool = true) -> void:
 func _apply_graphics() -> void:
 	Engine.max_fps = int(sim.data.settings.fps)
 	world.apply_settings(sim.data.settings)
+	if journey_view != null: journey_view.apply_settings(sim.data.settings)
 
 func _open_settings() -> void:
 	_dialog("Make it work for your device", "Graphics change presentation, never rewards or task eligibility. " + ("Native Android build." if OS.has_feature("Android") else "Browser/desktop-compatible build."))
