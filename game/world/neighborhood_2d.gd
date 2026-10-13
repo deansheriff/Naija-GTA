@@ -303,7 +303,8 @@ func _process(delta: float) -> void:
 		vehicle_nodes[i].position = street.vehicle_position(street.vehicles[i])
 	for i in range(pedestrian_nodes.size()):
 		var walker: Dictionary = street.walkers[i]
-		pedestrian_nodes[i].get_node("Sprite").walk(walker.position - pedestrian_nodes[i].position)
+		# Animate real steps, excluding the off-screen recycling jump.
+		pedestrian_nodes[i].get_node("Sprite").walk(walker.movement)
 		pedestrian_nodes[i].position = walker.position
 	for i in range(dog_nodes.size()):
 		dog_nodes[i].get_node("Sprite").walk(street.dogs[i].position - dog_nodes[i].position)

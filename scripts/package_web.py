@@ -22,7 +22,7 @@ shell_path.write_text(shell_path.read_text(encoding="utf-8").replace('src="index
 shutil.copy2(SITE / "index.html", DIST / "index.html")
 shutil.copy2(ROOT / "game" / "icon.svg", DIST / "icon.svg")
 shutil.copy2(ROOT / "game" / "assets" / "street-painted.png", DIST / "street-painted.png")
-report = {"version": "0.4.0", "engine": "4.6.3", "files": []}
+report = {"version": "0.4.1", "engine": "4.6.3", "files": []}
 for item in sorted(PLAY.iterdir()):
     if item.is_file():
         report["files"].append({"name": item.name, "bytes": item.stat().st_size, "sha256": hashlib.sha256(item.read_bytes()).hexdigest()})

@@ -33,9 +33,29 @@ func _initialize() -> void:
 	original_x = first.x
 	street.advance(0.1, Vector2(800, 880))
 	check(first.x == original_x and street.walkers[0].position == previous_position, "Animation preference pauses both traffic and pedestrian motion")
+	check(street.walkers[0].movement == Vector2.ZERO, "Pausing clears the last step so a stationary pedestrian cannot keep animating")
 	street.configure({"quality": "High", "distance": 2, "effects": true})
+	var continuous := true
+	var same_heading := true
+	var hidden_recycling := true
+	var crossings := [0, 0, 0, 0, 0, 0]
 	for i in range(4000):
+		var before: Array[Vector2] = []
+		for walker in street.walkers: before.append(walker.position)
 		street.advance(0.05, Vector2(800, 880))
+		for j in range(street.walker_count):
+			var walker: Dictionary = street.walkers[j]
+			continuous = continuous and absf(walker.movement.length() - walker.speed * 0.05) < 0.001
+			var displacement: Vector2 = walker.position - before[j]
+			if absf(displacement.x) > 1000:
+				crossings[j] += 1
+				hidden_recycling = hidden_recycling and ((before[j].x > 1636 and walker.position.x < -100) or (before[j].x < -100 and walker.position.x > 1636))
+			else:
+				same_heading = same_heading and displacement.dot(walker.direction) > 0
+	check(continuous, "Every active pedestrian keeps a constant stride without endpoint pauses")
+	check(same_heading, "Pedestrians never reverse their route while crossing the street")
+	check(hidden_recycling, "Pedestrian exit and re-entry occur with the whole body beyond the scene edges")
+	check(crossings.all(func(count): return count >= 2), "Every pedestrian walks off the scene repeatedly in both travel directions")
 	var bounded := true
 	for walker in street.walkers:
 		if walker.position.y > 500 and walker.position.y < 800:
@@ -48,6 +68,14 @@ func _initialize() -> void:
 	for i in range(100): regular.advance(0.1, Vector2(800, 880))
 	for i in range(200): fractional.advance(0.05, Vector2(800, 880))
 	check(absf(regular.vehicles[0].x - fractional.vehicles[0].x) < 0.1, "Unblocked traffic speed is independent of frame rate")
+	check(regular.walkers[0].position.distance_to(fractional.walkers[0].position) < 0.1, "Pedestrian travel speed is independent of frame rate")
+	street.configure({"quality": "Low", "distance": 0, "effects": true})
+	var inactive_position: Vector2 = street.walkers[1].position
+	street.advance(0.1, Vector2(800, 880))
+	check(street.walkers[1].position == inactive_position and street.walkers[1].movement == Vector2.ZERO, "Reducing crowd density freezes hidden pedestrians and clears their stride")
+	street.configure({"quality": "High", "distance": 2, "effects": true})
+	street.advance(0.1, Vector2(800, 880))
+	check(street.walkers[1].position.distance_to(inactive_position) < 6 and street.walkers[1].movement.x < 0, "Restoring crowd density resumes the same route without a jump or turn")
 	var exits := ["leave", "repair", "poll"]
 	var valid := true
 	for key in Dialogue.PARK:

@@ -18,5 +18,21 @@ func run() -> void:
 	var contact: bool = car.get_child(1).visible and car.get_child(2).visible and absf(sprite.position.y + sprite.texture.get_height() * sprite.scale.y / 2.0) < 0.01
 	print("Low graphics tire grounding: ", "PASS" if contact else "FAIL")
 	sane = sane and contact
+	scene.world.apply_settings({"quality": "High", "distance": 2, "effects": true, "shadows": true})
+	var continuous_gait := true
+	for i in range(2):
+		var walker: Dictionary = scene.world.street.walkers[i]
+		walker.position.x = 1775 if i == 0 else -239
+		walker.position.y = walker.base_y + walker.position.x * walker.slope
+		scene.world.pedestrian_nodes[i].position = walker.position
+		var visual = scene.world.pedestrian_nodes[i].get_node("Sprite")
+		visual.walk(walker.direction)
+		var stride_before: float = visual.travelled
+		scene.world._process(0.1)
+		continuous_gait = continuous_gait and visual.heading == ("right" if i == 0 else "left") and visual.flip_h == (i == 1)
+		continuous_gait = continuous_gait and absf(visual.travelled - fposmod(stride_before + walker.speed * 0.1, visual.stride)) < 0.01
+		continuous_gait = continuous_gait and (walker.position.x < -100 if i == 0 else walker.position.x > 1636)
+	print("Off-screen recycling preserves rendered gait/facing: ", "PASS" if continuous_gait else "FAIL")
+	sane = sane and continuous_gait
 	print("Desktop layout: ", "PASS" if sane else "FAIL")
 	quit(0 if sane else 1)

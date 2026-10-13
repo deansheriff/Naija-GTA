@@ -17,16 +17,20 @@ var moving := true
 func _init() -> void:
 	for item in [[0, 410.0, 1, 86.0, 0, 270.0], [1, 1200.0, -1, 108.0, 1, 240.0], [2, -170.0, 1, 94.0, 0, 165.0], [1, 1640.0, 1, 86.0, 0, 240.0], [2, 200.0, -1, 108.0, 1, 165.0]]:
 		vehicles.append({"kind": item[0], "x": item[1], "direction": item[2], "speed": item[3], "lane": item[4], "width": item[5], "stopped": false})
-	var paths = [
-		[Vector2(320, 456), Vector2(570, 465), Vector2(690, 468)],
-		[Vector2(925, 471), Vector2(1080, 481), Vector2(1335, 487)],
-		[Vector2(760, 932), Vector2(1010, 950), Vector2(1190, 935)],
-		[Vector2(305, 960), Vector2(525, 970), Vector2(640, 960)],
-		[Vector2(650, 473), Vector2(785, 476), Vector2(930, 480)],
-		[Vector2(1150, 922), Vector2(940, 920), Vector2(780, 906)],
+	# Full-width pavement routes, staggered in both directions. The 240-unit
+	# margins keep the whole sprite outside the clipped street during recycling.
+	var routes = [
+		[Vector2(320, 456), 1, 0.025],
+		[Vector2(925, 471), -1, 0.025],
+		[Vector2(760, 932), 1, 0.014],
+		[Vector2(305, 960), -1, 0.014],
+		[Vector2(650, 473), 1, 0.025],
+		[Vector2(1150, 922), -1, 0.014],
 	]
-	for i in range(paths.size()):
-		walkers.append({"position": paths[i][0], "path": paths[i], "target": 1, "pause": float(i) * 0.6, "speed": 39.0 + i * 3, "direction": Vector2.ZERO})
+	for i in range(routes.size()):
+		var origin: Vector2 = routes[i][0]
+		var slope: float = routes[i][2]
+		walkers.append({"position": origin, "base_y": origin.y - origin.x * slope, "slope": slope, "speed": 39.0 + i * 3, "direction": Vector2(routes[i][1], slope * routes[i][1]).normalized(), "movement": Vector2.ZERO})
 	for path in [[Vector2(800, 715), Vector2(930, 713), Vector2(995, 799), Vector2(825, 760)], [Vector2(545, 466), Vector2(667, 477), Vector2(918, 478), Vector2(680, 462)]]:
 		dogs.append({"position": path[0], "path": path, "target": 1, "pause": 2.0, "speed": 44.0, "direction": Vector2.ZERO})
 
@@ -50,6 +54,8 @@ func gust_strength() -> float:
 	return pow(sin(phase / 5.0 * PI), 2) if phase < 5.0 else 0.0
 
 func advance(delta: float, player: Vector2) -> void:
+	# Clear stride input even when animation is disabled or density is reduced.
+	for walker in walkers: walker.movement = Vector2.ZERO
 	if not moving:
 		return
 	# Limit a resumed-tab jump; ambience has no offline completion/reward semantics.
@@ -72,7 +78,11 @@ func advance(delta: float, player: Vector2) -> void:
 		vehicle.stopped = stopped
 		if not stopped:
 			vehicle.x = START_X + fposmod(vehicle.x - START_X + step * vehicle.speed * vehicle.direction, END_X - START_X)
-	for i in range(walker_count): _advance_walker(walkers[i], step, 1.6 + i * 0.25)
+	for i in range(walker_count):
+		var walker: Dictionary = walkers[i]
+		walker.movement = walker.direction * step * walker.speed
+		var x: float = START_X + fposmod(walker.position.x - START_X + walker.movement.x, END_X - START_X)
+		walker.position = Vector2(x, walker.base_y + x * walker.slope)
 	for i in range(dog_count):
 		if dogs[i].position.distance_to(player) < 36:
 			dogs[i].direction = Vector2.ZERO
