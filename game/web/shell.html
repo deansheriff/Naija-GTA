@@ -22,6 +22,11 @@ window.NSLPrivateStore = {
   read() {try {return localStorage.getItem('nsl-cloud-v1') || '';}catch {return '';}},
   write(payload) {try {localStorage.setItem('nsl-cloud-v1',payload);return true;}catch {return false;}}
 };
+window.NSLCloudCacheStore = {
+  read() {try {return localStorage.getItem('nsl-cloud-cache-v1') || '';}catch {return '';}},
+  write(payload) {try {localStorage.setItem('nsl-cloud-cache-v1',payload);return true;}catch {return false;}},
+  preserveInvalid(payload) {try {localStorage.setItem('nsl-cloud-cache-v1.invalid-'+Date.now(),payload);}catch {}}
+};
 // Ship a ~9MB gzip file on static hosts, then stream-decompress it for Godot.
 // No response headers, third-party CDN, or oversized raw-WASM upload needed.
 const fetchOriginal = window.fetch.bind(window);

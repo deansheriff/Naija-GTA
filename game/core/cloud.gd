@@ -93,6 +93,9 @@ func configure(url: String, code: String = "") -> void:
 		notice.emit("Use your game's HTTPS URL, or localhost for development.")
 		return
 	if not normalized.ends_with("/api"): normalized += "/api"
+	if OS.has_feature("web") and normalized != str(JavaScriptBridge.get_interface("window").location.origin) + "/api":
+		notice.emit("Open that game address in your browser to use its server.")
+		return
 	if normalized == base_url and code.strip_edges().is_empty() and not token.is_empty():
 		connect_save()
 		return

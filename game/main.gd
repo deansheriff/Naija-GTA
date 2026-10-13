@@ -4,6 +4,7 @@ const Simulation = preload("res://core/simulation.gd")
 const Neighborhood = preload("res://world/neighborhood_2d.gd")
 const Cloud = preload("res://core/cloud.gd")
 const SAVE_PATH = "user://street-life-v1.json"
+const CLOUD_CACHE_PATH = "user://cloud-character-cache-v1.json"
 const INK = Color("193c32")
 const MUTED = Color("a6b9ad")
 const CREAM = Color("f4efdb")
@@ -68,7 +69,7 @@ func _ready() -> void:
 	add_child(cloud)
 	_save()
 	_toast(loaded.message)
-	if not loaded.ok:
+	if not loaded.ok and not cloud.enabled():
 		_open_welcome()
 	if OS.has_feature("web") and not JavaScriptBridge.get_interface("NSLSaveStore").available():
 		_toast("Browser storage is unavailable. Progress may not survive closing this tab.")
@@ -379,10 +380,11 @@ func _load_progress() -> Dictionary:
 		connection_text = FileAccess.get_file_as_string(Cloud.PATH)
 	var connection: Variant = JSON.parse_string(connection_text) if not connection_text.is_empty() else null
 	var catch_up: bool = not (connection is Dictionary and not str(connection.get("url", "")).is_empty())
+	var path := SAVE_PATH if catch_up else CLOUD_CACHE_PATH
 	if OS.has_feature("web"):
-		var storage = JavaScriptBridge.get_interface("NSLSaveStore")
+		var storage = JavaScriptBridge.get_interface("NSLSaveStore" if catch_up else "NSLCloudCacheStore")
 		if storage == null:
-			return sim.load_from(SAVE_PATH, catch_up)
+			return sim.load_from(path, catch_up)
 		var payload: String = storage.read()
 		if not payload.is_empty():
 			var result: Dictionary = sim.load_json(payload, catch_up)
@@ -390,16 +392,16 @@ func _load_progress() -> Dictionary:
 				storage.preserveInvalid(payload)
 			return result
 	# Migrate existing early browser IndexedDB saves when no synchronous snapshot exists.
-	return sim.load_from(SAVE_PATH, catch_up)
+	return sim.load_from(path, catch_up)
 
 func _save() -> void:
 	var saved := false
 	if OS.has_feature("web"):
 		sim.data.last_saved = Time.get_unix_time_from_system()
-		var storage = JavaScriptBridge.get_interface("NSLSaveStore")
+		var storage = JavaScriptBridge.get_interface("NSLCloudCacheStore" if cloud.enabled() else "NSLSaveStore")
 		saved = storage.write(JSON.stringify({"version": Simulation.VERSION, "state": sim.data}))
 	else:
-		saved = sim.save_to(SAVE_PATH)
+		saved = sim.save_to(CLOUD_CACHE_PATH if cloud.enabled() else SAVE_PATH)
 	if saved:
 		if save_label != null:
 			save_label.text = cloud.status if cloud.enabled() else "Saved on this device · " + Time.get_time_string_from_system().left(5)
@@ -748,9 +750,14 @@ func _open_cloud() -> void:
 	var url := LineEdit.new()
 	url.placeholder_text = "https://your-game-domain.example"
 	url.text = cloud.base_url
+	if OS.has_feature("web"):
+		url.text = str(JavaScriptBridge.get_interface("window").location.origin) + "/api"
+		url.editable = false
 	url.custom_minimum_size.y = 48
 	modal_body.add_child(_label("GAME SERVER URL", 13, GOLD))
 	modal_body.add_child(url)
+	if OS.has_feature("web"):
+		modal_body.add_child(_label("This browser page uses its own game server. Open your deployed game address to connect there. Android lets you enter that address.", 14, MUTED))
 	var code := LineEdit.new()
 	code.placeholder_text = "Save access code; blank keeps your current save here"
 	code.secret = true

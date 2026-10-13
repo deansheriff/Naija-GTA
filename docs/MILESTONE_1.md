@@ -26,6 +26,8 @@ Browser interaction verified against the local development service: automatic cl
 
 All artwork was made with the built-in imagegen tool; files and complete generation prompts are documented in ART_DIRECTION.md. No Omins/old research assets or account credentials are embedded. The street is presently one painted background, with sprite actors and an editable home accent, rather than a full modular city or editable interior.
 
+The initial repository workflow passed against real PostgreSQL 17, then built the Docker image and started it serving health and game HTML: https://github.com/deansheriff/Naija-GTA/actions/runs/38346746792. Local and cloud snapshots now use separate save slots; connecting a cloud character does not overwrite an existing local prototype save. New configured cloud connections skip the local name prompt; names remain editable through Profile.
+
 ## Limits and deployment
 
 Compose deployment steps are in COOLIFY.md. A persistent volume is not a backup. Save access codes grant character access; lost-code recovery is not available. Rate limits are process-local and proxy peers can share them. Wider launch still needs measured phones/native networking, managed identity, retention, backup/restore and monitoring.

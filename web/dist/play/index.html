@@ -24,6 +24,11 @@ window.NSLPrivateStore = {
   read() {try {return localStorage.getItem('nsl-cloud-v1') || '';}catch {return '';}},
   write(payload) {try {localStorage.setItem('nsl-cloud-v1',payload);return true;}catch {return false;}}
 };
+window.NSLCloudCacheStore = {
+  read() {try {return localStorage.getItem('nsl-cloud-cache-v1') || '';}catch {return '';}},
+  write(payload) {try {localStorage.setItem('nsl-cloud-cache-v1',payload);return true;}catch {return false;}},
+  preserveInvalid(payload) {try {localStorage.setItem('nsl-cloud-cache-v1.invalid-'+Date.now(),payload);}catch {}}
+};
 // Ship a ~9MB gzip file on static hosts, then stream-decompress it for Godot.
 // No response headers, third-party CDN, or oversized raw-WASM upload needed.
 const fetchOriginal = window.fetch.bind(window);
@@ -42,7 +47,7 @@ window.fetch = async function(input, init) {
 </script>
 <script src="index.js?v=e3f56ee40e6f"></script>
 <script>
-const config = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":4050088,"index.wasm":37700666},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const config = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":4050872,"index.wasm":37700666},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 config.onPrintError = (...args) => {console.log('NSL engine error:', ...args);console.error(...args);};
 const loadStart = performance.now();
 const engine = new Engine(config);

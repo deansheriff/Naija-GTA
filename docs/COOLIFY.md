@@ -22,7 +22,7 @@ Exposing the Coolify dashboard does not automatically expose this game. Add a se
 - If `cloudflared` is in Docker: `localhost` refers to the tunnel container. Use the reachable Coolify proxy service/host on a shared network instead; verify its actual name and address in your setup.
 - If using ordinary proxied DNS rather than Tunnel: point the game hostname at the server and configure valid HTTPS at the origin. Use Full (strict) TLS when applicable.
 
-Configure the matching hostname in Coolify. If you set an explicit origin HTTP Host Header in Cloudflare, set it to the game hostname, not the Coolify dashboard hostname. Keep `/api/*` out of any Cloudflare Cache Everything rule; the API sends `Cache-Control: no-store`. No WebSocket configuration is needed for the current HTTP save system.
+Configure the matching hostname in Coolify. If you set an explicit origin HTTP Host Header in Cloudflare, set it to the game hostname, not the Coolify dashboard hostname. Keep `/api/*` out of any Cloudflare Cache Everything rule; the API sends `Cache-Control: no-store`. Disable Rocket Loader for the game hostname so it does not rewrite the engine loading sequence. No WebSocket configuration is needed for the current HTTP save system.
 
 ## What persists
 
@@ -34,7 +34,7 @@ Use Coolify's database backup capability if available for your resource, or sche
 
 ## Players and Android
 
-The web game discovers its same-origin API and creates/connects a cloud character automatically. In **Settings → Cloud save**, save the access code privately. Enter that code and the game domain on another device to open the same character. Anyone holding the code can access that character; email/password accounts and lost-code recovery are not implemented yet. An expired 30-day session can be renewed with the access code.
+The web game discovers its same-origin API and creates/connects a cloud character automatically. In **Settings → Cloud save**, save the access code privately. In another browser, open the deployed game domain and enter that code there; the browser connects only to its own server, avoiding cross-origin credentials. Android lets you enter both the game domain and code. Anyone holding the code can access that character; email/password accounts and lost-code recovery are not implemented yet. An expired 30-day session can be renewed with the access code.
 
 For the native APK, enter your HTTPS game domain under Cloud save. Internet permission is included. There is no hard-coded hostname, API secret or Cloudflare service token in the APK. Browser and native use the same server command protocol. Native HTTPS/cloud interaction and physical-device performance still need verification on your actual deployed domain and phones.
 
