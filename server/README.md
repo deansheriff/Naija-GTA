@@ -46,3 +46,7 @@ Migration v1 runs once transactionally under a PostgreSQL advisory lock, tracked
 Tests cover ownership, strict body validation, timers, skill gates, repeated payouts, stale/concurrent writes, drafts/refunds, durable command receipts, append-only ledger, recovery-code sessions, session revocation/expiry, persistence and bounded absence. A local cache never awards a cloud activity. Native HTTPS/device interaction remains to be tested on the deployed domain.
 
 This stack is an early self-hosted game service. Before a larger public launch, add managed identity/code rotation, tested off-host backups/restores, receipt/session retention, metrics, shared rate limiting and the remaining product systems. The Compose volume is persistent storage, not a backup. Jev/news/payment/reward integrations remain absent.
+
+The `neighbor` command accepts `choice`: `yemi_hello`, `park_welcome`, `park_space`, `favor_accept`, `favor_deliver` or `favor_finish`. It enforces quest order; the final choice pays 30 SC once.
+
+The 0.7 additive JSON save fields are `neighbors` (Amaka/Yemi/park familiarity plus park boundary choice) and `favor` (available/carrying/delivered/complete). Both storage adapters supply defaults for older characters without replacing existing progress. The SQL/save schema remains version 1. Read normalization is persisted on the next successful command. Schedules, movement and proximity are client presentation; these HTTP intents enforce quest order and rewards, not authoritative location. Shared-world location validation is future work.

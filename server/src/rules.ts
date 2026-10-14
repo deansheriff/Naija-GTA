@@ -13,17 +13,27 @@ export type State = {
   decorated: boolean; wall: 'sage' | 'clay' | 'ocean';
   day: number; minutes: number; active: {code: Action; endsAt: number} | null; updatedAt: number;
   posts: Array<{id: string; title: string; budget: number; refunded: boolean; status: string}>; vote: string;
+  neighbors: {amaka: number; yemi: number; park: number; park_choice: string};
+  favor: 'available' | 'carrying' | 'delivered' | 'complete';
 };
-export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll'; action?: Action; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
+export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor'; action?: Action; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
 export class RuleError extends Error {
   constructor(public code: string, message: string, public status = 422) {super(message);}
 }
 export function initialState(now: number): State {
   return {name: 'New neighbor', bio: 'Finding my feet, one small win at a time.', coins: 240, food: 65, energy: 78, comfort: 70,
     repair: 0, digital: 0, social: 0, met_amaka: false, gig_done: false,
-    decorated: false, wall: 'sage', day: 1, minutes: 480, posts: [], vote: '', active: null, updatedAt: now};
+    decorated: false, wall: 'sage', day: 1, minutes: 480, posts: [], vote: '', active: null, updatedAt: now,
+    neighbors: {amaka: 0, yemi: 0, park: 0, park_choice: ''}, favor: 'available'};
+}
+// Additive save upgrade: existing JSON characters keep their balances, receipts and schema.
+export function upgradeState(state: State): State {
+  state.neighbors ??= {amaka: state.met_amaka ? 1 : 0, yemi: 0, park: 0, park_choice: ''};
+  state.favor ??= 'available';
+  return state;
 }
 export function applyIntent(state: State, intent: Intent, now: number): Array<{delta: number; reason: string}> {
+  upgradeState(state);
   const ledger: Array<{delta: number; reason: string}> = [];
   const elapsed = Math.max(0, Math.min(1200, (now - state.updatedAt) / 1000));
   state.minutes += elapsed * 0.8;
@@ -51,7 +61,31 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
     case 'sync': break;
     case 'greet':
       if (!state.met_amaka) {state.met_amaka = true; state.social++;}
+      state.neighbors.amaka = Math.max(1, state.neighbors.amaka);
       break;
+    case 'neighbor': {
+      switch (intent.choice) {
+        case 'yemi_hello':
+          if (!state.neighbors.yemi) {state.neighbors.yemi = 1; state.social = Math.min(100, state.social + 1);} break;
+        case 'park_welcome':
+          if (!state.neighbors.park) {state.neighbors.park = 1; state.social = Math.min(100, state.social + 1);}
+          state.neighbors.park_choice = 'welcome'; break;
+        case 'park_space': state.neighbors.park_choice = 'space'; break;
+        case 'favor_accept':
+          if (!state.met_amaka || state.favor !== 'available') throw new RuleError('favor_locked', 'Say hello to Amaka first. This favor can be accepted once.');
+          state.favor = 'carrying'; break;
+        case 'favor_deliver':
+          if (state.favor !== 'carrying') throw new RuleError('favor_locked', 'Collect Amaka\'s covered lunch plate first.');
+          state.favor = 'delivered'; state.neighbors.yemi = Math.max(2, state.neighbors.yemi); break;
+        case 'favor_finish':
+          if (state.favor !== 'delivered') throw new RuleError('favor_locked', 'Take the plate to Yemi, then return to Amaka.');
+          state.favor = 'complete'; state.neighbors.amaka = 3; state.neighbors.yemi = 3;
+          state.social = Math.min(100, state.social + 1); state.coins += 30;
+          ledger.push({delta: 30, reason: 'neighbor_lunch_favor'}); break;
+        default: throw new RuleError('invalid_neighbor_choice', 'Choose a listed neighbor conversation.');
+      }
+      break;
+    }
     case 'begin': {
       if (!intent.action || !Object.hasOwn(actions, intent.action)) throw new RuleError('unknown_action', 'Choose a known activity.');
       const action = actions[intent.action];

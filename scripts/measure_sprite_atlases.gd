@@ -3,15 +3,19 @@ extends SceneTree
 
 func _initialize() -> void:
 	var result: Dictionary = {}
-	for source in [["hero-walk-v04.png", 4, 3], ["hero-idle-v04.png", 3, 1], ["pedestrians-v04.png", 4, 3], ["wildlife-v04.png", 4, 2], ["neighbors.png", 2, 1]]:
+	for source in [["hero-walk-v04.png", 4, 3], ["hero-idle-v04.png", 3, 1], ["pedestrians-v04.png", 4, 3], ["wildlife-v04.png", 4, 2], ["neighbors.png", 2, 1], ["neighbors-walk-v07.png", 4, 2]]:
 		var texture: Texture2D = load("res://assets/" + source[0])
 		var image := texture.get_image()
 		image.decompress()
+		var split := character_row_gap(image) if source[0] == "neighbors-walk-v07.png" else 0
 		var cells: Array = []
 		for row in range(source[2]):
 			for col in range(source[1]):
 				var start := Vector2i(col * image.get_width() / source[1], row * image.get_height() / source[2])
 				var end := Vector2i((col + 1) * image.get_width() / source[1], (row + 1) * image.get_height() / source[2])
+				if split > 0:
+					start.y = 0 if row == 0 else split
+					end.y = split if row == 0 else image.get_height()
 				cells.append(measure(image, Rect2i(start, end - start)))
 		result[source[0]] = cells
 	var vehicles: Texture2D = load("res://assets/traffic-v04.png")
@@ -44,6 +48,26 @@ func _initialize() -> void:
 	file.store_string(JSON.stringify(result, "\t") + "\n")
 	print("Measured sprite bounds: ", result.keys())
 	quit()
+
+func character_row_gap(image: Image) -> int:
+	# Generated character rows can drift across the nominal half-height cell.
+	# Find the actual empty alpha gutter; measure metadata only, never edit PNGs.
+	var first := -1
+	var best_length := 0
+	var split := 0
+	for y in range(int(image.get_height() * 0.4), int(image.get_height() * 0.6)):
+		var occupied := 0
+		for x in range(image.get_width()):
+			if image.get_pixel(x, y).a > 0.25: occupied += 1
+		if occupied == 0:
+			if first < 0: first = y
+			if y - first + 1 > best_length:
+				best_length = y - first + 1
+				split = (first + y) / 2
+		else: first = -1
+	assert(best_length >= 2, "Expected a real transparent gutter between named walking rows")
+	print("Named walking alpha row separator: ", split)
+	return split
 
 func measure(image: Image, cell: Rect2i) -> Array:
 	var left: int = cell.end.x

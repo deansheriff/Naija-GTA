@@ -24,6 +24,7 @@ func reset() -> void:
 		"repair": 0, "digital": 0, "social": 0, "met_amaka": false,
 		"gig_done": false, "decorated": false, "wall": "sage", "active": {},
 		"day": 1, "minutes": 480.0, "posts": [], "vote": "", "last_saved": 0.0,
+		"neighbors": {"amaka": 0, "yemi": 0, "park": 0, "park_choice": ""}, "favor": "available",
 		"settings": {"quality": "Medium", "shadows": true, "effects": true, "distance": 1,
 			"fps": 30, "data_saver": true, "manual": false},
 	}
@@ -75,11 +76,38 @@ func tick(seconds: float) -> bool:
 	return true
 
 func meet_amaka() -> String:
+	data.neighbors.amaka = maxi(1, data.neighbors.amaka)
 	if not data.met_amaka:
 		data.met_amaka = true
 		data.social += 1
 		return "Amaka: Welcome, neighbor! Yemi needs a hand with his radio. Try his repair bench first."
 	return "Amaka: Small steps still take you somewhere. How is your day going?"
+
+func neighbor_choice(choice: String) -> Dictionary:
+	match choice:
+		"yemi_hello", "park_welcome":
+			var who := "yemi" if choice == "yemi_hello" else "park"
+			if data.neighbors[who] == 0:
+				data.neighbors[who] = 1
+				data.social = mini(100, data.social + 1)
+			if who == "park": data.neighbors.park_choice = "welcome"
+		"park_space": data.neighbors.park_choice = "space"
+		"favor_accept":
+			if not data.met_amaka or data.favor != "available": return {"ok": false, "message": "Say hello to Amaka first. This favor can be accepted once."}
+			data.favor = "carrying"
+		"favor_deliver":
+			if data.favor != "carrying": return {"ok": false, "message": "Collect Amaka's covered lunch plate first."}
+			data.favor = "delivered"
+			data.neighbors.yemi = maxi(2, data.neighbors.yemi)
+		"favor_finish":
+			if data.favor != "delivered": return {"ok": false, "message": "Take the plate to Yemi, then return to Amaka."}
+			data.favor = "complete"
+			data.neighbors.amaka = 3
+			data.neighbors.yemi = 3
+			data.social = mini(100, data.social + 1)
+			data.coins += 30
+		_: return {"ok": false, "message": "Choose a listed neighbor conversation."}
+	return {"ok": true, "message": "Your neighbor remembers."}
 
 func decorate(color: String) -> void:
 	if color in ["sage", "clay", "ocean"]:
@@ -111,6 +139,8 @@ func cancel_job(id: String) -> bool:
 	return false
 
 func goal() -> Dictionary:
+	if data.favor in ["carrying", "delivered"]:
+		return {"step": 6, "title": "A plate for Yemi", "body": "Deliver Amaka's covered lunch plate to Yemi." if data.favor == "carrying" else "Tell Amaka the lunch arrived. One-time thank-you: 30 SC.", "place": "repair" if data.favor == "carrying" else "food"}
 	if not data.met_amaka:
 		return {"step": 1, "title": "Meet your neighbor", "body": "Amaka knows this street. Say hello at the food stall.", "place": "food"}
 	if data.repair < 1:
@@ -162,6 +192,14 @@ func load_json(json_text: String, catch_up: bool = true) -> Dictionary:
 		data.wall = incoming.wall
 	if incoming.get("minutes") is float or incoming.get("minutes") is int:
 		data.minutes = clampf(float(incoming.minutes), 0, 1439)
+	if incoming.get("neighbors") is Dictionary:
+		for who in ["amaka", "yemi", "park"]:
+			var value: Variant = incoming.neighbors.get(who)
+			if value is float or value is int: data.neighbors[who] = clampi(int(value), 0, 3)
+		if incoming.neighbors.get("park_choice") in ["", "welcome", "space"]:
+			data.neighbors.park_choice = incoming.neighbors.park_choice
+	if data.met_amaka: data.neighbors.amaka = maxi(1, data.neighbors.amaka)
+	if incoming.get("favor") in ["available", "carrying", "delivered", "complete"]: data.favor = incoming.favor
 	if incoming.get("active") is Dictionary:
 		var active: Dictionary = incoming.active
 		if ACTIONS.has(active.get("code", "")) and (active.get("remaining") is float or active.get("remaining") is int):

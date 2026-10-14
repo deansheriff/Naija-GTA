@@ -55,7 +55,6 @@ var benchmark_time := 0.0
 var suggested_preset := "Measuring…"
 var current_place := "street"
 var last_dialog := ""
-var park_met := false
 var district_id := 0
 var pending_district := -1
 var pending_venue := ""
@@ -72,6 +71,7 @@ func _ready() -> void:
 	add_child(world)
 	_build_hud()
 	world.set_wall(sim.data.wall)
+	world.set_context(sim.data)
 	_apply_graphics()
 	get_viewport().size_changed.connect(_resize)
 	_resize()
@@ -110,6 +110,7 @@ func _process(delta: float) -> void:
 	toast_remaining -= delta
 	toast_label.visible = toast_remaining > 0
 	world.conversation_focus = modal != null
+	world.set_context(sim.data)
 	if modal == null and journey_view == null:
 		_move_player(delta)
 	if benchmark_time < 8 and delta < 0.25:
@@ -176,6 +177,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				pending_venue = ""
 				_toast("Ride request cancelled.")
 		if event.keycode == KEY_E and modal == null:
+			if world.routines != null:
+				for who in world.routines.agents:
+					if world.hero.position.distance_to(world.speakers[who].position) < 85:
+						_open_neighbor(who)
+						return
 			var nearest := ""
 			var distance := 100.0
 			for key in world.places:
@@ -189,6 +195,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				_toast("Walk closer to a venue, or choose one from Explore.")
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and modal == null:
 		var point := world.get_global_mouse_position()
+		var neighbor: String = world.neighbor_hit(point)
+		if not neighbor.is_empty():
+			_find_neighbor(neighbor)
+			return
 		if world.crew_hit(point):
 			if world.hero.position.distance_to(Neighborhood.PLACES.park.position) < 170:
 				_open_park()
@@ -426,7 +436,7 @@ func _refresh() -> void:
 	var hours := int(sim.data.minutes / 60)
 	clock_label.text = "DAY %s · %02d:%02d" % [sim.data.day, hours, int(sim.data.minutes) % 60]
 	var goal: Dictionary = sim.goal()
-	mission_step.text = "FIRST STEPS  ·  %s / 4" % mini(4, goal.step)
+	mission_step.text = "NEIGHBOR FAVOR" if goal.step == 6 else "FIRST STEPS  ·  %s / 4" % mini(4, goal.step)
 	mission_title.text = goal.title
 	mission_body.text = goal.body
 	mission_button.text = "Explore the square" if goal.step == 5 else "Take me there"
@@ -493,6 +503,9 @@ func _toast(message: String) -> void:
 	toast_label.visible = true
 
 func _travel_goal() -> void:
+	if district_id == 0 and sim.data.favor in ["carrying", "delivered"]:
+		_find_neighbor("yemi" if sim.data.favor == "carrying" else "amaka")
+		return
 	_travel(sim.goal().place)
 
 func _travel(place: String) -> void:
@@ -528,6 +541,9 @@ func _open_explore() -> void:
 		modal_body.add_child(_button(Neighborhood.PLACES[key].name, _travel.bind(key)))
 
 func _open_place(place: String) -> void:
+	if place.begins_with("neighbor_"):
+		_open_neighbor(place.trim_prefix("neighbor_"))
+		return
 	if place == "board":
 		_begin_ride()
 		return
@@ -542,11 +558,13 @@ func _open_place(place: String) -> void:
 		_dialog("Amaka's kitchen", "A warm plate, a familiar face, and time to catch your breath.")
 		modal_body.add_child(_label("AMAKA · NEIGHBOR", 13, GOLD))
 		modal_body.add_child(_button("Say hello", _hello, true))
+		_neighbor_venue("amaka")
 		modal_body.add_child(_button("Eat jollof · 25 SC · 6 sec", _start.bind("eat")))
 		modal_body.add_child(_label("+35 food · SC means fictional StreetCoins", 14, MUTED))
 	elif place == "repair":
 		_dialog("Yemi's workshop", "Fix something small. Build a skill that lasts.")
 		modal_body.add_child(_label("REPAIR SKILL · LEVEL %s" % sim.data.repair, 15, GOLD))
+		_neighbor_venue("yemi")
 		modal_body.add_child(_button("Practice at the bench · 8 sec", _start.bind("learn"), true))
 		var gig := _button("Repair Yemi's radio · earn 90 SC", _start.bind("gig"))
 		gig.disabled = sim.data.repair < 1 or sim.data.gig_done
@@ -621,7 +639,7 @@ func _arrive(target: int) -> void:
 	add_child(world)
 	world.hero.position = world.places.bus.position
 	world.previous_hero_position = world.hero.position
-	world.park_familiar = park_met
+	world.set_context(sim.data)
 	world.set_wall(sim.data.wall)
 	world.apply_settings(sim.data.settings)
 	world.camera.make_current()
@@ -662,7 +680,7 @@ func _travel_visibility() -> void:
 	if riding: activity_panel.hide()
 
 func _open_park() -> void:
-	_open_park_page("return" if park_met else "intro")
+	_open_park_page("space" if sim.data.neighbors.park_choice == "space" else "return" if sim.data.neighbors.park > 0 else "intro")
 
 func _open_park_page(page: String) -> void:
 	if page == "leave":
@@ -676,7 +694,7 @@ func _open_park_page(page: String) -> void:
 		_open_poll()
 		return
 	var entry: Dictionary = StreetDialogue.PARK[page]
-	_dialog("Gist at the park", "Three street toughs claim this corner: Razor, Smallie and Chidi. Choose how you want to speak with them.")
+	_dialog("Gist at the park", "Razor, Smallie and Chidi remember how you choose to speak with them. You can always leave freely.")
 	modal_body.add_child(_label(entry.speaker, 14, GOLD))
 	modal_body.add_child(_label(entry.line, 22, CREAM))
 	for i in range(entry.choices.size()):
@@ -684,10 +702,63 @@ func _open_park_page(page: String) -> void:
 		modal_body.add_child(_button(choice[0], _park_reply.bind(choice[1]), i == 0))
 
 func _park_reply(next_page: String) -> void:
-	if next_page != "leave" and next_page != "distance":
-		park_met = true
-	world.park_familiar = park_met
+	if next_page in ["welcome", "distance"]:
+		var result: Dictionary = await _neighbor_intent("park_welcome" if next_page == "welcome" else "park_space")
+		if not result.ok:
+			_toast(result.message)
+			return
+	world.set_context(sim.data)
 	_open_park_page(next_page)
+
+func _neighbor_intent(choice: String) -> Dictionary:
+	var result: Dictionary = await cloud.submit("neighbor", {"choice": choice}) if cloud.enabled() else sim.neighbor_choice(choice)
+	if result.ok:
+		world.set_context(sim.data)
+		_save()
+		_refresh()
+	return result
+
+func _find_neighbor(who: String) -> void:
+	if world.routines == null: return
+	_close_modal()
+	if world.routines.agents[who].phase == "home" and world.routines.agents[who].route.is_empty():
+		_toast(who.capitalize() + " is home for the night. The counter has a note and self-service activities.")
+		return
+	_walk_to(world.speakers[who].position, "neighbor_" + who)
+
+func _neighbor_venue(who: String) -> void:
+	modal_body.add_child(_label(who.capitalize() + " · " + world.neighbor_status(who), 15, GOLD))
+	if world.routines != null and world.routines.agents[who].phase == "work" and world.routines.agents[who].route.is_empty():
+		modal_body.add_child(_button("Talk with " + who.capitalize(), _open_neighbor.bind(who)))
+	else:
+		modal_body.add_child(_label("A note keeps your starter activities available while the owner is away.", 14, MUTED))
+		modal_body.add_child(_button("Find " + who.capitalize(), _find_neighbor.bind(who)))
+
+func _open_neighbor(who: String) -> void:
+	if world.routines == null: return
+	if world.hero.position.distance_to(world.speakers[who].position) > 125:
+		_find_neighbor(who)
+		return
+	var line: String = StreetDialogue.neighbor_line(who, sim.data, world.neighbor_status(who))
+	_dialog(who.capitalize() + " · Neighbor", line)
+	modal_body.add_child(_label("RELATIONSHIP · " + StreetDialogue.relationship(sim.data.neighbors[who]), 14, GOLD))
+	if who == "amaka":
+		if not sim.data.met_amaka: modal_body.add_child(_button("Introduce yourself", _hello, true))
+		if sim.data.met_amaka and sim.data.favor == "available":
+			modal_body.add_child(_button("Take a lunch plate to Yemi", _choose_neighbor.bind("favor_accept", who), true))
+		if sim.data.favor == "delivered":
+			modal_body.add_child(_button("Yemi got his lunch · receive 30 SC", _choose_neighbor.bind("favor_finish", who), true))
+		if sim.data.favor == "carrying": modal_body.add_child(_button("Find Yemi with the covered plate", _find_neighbor.bind("yemi"), true))
+	else:
+		if sim.data.neighbors.yemi == 0: modal_body.add_child(_button("Introduce yourself", _choose_neighbor.bind("yemi_hello", who)))
+		if sim.data.favor == "carrying": modal_body.add_child(_button("Deliver Amaka's covered lunch plate", _choose_neighbor.bind("favor_deliver", who), true))
+		if sim.data.favor == "delivered": modal_body.add_child(_button("Tell Amaka the plate arrived", _find_neighbor.bind("amaka"), true))
+	modal_body.add_child(_button("See you around", _close_modal))
+
+func _choose_neighbor(choice: String, who: String) -> void:
+	var result: Dictionary = await _neighbor_intent(choice)
+	if result.ok: _open_neighbor(who)
+	_toast("Lunch favor complete · +30 StreetCoins. Amaka and Yemi trust you." if result.ok and choice == "favor_finish" else result.message)
 
 func _conductor_gist() -> void:
 	_dialog("A word with the conductor", "CONDUCTOR: Yemi's workshop is up there. Amaka has food ready. That crew at the park? Plenty of talk, but they'll point you the right way. Keep clear of the road when the traffic comes.")
@@ -807,6 +878,10 @@ func _open_profile() -> void:
 	modal_body.add_child(bio)
 	modal_body.add_child(_label("Repair: %s   ·   Digital: %s   ·   Connection: %s" % [sim.data.repair, sim.data.digital, sim.data.social], 18))
 	modal_body.add_child(_label("Experience: " + ("Completed Yemi's radio repair." if sim.data.gig_done else "Your first gig is still ahead."), 16, MUTED))
+	modal_body.add_child(_label("NEIGHBORS & FAVORS", 14, GOLD))
+	for who in ["amaka", "yemi", "park"]:
+		modal_body.add_child(_label(who.capitalize() + ": " + StreetDialogue.relationship(sim.data.neighbors[who]), 16, MUTED))
+	modal_body.add_child(_label(StreetDialogue.favor_goal(sim.data.favor), 16, CREAM))
 	var save_profile := func():
 		if cloud.enabled():
 			var result: Dictionary = await cloud.submit("profile", {"name": name_input.text.strip_edges().left(24) if not name_input.text.strip_edges().is_empty() else "New neighbor", "bio": bio.text.strip_edges().left(160)})
@@ -971,6 +1046,7 @@ func _open_component_licenses() -> void:
 
 func _cloud_changed() -> void:
 	world.set_wall(sim.data.wall)
+	world.set_context(sim.data)
 	_refresh()
 	_save()
 

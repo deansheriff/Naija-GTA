@@ -2,7 +2,7 @@ import {randomBytes, randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {Pool, type PoolConfig} from 'pg';
-import {applyIntent, initialState, RuleError, type Intent} from './rules.js';
+import {applyIntent, initialState, upgradeState, RuleError, type Intent} from './rules.js';
 import {hash, canonical, lifetime, type Character} from './store.js';
 import type {GameStore, Session, Snapshot} from './contract.js';
 export interface SqlConnection {query(text: string, values?: unknown[]): Promise<{rows: any[]}>; release?(): void;}
@@ -36,7 +36,7 @@ export class PostgresStore implements GameStore {
       catch (error) {await client.query('ROLLBACK'); throw error;}
     } finally {client.release?.();}
   }
-  private decode(row: any): Character {return {id: row.id, revision: Number(row.revision), state: row.state};}
+  private decode(row: any): Character {return {id: row.id, revision: Number(row.revision), state: upgradeState(row.state)};}
   async createGuest(): Promise<Session> {
     return this.transaction(async client => {
       const now = this.clock(), id = randomUUID(), token = randomBytes(32).toString('base64url'), recoveryCode = randomBytes(32).toString('base64url');

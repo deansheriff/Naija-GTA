@@ -5,6 +5,7 @@ import {Pool} from 'pg';
 import {PostgresStore, type SqlPool, type SqlConnection} from '../src/postgres.js';
 import {createApp} from '../src/app.js';
 import type {Intent} from '../src/rules.js';
+import {neighborContract} from './neighbor-contract.js';
 
 // Embedded PostgreSQL validates real SQL locally. CI uses a multi-connection PostgreSQL service.
 async function embeddedPool(): Promise<SqlPool> {
@@ -75,5 +76,12 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     assert.notEqual(restored.token, guest.token);
     assert.equal((await app.inject({method: 'POST', url: '/api/v1/sessions', payload: {recoveryCode: 'x'.repeat(43)}})).statusCode, 401);
     assert.equal((await pool.query('SELECT version FROM schema_versions')).rows.length, 1);
+    const neighborId = await neighborContract(app);
+    const favorLedger = (await pool.query("SELECT delta FROM ledger WHERE character_id=$1 AND reason='neighbor_lunch_favor'", [neighborId])).rows;
+    assert.equal(favorLedger.length, 1); assert.equal(Number(favorLedger[0].delta), 30);
+    const legacy = await store.createGuest();
+    await pool.query("UPDATE characters SET state=(state - 'neighbors' - 'favor') WHERE id=$1", [legacy.character.id]);
+    assert.equal((await store.read(legacy.character.id)).state.favor, 'available');
+    assert.equal((await store.read(legacy.character.id)).state.coins, 240);
   } finally {await app.close();}
 });

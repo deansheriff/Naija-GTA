@@ -26,7 +26,9 @@ Next transport extensions: player-controlled driving, lane changes, vehicles tur
 
 ## 0.7 — NPC routines and persistent relationships
 
-Give shopkeepers opening/work/break/home routines; introduce more ages, professions, clothes and body types. The park crew, vendors, commuters and neighbors should react to context. Expand authored player choices and NPC-to-NPC conversation graphs. Store consequential relationship/quest state on the server, with approved intents and replay-safe receipts. Keep cosmetic chatter local when it has no consequences.
+Implemented in 0.7.0: Amaka and Yemi follow opening/work/tea/lunch/home schedules with collision-safe pavement routes and identity-matched walking art. Conversations hold their movement, and venue notes keep starter activities available while owners are away. Authored dialogue and nearby NPC exchanges react to their schedules and the new **A plate for Yemi** favor. Introductions, trusted-neighbor relationships, park-crew boundaries and quest stages persist in local/cloud saves. The one-time 30 SC favor reward uses approved server intents, durable receipts and an append-only ledger. Older version-1 saves upgrade without resetting existing progress. See [NPC routines and relationships](MILESTONE_6.md).
+
+Extend the existing varied pedestrian cast with more named professions/ages and deeper commuter, park-crew and household routines. Cosmetic chatter and visual schedules stay local; they cannot award authoritative progress. This is a bounded authored neighborhood slice, not a general autonomous NPC simulation.
 
 Plan faction/conflict behavior, safe ways to decline and player recovery before adding fights or theft. Any balance/inventory changes require authoritative rules. Jev-generated decisions wait for provider/key/budget confirmation; authored dialogue already works without that dependency.
 

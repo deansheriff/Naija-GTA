@@ -4,6 +4,7 @@ extends Node2D
 const StreetActivity = preload("res://core/street_activity.gd")
 const Dialogue = preload("res://core/street_dialogue.gd")
 const ActorVisual = preload("res://core/actor_visual.gd")
+const NpcRoutines = preload("res://core/npc_routines.gd")
 const DistrictLayout = preload("res://world/district_layout.gd")
 const ModularScenery = preload("res://world/modular_scenery.gd")
 const STREET_ATLAS = preload("res://assets/street-life-atlas.png")
@@ -52,14 +53,18 @@ var chatter_index := 0
 var conversation_focus := false
 var park_near := false
 var park_familiar := false
+var park_boundary := false
 var detailed_motion := true
 var clock := 0.0
 var animate := true
+var routines: RefCounted
+var favor_state := "available"
 
 func _ready() -> void:
 	if layout == null: layout = DistrictLayout.new()
 	places = layout.places.duplicate(true)
 	street.apply_layout(layout)
+	if district_id == 0 and not travel_chunk: routines = NpcRoutines.new(layout)
 	var bounds := Control.new()
 	bounds.size = SIZE
 	bounds.clip_contents = not travel_chunk
@@ -80,8 +85,8 @@ func _ready() -> void:
 	hero_sprite = hero.get_node("Sprite")
 	hero.visible = not travel_chunk
 	previous_hero_position = hero.position
-	for item in [[places.food.position + Vector2(-104, -50), 0], [places.repair.position + Vector2(-104, -50), 1]]:
-		var actor := _still_person(item[0], preload("res://assets/neighbors.png"), sprite_bounds["neighbors.png"][item[1]], 100)
+	for item in [[places.food.position + Vector2(-104, -50), "amaka"], [places.repair.position + Vector2(-104, -50), "yemi"]]:
+		var actor := _person(item[0], item[1], 100)
 		people.add_child(actor)
 		actors.append(actor)
 	speakers.amaka = actors[0]
@@ -256,6 +261,21 @@ func crew_hit(point: Vector2) -> bool:
 			return true
 	return false
 
+func neighbor_hit(point: Vector2) -> String:
+	if routines == null: return ""
+	for who in routines.agents:
+		if point.distance_to(speakers[who].position - Vector2(0, 45)) < 45: return who
+	return ""
+
+func set_context(state: Dictionary) -> void:
+	favor_state = state.favor
+	park_familiar = state.neighbors.park > 0
+	park_boundary = state.neighbors.park_choice == "space"
+	if routines != null: routines.minutes = state.minutes
+
+func neighbor_status(who: String) -> String:
+	return routines.status(who) if routines != null else "At the counter"
+
 func _person(at: Vector2, kind: String = "hero", height: float = 96) -> Node2D:
 	var person := Node2D.new()
 	person.position = at
@@ -266,6 +286,10 @@ func _person(at: Vector2, kind: String = "hero", height: float = 96) -> Node2D:
 		sprite.configure(HERO_SHEET, sprite_bounds["hero-walk-v04.png"], height, true, [[0, 1, 2, 3], [0, 3, 2, 3], [0, 1, 2, 3]])
 		sprite.configure_idle(HERO_IDLE_SHEET, sprite_bounds["hero-idle-v04.png"])
 		sprite.stride = 100.0
+	elif kind in ["amaka", "yemi"]:
+		var row := 0 if kind == "amaka" else 1
+		sprite.configure(preload("res://assets/neighbors-walk-v07.png"), sprite_bounds["neighbors-walk-v07.png"].slice(row * 4, row * 4 + 4), height)
+		sprite.configure_idle(preload("res://assets/neighbors.png"), [sprite_bounds["neighbors.png"][row]])
 	elif kind == "dog":
 		sprite.configure(WILDLIFE_SHEET, sprite_bounds["wildlife-v04.png"].slice(0, 4), height)
 		person.get_child(0).scale = Vector2(1.25, 0.65)
@@ -289,6 +313,12 @@ func _process(delta: float) -> void:
 	clock += delta
 	hero_sprite.walk(hero.position - previous_hero_position)
 	previous_hero_position = hero.position
+	if routines != null:
+		routines.advance(delta, conversation_focus)
+		for who in routines.agents:
+			var agent: Dictionary = routines.agents[who]
+			speakers[who].position = agent.position
+			speakers[who].get_node("Sprite").walk(agent.movement)
 	for i in range(actors.size()):
 		var visual = actors[i].get_node("Sprite")
 		visual.position = visual.base_position + Vector2(0, sin(clock * 1.6 + i) * 0.7 if animate and detailed_motion else 0)
@@ -333,7 +363,7 @@ func _tick_chatter(delta: float) -> void:
 		speech_remaining -= delta
 		return
 	var near_park: bool = hero.position.distance_to(places.park.position) < 170
-	if near_park and not park_near and not conversation_focus:
+	if near_park and not park_near and not conversation_focus and not park_boundary:
 		say("razor", "Razor: Neighbor! Come gist, or keep moving." if park_familiar else "Razor: New face! Come gist, or keep moving.")
 	park_near = near_park
 	speech_remaining -= delta
@@ -347,11 +377,13 @@ func _tick_chatter(delta: float) -> void:
 	if chatter_timer <= 0:
 		chatter_timer = 5.5
 		if not conversation_focus and animate:
+			var lines: Array = Dialogue.chatter(favor_state, routines != null and routines.agents.amaka.phase == "break")
 			# Pick a nearby speaker, then their reply on the following turn.
-			for attempt in range(Dialogue.CHATTER.size()):
-				var item: Array = Dialogue.CHATTER[chatter_index]
-				chatter_index = (chatter_index + 1) % Dialogue.CHATTER.size()
+			for attempt in range(lines.size()):
+				var item: Array = lines[chatter_index]
+				chatter_index = (chatter_index + 1) % lines.size()
 				if speakers[item[0]].position.distance_to(hero.position) < 580 and _speaker_on_screen(speakers[item[0]]):
+					if item[0] in ["amaka", "yemi"] and (speakers.amaka.position.distance_to(speakers.yemi.position) > 560 or routines == null): continue
 					say(item[0], item[1])
 					break
 

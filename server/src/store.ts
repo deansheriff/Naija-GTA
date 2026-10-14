@@ -1,6 +1,6 @@
 import {DatabaseSync} from 'node:sqlite';
 import {createHash, randomBytes, randomUUID} from 'node:crypto';
-import {applyIntent, initialState, RuleError, type Intent, type State} from './rules.js';
+import {applyIntent, initialState, upgradeState, RuleError, type Intent, type State} from './rules.js';
 
 export type Character = {id: string; revision: number; state: State};
 type Row = {id: string; revision: number; state: string};
@@ -58,7 +58,7 @@ export class Store {
   }
   read(id: string): Character {
     const row = this.db.prepare('SELECT * FROM characters WHERE id=?').get(id) as Row;
-    return {id: row.id, revision: row.revision, state: JSON.parse(row.state)};
+    return {id: row.id, revision: row.revision, state: upgradeState(JSON.parse(row.state))};
   }
   revoke(token: string) {this.db.prepare('DELETE FROM sessions WHERE token_hash=?').run(hash(token));}
   execute(id: string, key: string, intent: Intent) {
