@@ -1,66 +1,122 @@
 extends RefCounted
+const VERSION = 2
 const STORY_PATH = "res://story/prologue.json"
+const TUNDE_PATH = "res://story/tunde-intro.json"
 const LEADS = ["tunde", "ngozi", "kc"]
+const ORDER = ["P00", "A11"]
+const Drive = preload("res://core/driving_task.gd")
 
-static func story() -> Dictionary:
-	return JSON.parse_string(FileAccess.get_file_as_string(STORY_PATH))
+static func story(id: String = "P00") -> Dictionary:
+	if not id in ORDER: return {}
+	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(STORY_PATH if id == "P00" else TUNDE_PATH))
+	if id == "P00":
+		content.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
+		content.evidence = ["wedding_clip"]
+	return content
 
 static func fresh() -> Dictionary:
-	return {"version": 1, "status": "unstarted", "stage": 0, "lead": "tunde", "completed": [], "mastery": {"tunde": 0, "ngozi": 0, "kc": 0}, "evidence": [], "paused": true}
+	return {"version": VERSION, "mission": "P00", "status": "unstarted", "stage": 0, "lead": "tunde", "completed": [], "mastery": {"tunde": 0, "ngozi": 0, "kc": 0}, "evidence": [], "paused": true, "choices": {}, "drive": null}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary: return fresh()
-	# Preserve newer campaigns instead of downgrading and overwriting them.
-	if (value.get("version") is int or value.get("version") is float) and value.version > 1: return value.duplicate(true)
-	var count: int = story().stages.size()
-	if value.get("version") != 1 or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()
+	if (value.get("version") is int or value.get("version") is float) and value.version > VERSION: return value.duplicate(true)
+	if value.get("version") == 1:
+		value = value.duplicate(true)
+		value.version = VERSION
+		value.mission = "P00"
+		value.choices = {}
+		value.drive = null
+	if value.get("version") != VERSION or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()
+	if not value.get("mission") in ORDER: return value.duplicate(true)
+	var content := story(value.mission)
+	var count: int = content.stages.size()
 	var stage: Variant = value.get("stage")
 	if not (stage is int or stage is float) or stage != int(stage) or stage < 0 or stage > count: return fresh()
-	if (value.status == "hub") != (stage == count) or (value.status == "unstarted" and stage != 0): return fresh()
+	if (value.status == "hub") != (stage == count) or (value.status == "unstarted" and (stage != 0 or value.mission != "P00")): return fresh()
 	var result := fresh()
 	result.status = value.status
+	result.mission = value.mission
 	result.stage = int(stage)
 	result.paused = value.get("paused", true) != false
 	result.lead = value.get("lead") if value.get("lead") in LEADS else "tunde"
-	if result.status == "playing": result.lead = story().stages[result.stage].lead
-	if result.status == "hub":
-		result.completed = ["P00"]
-		result.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
-		result.evidence = ["wedding_clip"]
+	if result.status == "playing": result.lead = content.stages[result.stage].lead
+	for id in ORDER:
+		if (value.get("completed") is Array and id in value.completed) or (id == result.mission and result.status == "hub"):
+			result.completed.append(id)
+			var finished := story(id)
+			for who in LEADS: result.mastery[who] = mini(100, result.mastery[who] + finished.mastery.get(who, 0))
+			for fact in finished.evidence:
+				if not fact in result.evidence: result.evidence.append(fact)
+	if value.get("choices") is Dictionary:
+		for id in result.completed + [result.mission]:
+			for task in story(id).stages:
+				var key: String = id + "-" + task.id
+				for option in task.choices:
+					if value.choices.get(key) == option.id and option.correct: result.choices[key] = option.id
+	if result.status == "playing" and content.stages[result.stage].get("kind") == "drive":
+		var drive := Drive.normalize(value.get("drive"))
+		result.drive = drive if not drive.is_empty() else Drive.fresh(0)
 	return result
 
 static func active(c: Dictionary) -> bool:
-	return c.get("version") == 1 and c.get("status") != "unstarted" and c.get("paused") == false
+	return c.get("version") == VERSION and c.get("mission") in ORDER and c.get("status") != "unstarted" and c.get("paused") == false
 
-static func command(c: Dictionary, kind: String, stage: int = -1, choice: String = "") -> Dictionary:
+static func _stage(c: Dictionary, now: int) -> void:
+	var task: Dictionary = story(c.mission).stages[c.stage]
+	c.lead = task.lead
+	c.drive = Drive.fresh(now) if task.get("kind") == "drive" else null
+
+static func command(c: Dictionary, kind: String, stage: int = -1, choice: String = "", now: int = -1) -> Dictionary:
+	if now < 0: now = Time.get_ticks_msec()
 	var fail := {"ok": false, "message": "This choice does not match your active campaign checkpoint. Reopen the story."}
-	if c.get("version") != 1: return {"ok": false, "message": "This campaign needs a newer game client. Its saved progress has been preserved."}
+	if c.get("version") != VERSION or not c.get("mission") in ORDER: return {"ok": false, "message": "This campaign needs a newer game client. Its saved progress has been preserved."}
 	if kind == "campaign_start":
 		if c.status != "unstarted": return {"ok": false, "message": "Your campaign has already started. Resume its checkpoint."}
 		c.status = "playing"
 		c.paused = false
+		_stage(c, now)
 		return {"ok": true, "message": "Wedding introduction started. Your street progress is separate."}
 	if c.status == "unstarted": return {"ok": false, "message": "Start the wedding introduction first."}
 	if kind in ["campaign_pause", "campaign_resume"]:
 		c.paused = kind == "campaign_pause"
+		if c.drive is Dictionary: c.drive.lastAt = now
 		return {"ok": true, "message": "Campaign checkpoint saved."}
 	if kind == "campaign_switch":
-		if c.status != "hub": return {"ok": false, "message": "The wedding has a staged perspective order. Finish or pause this task first."}
+		if c.status != "hub": return {"ok": false, "message": "This mission has a staged perspective. Finish or pause this task first."}
 		if not choice in LEADS: return fail
 		c.lead = choice
 		return {"ok": true, "message": "Family Meeting · " + choice.capitalize()}
-	if kind != "campaign_choose" or c.status != "playing" or c.paused or stage != c.stage: return fail
-	var content := story()
+	if kind == "campaign_continue":
+		if c.status != "hub" or c.paused: return fail
+		var index: int = ORDER.find(c.mission) + 1
+		if index >= ORDER.size(): return {"ok": false, "message": "The next chapter is still in production. Your checkpoint is saved."}
+		c.mission = ORDER[index]
+		c.stage = 0
+		c.status = "playing"
+		_stage(c, now)
+		return {"ok": true, "message": "Starting " + story(c.mission).title}
+	if c.status != "playing" or c.paused or stage != c.stage: return fail
+	var content := story(c.mission)
 	var task: Dictionary = content.stages[c.stage]
+	if kind == "campaign_drive":
+		if task.get("kind") != "drive" or not c.drive is Dictionary or not choice in Drive.INPUTS: return {"ok": false, "message": "Use the driving controls shown for this road leg."}
+		Drive.advance(c.drive, choice, now, float(task.target))
+		return {"ok": true, "message": "Driving checkpoint saved."}
+	if kind != "campaign_choose": return fail
+	if task.get("kind") == "drive" and not c.drive.get("ready", false): return {"ok": false, "message": "Reach the lower-lane safe bay and stop first. Guided approach is available."}
 	for option in task.choices:
 		if option.id != choice: continue
 		if not option.correct: return {"ok": false, "message": option.get("hint", "Try the labelled objective again.")}
+		c.choices[c.mission + "-" + task.id] = choice
 		c.stage += 1
 		if c.stage == content.stages.size():
 			c.status = "hub"
-			c.completed = ["P00"]
-			c.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
-			c.evidence = ["wedding_clip"]
-		else: c.lead = content.stages[c.stage].lead
+			c.drive = null
+			if not c.mission in c.completed:
+				c.completed.append(c.mission)
+				for who in LEADS: c.mastery[who] = mini(100, c.mastery[who] + content.mastery.get(who, 0))
+				for fact in content.evidence:
+					if not fact in c.evidence: c.evidence.append(fact)
+		else: _stage(c, now)
 		return {"ok": true, "message": "Campaign checkpoint saved."}
 	return fail

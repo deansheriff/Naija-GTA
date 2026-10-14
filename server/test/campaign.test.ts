@@ -23,7 +23,7 @@ test('wedding campaign: validated checkpoints, all leads, retries, recovery and 
     store.db.prepare("UPDATE characters SET state=json_remove(state,'$.campaign') WHERE id=?").run(legacy.character.id);
     assert.deepEqual(store.read(legacy.character.id).state.campaign, freshCampaign());
     assert.equal(store.read(legacy.character.id).state.coins, 240);
-    store.db.prepare("UPDATE characters SET state=json_set(state,'$.campaign',json(?)) WHERE id=?").run(JSON.stringify({version: 2, custom: 'preserve'}), legacy.character.id);
+    store.db.prepare("UPDATE characters SET state=json_set(state,'$.campaign',json(?)) WHERE id=?").run(JSON.stringify({version: 99, custom: 'preserve'}), legacy.character.id);
     assert.throws(() => store.execute(legacy.character.id, 'story-future-blocked', {kind: 'campaign_start', revision: 0}), /newer game/);
     assert.equal((store.read(legacy.character.id).state.campaign as unknown as {custom:string}).custom, 'preserve');
   } finally {await app.close(); rmSync(dir, {recursive: true, force: true});}

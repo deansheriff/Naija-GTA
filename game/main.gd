@@ -1277,6 +1277,7 @@ func _open_campaign() -> void:
 		campaign_view = CampaignView.new()
 		hud.add_child(campaign_view)
 		world.hide()
+		world.process_mode = Node.PROCESS_MODE_DISABLED
 		campaign_view.requested.connect(_campaign_command)
 		campaign_view.exit_requested.connect(_exit_campaign)
 		_hide_street_hud()
@@ -1299,10 +1300,11 @@ func _campaign_command(kind: String, stage: int, choice: String) -> void:
 	elif campaign_view != null:
 		campaign_view.display(sim.data.campaign, cloud.enabled() and (cloud.busy or not cloud.connected or not cloud.pending.is_empty()))
 		campaign_view.message(result.message)
+		if kind == "campaign_drive" and not result.ok: campaign_view.stop_driving(result.message)
 	_refresh()
 
 func _exit_campaign() -> void:
-	if sim.data.campaign.get("version") != 1 or sim.data.campaign.get("status") == "unstarted" or sim.data.campaign.get("paused", false):
+	if sim.data.campaign.get("version") != Campaign.VERSION or sim.data.campaign.get("status") == "unstarted" or sim.data.campaign.get("paused", false):
 		_close_campaign()
 	else: _campaign_command("campaign_pause", -1, "")
 
@@ -1312,6 +1314,7 @@ func _close_campaign() -> void:
 		campaign_view.queue_free()
 		campaign_view = null
 		world.show()
+		world.process_mode = Node.PROCESS_MODE_INHERIT
 		for child in hud.get_children():
 			if child is Control: child.show()
 		journey_panel.hide()

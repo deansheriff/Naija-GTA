@@ -6,6 +6,7 @@ if (-not (Test-Path -LiteralPath $enginePath)) { throw 'Run python scripts/fetch
 $gamePath = Join-Path $projectRoot 'game'
 New-Item -ItemType Directory -Path (Join-Path $gamePath 'story') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/prologue.json') -Destination (Join-Path $gamePath 'story/prologue.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/tunde-intro.json') -Destination (Join-Path $gamePath 'story/tunde-intro.json') -Force
 & $enginePath --headless --path $gamePath --editor --import --quit
 if ($LASTEXITCODE -ne 0) { throw 'Godot import failed.' }
 & $enginePath --headless --path $gamePath --script res://main.gd --check-only
@@ -40,6 +41,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Neighbourhood errand checks failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Interactive radio checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/campaign_test.gd -- --test
 if ($LASTEXITCODE -ne 0) { throw 'Campaign checkpoint/scene checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/driving_campaign_test.gd -- --test
+if ($LASTEXITCODE -ne 0) { throw 'Tunde driving/checkpoint checks failed.' }
 if ($Target -eq 'test') { exit 0 }
 if ($Target -in @('web','all')) {
     $webPath = Join-Path $projectRoot 'build\web\play'

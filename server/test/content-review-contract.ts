@@ -9,7 +9,7 @@ export async function contentReviewContract(store: GameStore, app: FastifyInstan
   assert.equal(login.statusCode,200);
   const headers={cookie:String(login.headers['set-cookie']).split(';')[0],origin:fixtureOwner.origin,'x-csrf-token':login.json().csrfToken};
   const queue=async()=>{const reply=await app.inject({url:'/api/owner/content',headers});assert.equal(reply.statusCode,200);return reply.json();};
-  const initial=await queue(); assert.equal(initial.units.length,77); assert.equal(initial.counts.total,77);
+  const initial=await queue(); assert.equal(initial.units.length,86); assert.equal(initial.counts.total,86);
   const unit=initial.units.find((u:any)=>u.id==='P00-invitation'); assert.equal(unit.status,'pending');
   assert.ok(unit.text.includes('BURGUNDY'));assert.ok(unit.choices.some((text:string)=>text.includes('Retry hint')));
   const body={unitId:unit.id,contentHash:unit.hash,revision:unit.revision,status:'approved',notes:'Reviewed local wording and readable context in this disposable test.'};

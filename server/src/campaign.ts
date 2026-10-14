@@ -1,31 +1,61 @@
-import story from './prologue.json' with {type: 'json'};
-export const prologue = story;
-export const leads = ['tunde', 'ngozi', 'kc'] as const;
-export type Lead = typeof leads[number];
-export type Campaign = {version: number; status: 'unstarted' | 'playing' | 'hub'; stage: number; lead: Lead; completed: string[]; mastery: Record<Lead, number>; evidence: string[]; paused: boolean};
+import story from './prologue.json' with {type:'json'};
+import tunde from './tunde-intro.json' with {type:'json'};
+import {freshDrive,advanceDrive,driveInputs,type DrivingState} from './driving-task.js';
+export const prologue=story;
+export const leads=['tunde','ngozi','kc'] as const;
+export type Lead=typeof leads[number];
+export type StoryChoice={id:string;label:string;correct:boolean;hint?:string};
+export type StoryStage={id:string;lead:string;scene:string;title:string;text:string;summary:string;kind?:string;target?:number;choices:StoryChoice[]};
+export type Mission={id:string;title:string;summary:string;stages:StoryStage[];mastery:Partial<Record<Lead,number>>;evidence:string[]};
+export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde};
+export const missionOrder=['P00','A11'];
+export const CAMPAIGN_VERSION=2;
+export type Campaign={version:number;mission:string;status:'unstarted'|'playing'|'hub';stage:number;lead:Lead;completed:string[];mastery:Record<Lead,number>;evidence:string[];paused:boolean;choices:Record<string,string>;drive:DrivingState|null};
 export class CampaignError extends Error {}
-export function freshCampaign(): Campaign {return {version: 1, status: 'unstarted', stage: 0, lead: 'tunde', completed: [], mastery: {tunde: 0, ngozi: 0, kc: 0}, evidence: [], paused: true};}
-export function campaignCommand(c: Campaign, command: string, stage?: number, choice?: string): void {
-  if (c.version !== 1) throw new CampaignError('This campaign needs a newer game client. Its saved progress has been preserved.');
-  if (command === 'campaign_start') {
-    if (c.status !== 'unstarted') throw new CampaignError('Your campaign has already started. Resume its checkpoint.');
-    c.status = 'playing'; c.paused = false; return;
+export function freshCampaign():Campaign{return {version:CAMPAIGN_VERSION,mission:'P00',status:'unstarted',stage:0,lead:'tunde',completed:[],mastery:{tunde:0,ngozi:0,kc:0},evidence:[],paused:true,choices:{},drive:null};}
+export function upgradeCampaign(value:Campaign):Campaign {
+  if(value.version===1)return {...freshCampaign(),...value,version:CAMPAIGN_VERSION,mission:'P00',choices:{},drive:null};
+  return value;
+}
+export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:string,now=Date.now()):void {
+  const mission=missions[c.mission];
+  if(c.version!==CAMPAIGN_VERSION||!mission)throw new CampaignError('This campaign needs a newer game client. Its saved progress has been preserved.');
+  const startStage=()=>{const task=missions[c.mission].stages[c.stage];c.lead=task.lead as Lead;c.drive=task.kind==='drive'?freshDrive(now):null;};
+  if(command==='campaign_start'){
+    if(c.status!=='unstarted')throw new CampaignError('Your campaign has already started. Resume its checkpoint.');
+    c.status='playing';c.paused=false;startStage();return;
   }
-  if (c.status === 'unstarted') throw new CampaignError('Start the wedding introduction first.');
-  if (command === 'campaign_pause') {c.paused = true; return;}
-  if (command === 'campaign_resume') {c.paused = false; return;}
-  if (command === 'campaign_switch') {
-    if (c.status !== 'hub') throw new CampaignError('The wedding has a staged perspective order. Finish or pause this task first.');
-    if (!leads.includes(choice as Lead)) throw new CampaignError('Choose Tunde, Ngozi or KC.');
-    c.lead = choice as Lead; return;
+  if(c.status==='unstarted')throw new CampaignError('Start the wedding introduction first.');
+  if(command==='campaign_pause'||command==='campaign_resume'){c.paused=command==='campaign_pause';if(c.drive)c.drive.lastAt=now;return;}
+  if(command==='campaign_switch'){
+    if(c.status!=='hub')throw new CampaignError('This mission has a staged perspective. Finish or pause this task first.');
+    if(!leads.includes(choice as Lead))throw new CampaignError('Choose Tunde, Ngozi or KC.');
+    c.lead=choice as Lead;return;
   }
-  if (command !== 'campaign_choose' || c.status !== 'playing' || c.paused || stage !== c.stage) throw new CampaignError('This choice does not match your active campaign checkpoint. Reopen the story.');
-  const task = prologue.stages[c.stage];
-  const selected = task?.choices.find(option => option.id === choice);
-  if (!selected) throw new CampaignError('Choose one of the options shown for this task.');
-  if (!selected.correct) throw new CampaignError('hint' in selected ? String(selected.hint) : 'Try the labelled objective again.');
-  c.stage++;
-  if (c.stage === prologue.stages.length) {
-    c.status = 'hub'; c.completed = ['P00']; c.mastery = {tunde: 1, ngozi: 1, kc: 1}; c.evidence = ['wedding_clip'];
-  } else c.lead = prologue.stages[c.stage].lead as Lead;
+  if(command==='campaign_continue'){
+    if(c.status!=='hub'||c.paused)throw new CampaignError('Resume the completed mission hub first.');
+    const next=missionOrder[missionOrder.indexOf(c.mission)+1];
+    if(!next)throw new CampaignError('The next chapter is still in production. Your checkpoint is saved.');
+    c.mission=next;c.stage=0;c.status='playing';startStage();return;
+  }
+  if(c.status!=='playing'||c.paused||stage!==c.stage)throw new CampaignError('This choice does not match your active campaign checkpoint. Reopen the story.');
+  const task=mission.stages[c.stage];
+  if(command==='campaign_drive'){
+    if(task.kind!=='drive'||!c.drive||!driveInputs.includes(choice as typeof driveInputs[number]))throw new CampaignError('Use the driving controls shown for this road leg.');
+    advanceDrive(c.drive,choice!,now,task.target!);return;
+  }
+  if(command!=='campaign_choose')throw new CampaignError('Choose a supported story action.');
+  if(task.kind==='drive'&&!c.drive?.ready)throw new CampaignError('Reach the lower-lane safe bay and stop first. Guided approach is available.');
+  const selected=task.choices.find(option=>option.id===choice);
+  if(!selected)throw new CampaignError('Choose one of the options shown for this task.');
+  if(!selected.correct)throw new CampaignError(selected.hint??'Try the labelled objective again.');
+  c.choices[c.mission+'-'+task.id]=choice!;c.stage++;
+  if(c.stage===mission.stages.length){
+    c.status='hub';c.drive=null;
+    if(!c.completed.includes(c.mission)){
+      c.completed.push(c.mission);
+      for(const lead of leads)c.mastery[lead]=Math.min(100,c.mastery[lead]+(mission.mastery[lead]??0));
+      c.evidence=[...new Set([...c.evidence,...mission.evidence])];
+    }
+  }else startStage();
 }

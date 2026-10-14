@@ -50,7 +50,7 @@ func _initialize() -> void:
 	var legacy = Simulation.new()
 	legacy.load_json('{"version":1,"state":{"coins":301}}', false)
 	check(legacy.data.coins == 301 and legacy.data.campaign.status == "unstarted", "Legacy save gains unstarted campaign without resetting money")
-	var future := {"version": 2, "unknown": ["keep", 9]}
+	var future := {"version": 99, "unknown": ["keep", 9]}
 	check(Campaign.normalize(future) == future and not Campaign.command(future, "campaign_start").ok, "Future campaign is preserved and downgrade blocked")
 	check(Campaign.normalize({"version": 1, "status": "playing", "stage": -1}).status == "unstarted", "Invalid checkpoint never indexes content")
 	call_deferred("scene_checks")
@@ -63,7 +63,7 @@ func scene_checks() -> void:
 	scene.sim.reset()
 	scene._open_campaign()
 	for i in range(3): await process_frame
-	check(scene.campaign_view != null and not scene.world.visible, "Story opens actual scene with layered staging")
+	check(scene.campaign_view != null and not scene.world.visible and scene.world.process_mode == Node.PROCESS_MODE_DISABLED, "Story staging suspends hidden street processing")
 	check(not scene.sidebar.visible and not scene.mobile_nav.visible and not scene.header.visible, "Hidden street controls cannot take campaign keyboard focus")
 	scene._campaign_command("campaign_start", -1, "")
 	for i in range(3): await process_frame

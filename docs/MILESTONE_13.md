@@ -1,0 +1,25 @@
+# 0.14.0 — Baba God Dey and interactive bus controls
+
+After the wedding, choose **Continue · Baba God Dey** in Family Meeting. Tunde's Act 1 introduction has nine saved stages: morning passengers, three short road legs with safe bays, clear-road/crossing choices, a fare conversation, the unopened bag record and the call to Ngozi. Respectful and firm fare arrangements both work; wrong choices give hints. Tunde gains two mastery and `bag_record` once, with no sandbox currency. Ajo Day is next in production.
+
+## Driving and presentation
+
+Tap **Accelerate**, **Brake** or **Coast** to keep that pace mode until changed. Upper/lower controls change lane; finish an approach stopped in the lower-lane safe bay. Keyboard Right/D accelerates, Left/A brakes, Up/Down changes lane. **Guided approach** is an untimed alternative with identical rewards. A missed bay starts a free loop, stops automatic input and gives a braking hint. Reading the tutorial at rest sends no idle drive-request stream.
+
+Painted building/roof/tree modules scroll independently behind the existing danfo, with the camera above and at the side. The bus has the same trimmed wheel contact used by grounded traffic. One bounded view draws only nearby lots; progress snapshots update its state in place without rebuilding its UI/scenery. Cosmetic interpolation cannot finish an objective. Essential labels, controls and the safe bay remain without ambient effects. This is a short authored driving task, not unrestricted city driving, traffic collision/turning simulation or a new free-roaming protagonist walk set.
+
+The server owns speed, lane, distance and safe-stop status. `campaign_drive` submits only the expected stage and a known control name. Elapsed movement comes from the server clock, capped at one second per command; rapid requests cannot invent travel, long gaps cannot drive across the city, and sync alone never moves the bus. Route choices remain locked until the authoritative stop. Durable receipts prevent duplicate input; a failed request stops the automatic input loop until deliberate retry. Cloud disconnection cannot award local progress.
+
+## Save compatibility and review
+
+Campaign JSON advances to **version 2**, adding mission ID, recorded choices and a driving checkpoint. Existing version-1 wedding stages/completion, selected lead, mastery and evidence migrate to P00 without replay or reset. Root character save version stays 1; SQL stays migration 3. Future campaign versions/unknown mission IDs are preserved and blocked from downgrade writes. Use the current browser export/APK for the new chapter.
+
+Canonical `server/src/tunde-intro.json` is copied into the game during build. P00/A11 share a validated mission registry and one-time mastery/evidence awards. The admin review queue now covers **86** units, including all nine new Tunde stages; existing unchanged wedding reviews retain their exact-text hashes. Suggested wording still ships through a game build and then needs review.
+
+## Verification and remaining work
+
+The game adds 41 driving/model/scene checks, bringing numbered checks to **376**, plus existing actual-scene HUD/grounding/gait checks. Twenty-two backend tests cover shared SQLite/embedded PostgreSQL/CI PostgreSQL 17 road contracts: illegal controls/stages, forged results, zero-time spam, exact retries, safe stops, pause/recovery/restart, source equivalence, version-1 migration, and once-only completion. Browser/native version is 0.14.0, Android code 15; the development APK is signed/verified.
+
+Browser playthrough verified manual acceleration/braking, keyboard lane changes, moving scenery and wheel contact, a missed bay/free loop, guided arrivals, direct route decisions, retry hints, fare/bag choices and once-only completion. Reload preserved the road checkpoint; a disposable version-1 completed wedding entered Tunde without replay. Portrait 390×844 and default desktop layouts were inspected. A real viewport mouse-input regression covers the route button after a cloud-style waiting cycle. The safe-stop transition replaces finished driving controls with the narrative decision; moving snapshots continue to reuse the view. Verbose local fixture logging was removed after it delayed test responses; the clean-server direct decision passed. Browser warning/error logs were empty. Screenshots: [driving](screenshots/milestone13-driving-mobile.png), [safe stop](screenshots/milestone13-safe-stop-mobile.png), [phone completion](screenshots/milestone13-complete-mobile.png), [desktop completion](screenshots/milestone13-complete-desktop.png). The packaged browser payload is 21.68 MiB (raw engine 35.95 MiB).
+
+Production phone performance, signing, full accessibility, actual cultural review and deployment/recovery gates remain pending. Drive input currently uses bounded HTTP intents; multi-player/NAT/load budgets and request-rate tuning must be validated before production scale. Continue Ajo Day, Four Percent and Family Meeting, then the remaining campaign under [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md).

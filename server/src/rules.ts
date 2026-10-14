@@ -1,5 +1,5 @@
 import {newRadioPuzzle, radioMatches, type RadioPuzzle} from './repair-puzzle.js';
-import {freshCampaign, campaignCommand, CampaignError, type Campaign} from './campaign.js';
+import {freshCampaign, upgradeCampaign, campaignCommand, CampaignError, type Campaign} from './campaign.js';
 export const actions = {
   learn: {seconds: 8, cost: 0, energy: 8},
   gig: {seconds: 10, cost: 0, energy: 12},
@@ -33,7 +33,7 @@ export type State = {
   inventory: {owned: string[]; equipped: string[]};
   errand: {stage: 'available' | 'collect' | 'repair' | 'ready' | 'installed' | 'complete'; spot: '' | 'board' | 'bench'};
 };
-export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand' | 'repair_move' | 'campaign_start' | 'campaign_choose' | 'campaign_pause' | 'campaign_resume' | 'campaign_switch'; action?: Action; stage?: number; tile?: number; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
+export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand' | 'repair_move' | 'campaign_start' | 'campaign_choose' | 'campaign_pause' | 'campaign_resume' | 'campaign_switch' | 'campaign_continue' | 'campaign_drive'; action?: Action; stage?: number; tile?: number; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
 export class RuleError extends Error {
   constructor(public code: string, message: string, public status = 422) {super(message);}
 }
@@ -46,7 +46,7 @@ export function initialState(now: number): State {
 }
 // Additive save upgrade: existing JSON characters keep their balances, receipts and schema.
 export function upgradeState(state: State): State {
-  state.campaign ??= freshCampaign();
+  state.campaign = upgradeCampaign(state.campaign ?? freshCampaign());
   state.world_seed ??= 260713;
   state.neighbors ??= {amaka: state.met_amaka ? 1 : 0, yemi: 0, park: 0, park_choice: ''};
   state.favor ??= 'available';
@@ -74,7 +74,7 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
     if (state.career.readyAt > state.updatedAt) state.career.readyAt += paused;
     state.updatedAt = now;
     if (storyCommand) {
-      try {campaignCommand(state.campaign, intent.kind, intent.stage, intent.choice);}
+      try {campaignCommand(state.campaign, intent.kind, intent.stage, intent.choice, now);}
       catch (error) {if (error instanceof CampaignError) throw new RuleError('campaign_choice', error.message); throw error;}
     } else if (intent.kind !== 'sync') throw new RuleError('campaign_active', 'Pause the campaign before continuing street activities.');
     return [];
