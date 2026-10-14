@@ -4,6 +4,8 @@ Version 0.8.0 adds `/owner/`. Its public sign-in page contains no save data. Own
 
 ## Enable in Coolify
 
+Before upgrading an existing deployment, take a PostgreSQL backup and confirm its restore procedure. Migration 2 adds a command timestamp column; pre-0.8 backends use positional receipt inserts and are not compatible with that upgraded table. Deploy the matching 0.8 backend/browser together. Use a forward fix, or deliberately restore the matching pre-upgrade backup during a maintenance window if a downgrade is required; redeploying an older image alone does not downgrade the schema.
+
 1. On your development machine, run `npm run owner:password` in `server/` (after `npm ci`). Enter and repeat a unique password of at least 16 characters at the hidden prompt. The tool prints a salted scrypt verifier; keep both the password and verifier private. Do not put a password in command arguments or paste it into chat. From an already deployed container you can instead run `node dist/owner-password.js` in an interactive terminal.
 2. Set these app environment variables in Coolify, then redeploy the latest `main` using `/compose.yaml`:
 
