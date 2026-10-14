@@ -152,6 +152,7 @@ func _apply(payload: Dictionary) -> void:
 	if active is Dictionary:
 		var remaining := maxf(0, (float(active.endsAt) - float(payload.get("serverTime", state.updatedAt))) / 1000.0)
 		state.active = {"code": active.code, "remaining": remaining, "total": sim.ACTIONS[active.code].seconds}
+		if active.get("puzzle") is Dictionary: state.active.puzzle = active.puzzle
 	else:
 		state.active = {}
 	# The save loader is schema-aware. No offline award/catch-up occurs for server snapshots.

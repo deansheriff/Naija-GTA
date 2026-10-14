@@ -7,7 +7,7 @@ import {createApp} from '../src/app.js';
 import {Store} from '../src/store.js';
 import type {Intent} from '../src/rules.js';
 
-test('authoritative HTTP loop, retries, stale devices, timers and ledger', async () => {
+test('authoritative HTTP loop, legacy timed gig upgrade, retries, stale devices, timers and ledger', async () => {
   let now = 1700000000000;
   const store = new Store(':memory:', () => now), app = createApp(store);
   const guest = (await app.inject({method: 'POST', url: '/api/v1/guests', payload: {}})).json();
@@ -31,6 +31,8 @@ test('authoritative HTTP loop, retries, stale devices, timers and ledger', async
   assert.equal(qualified.character.state.repair, 1);
   assert.equal(qualified.character.state.active, null);
   await command('begin-starter-001', {kind: 'begin', action: 'gig', revision: 3});
+  // Fixture for a pre-0.11 activity already saved without a puzzle.
+  store.db.prepare("UPDATE characters SET state=json_remove(state,'$.active.puzzle') WHERE id=?").run(guest.character.id);
   now += 10000;
   const paid = await command('finish-starter-01', {kind: 'sync', revision: 4});
   assert.equal(paid.json().character.state.coins, 330);

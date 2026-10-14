@@ -19,6 +19,9 @@ func _initialize() -> void:
 	check(state.data.repair == 1, "Completed practice unlocks Repair 1")
 	check(state.begin_action("gig").ok, "Qualified gig starts")
 	var before: int = state.data.coins
+	for tile in range(6):
+		var turns: int = (state.data.active.puzzle.target[tile] - state.data.active.puzzle.turns[tile] + 4) % 4
+		for i in range(turns): state.repair_move(tile)
 	state.tick(10)
 	state.tick(10)
 	check(state.data.coins == before + 90, "Repeated tick cannot duplicate gig payment")

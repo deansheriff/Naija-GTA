@@ -23,7 +23,7 @@ shutil.copy2(SITE / "index.html", DIST / "index.html")
 shutil.copytree(SITE / "owner", DIST / "owner", dirs_exist_ok=True)
 shutil.copy2(ROOT / "game" / "icon.svg", DIST / "icon.svg")
 shutil.copy2(ROOT / "docs" / "screenshots" / "milestone6-favor-desktop.png", DIST / "neighborhood-preview.png")
-report = {"version": "0.10.0", "engine": "4.6.3", "files": []}
+report = {"version": "0.11.0", "engine": "4.6.3", "files": []}
 for item in sorted(PLAY.iterdir()):
     if item.is_file():
         report["files"].append({"name": item.name, "bytes": item.stat().st_size, "sha256": hashlib.sha256(item.read_bytes()).hexdigest()})

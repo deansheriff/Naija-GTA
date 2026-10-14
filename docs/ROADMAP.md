@@ -48,13 +48,13 @@ Implemented in 0.10.0: **A light for the square**, an authored Amaka → park �
 
 ## 0.11 — Hands-on repair tasks
 
-Replace the first timed repair activity with a small playable repair task, using clear touch/mouse/keyboard controls and readable feedback. The server should issue/validate puzzle state and own eligibility, rewards and replay protection; a client-reported success flag cannot pay a job. Keep the existing career, recovery and save history, and retain an accessible low-motion presentation. Playtest this bounded interaction and the current earning/recovery balance before shared marketplace applications, deliverables, reviews or moderation.
+Implemented in 0.11.0: six labelled signal dials replace the timer-only starter radio job. Server-issued targets and validated clockwise moves control completion; all channels and the minimum ten seconds are required for the one-time 90 SC payment. Unfinished boards persist and can be reopened from the activity panel. Durable receipts prevent duplicate turns/payments, and pre-0.11 active repairs retain their original timer. See [interactive repair milestone](MILESTONE_10.md). Playtest earning/recovery balance before expanding the shared economy.
 
 ## Up NEPA! — campaign production track
 
 | Stage | Deliverable and dependency |
 |---|---|
-| S0 · Drafted | [Story bible](STORY_BIBLE_UP_NEPA.md): premise, themes, Tunde/Ngozi/KC voices and arcs, relationships, secrets, gags, world rules and ending intentions. Narrative review comes before the next story deliverable, as requested in the supplied brief. |
+| S0 · Drafted | [Story bible](STORY_BIBLE_UP_NEPA.md): premise, themes, Tunde/Ngozi/KC voices and arcs, relationships, secrets, gags, world rules and ending intentions. The owner's continuous full-game instruction permits continuing the deliverables; native-speaker/cultural release review remains pending. |
 | S1 · Planned | Full mission list with objectives, set pieces, comedic beats and rewards, then the three-character ability/progression specification. Separate story props and campaign rewards from sandbox currency. |
 | S2 · Planned | Prologue and Act 1 scripts, followed by ambient/failure/switching dialogue banks and the full systems integration specification. Tag slang and cultural delivery for native-speaker review. |
 | S3 · Planned | A small replayable **Owambe, Owambe** vertical slice: wedding staging, blackout/light restoration, a tutorial perspective for each lead, Family Meeting switching, text-first cutscenes and skip summaries. Requires reviewed scripts, original protagonist art and checkpoint rules. |
@@ -70,3 +70,5 @@ Critical missions and dialogue remain scripted. Jev decisions and licensed live 
 ## Release gates
 
 Every milestone ships a rebuilt browser export, native APK, regression checks, an in-motion animation review and screenshots. Recheck the deployed version through `build-info.json`. Physical-phone HTTPS/input/rendering and 20-minute thermal sessions are separate evidence from desktop tests. Larger shared markets, real election data, payments and reward redemption remain separate later work under the original approved plan.
+
+The owner selected the full game including this campaign as the production scope on 14 October 2026. Follow [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md) continuously across milestones without another handoff. A completed prototype milestone does not establish production readiness.

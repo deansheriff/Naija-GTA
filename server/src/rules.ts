@@ -1,3 +1,4 @@
+import {newRadioPuzzle, radioMatches, type RadioPuzzle} from './repair-puzzle.js';
 export const actions = {
   learn: {seconds: 8, cost: 0, energy: 8},
   gig: {seconds: 10, cost: 0, energy: 12},
@@ -22,7 +23,7 @@ export type State = {
   name: string; bio: string; coins: number; food: number; energy: number; comfort: number;
   repair: number; digital: number; social: number; met_amaka: boolean; gig_done: boolean;
   decorated: boolean; wall: 'sage' | 'clay' | 'ocean';
-  day: number; minutes: number; active: {code: Action; endsAt: number} | null; updatedAt: number;
+  day: number; minutes: number; active: {code: Action; endsAt: number; puzzle?: RadioPuzzle} | null; updatedAt: number;
   posts: Array<{id: string; title: string; budget: number; refunded: boolean; status: string}>; vote: string;
   neighbors: {amaka: number; yemi: number; park: number; park_choice: string};
   favor: 'available' | 'carrying' | 'delivered' | 'complete';
@@ -30,7 +31,7 @@ export type State = {
   inventory: {owned: string[]; equipped: string[]};
   errand: {stage: 'available' | 'collect' | 'repair' | 'ready' | 'installed' | 'complete'; spot: '' | 'board' | 'bench'};
 };
-export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand'; action?: Action; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
+export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand' | 'repair_move'; action?: Action; tile?: number; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
 export class RuleError extends Error {
   constructor(public code: string, message: string, public status = 422) {super(message);}
 }
@@ -51,6 +52,13 @@ export function upgradeState(state: State): State {
   state.errand ??= {stage: 'available', spot: ''};
   return state;
 }
+function finishStarterGig(state: State, ledger: Array<{delta: number; reason: string}>) {
+  if (!state.gig_done) {
+    state.coins += 90; state.repair = Math.min(100, state.repair + 1);
+    state.energy = Math.max(0, state.energy - 12); state.gig_done = true;
+    ledger.push({delta: 90, reason: 'starter_gig'});
+  }
+}
 export function applyIntent(state: State, intent: Intent, now: number): Array<{delta: number; reason: string}> {
   upgradeState(state);
   const ledger: Array<{delta: number; reason: string}> = [];
@@ -61,7 +69,7 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
   state.food = Math.max(0, state.food - elapsed * 0.025);
   state.energy = Math.max(0, state.energy - elapsed * 0.015);
   state.comfort = Math.max(0, state.comfort - elapsed * 0.01);
-  if (state.active && state.active.endsAt <= now) {
+  if (state.active && state.active.endsAt <= now && (!state.active.puzzle || radioMatches(state.active.puzzle))) {
     switch (state.active.code) {
       case 'learn': state.repair = Math.min(100, state.repair + 1); state.energy = Math.max(0, state.energy - 8); break;
       case 'study': state.digital = Math.min(100, state.digital + 1); state.energy = Math.max(0, state.energy - 8); break;
@@ -82,7 +90,7 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
         break;
       }
       case 'gig':
-        if (!state.gig_done) {state.coins += 90; state.repair = Math.min(100, state.repair + 1); state.energy = Math.max(0, state.energy - 12); state.gig_done = true; ledger.push({delta: 90, reason: 'starter_gig'});}
+        finishStarterGig(state, ledger);
         break;
     }
     state.active = null;
@@ -91,6 +99,16 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
   state.posts ??= []; state.vote ??= '';
   switch (intent.kind) {
     case 'sync': break;
+    case 'repair_move': {
+      const active = state.active;
+      if (!active || active.code !== 'gig' || !active.puzzle) throw new RuleError('repair_unavailable', 'Start Yemi\'s radio test before turning a dial.');
+      if (!Number.isInteger(intent.tile) || intent.tile! < 0 || intent.tile! > 5) throw new RuleError('invalid_dial', 'Choose a radio channel from A to F.');
+      if (radioMatches(active.puzzle)) throw new RuleError('repair_solved', 'All channels match. The radio test is finishing.');
+      active.puzzle.turns[intent.tile!] = (active.puzzle.turns[intent.tile!] + 1) % 4;
+      active.puzzle.solved = radioMatches(active.puzzle);
+      if (active.puzzle.solved && active.endsAt <= now) {finishStarterGig(state, ledger); state.active = null;}
+      break;
+    }
     case 'errand': {
       const quest = state.errand;
       const locked = () => {throw new RuleError('errand_locked', 'Follow the current objective in A light for the square.');};
@@ -161,6 +179,7 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
       state.coins -= action.cost;
       if (action.cost) ledger.push({delta: -action.cost, reason: intent.action});
       state.active = {code: intent.action, endsAt: now + action.seconds * 1000};
+      if (intent.action === 'gig') state.active.puzzle = newRadioPuzzle();
       break;
     }
     case 'buy': case 'furnish': {

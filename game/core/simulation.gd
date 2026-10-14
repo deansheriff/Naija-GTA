@@ -2,6 +2,7 @@ extends RefCounted
 ## Local prototype rules. Real economy/eligibility moves server-side in Milestone 1.
 
 const VERSION = 1
+const RepairTask = preload("res://core/repair_task.gd")
 const ACTIONS = {
 	"eat": {"name": "Jollof at Amaka's", "seconds": 6.0, "cost": 25, "food": 35, "energy": 4},
 	"communitymeal": {"name": "Amaka's community plate", "seconds": 12.0, "cost": 0, "food": 25},
@@ -71,6 +72,7 @@ func begin_action(code: String) -> Dictionary:
 		data.energy -= REPAIR_JOBS[code].energy
 		data.food -= REPAIR_JOBS[code].food
 	data.active = {"code": code, "remaining": action.seconds, "total": action.seconds}
+	if code == "gig": data.active.puzzle = RepairTask.create()
 	return {"ok": true, "message": action.name + "…"}
 
 func tick(seconds: float) -> bool:
@@ -86,6 +88,9 @@ func tick(seconds: float) -> bool:
 	if data.active.is_empty():
 		return false
 	data.active.remaining -= seconds
+	if data.active.has("puzzle"):
+		data.active.remaining = maxf(0, data.active.remaining)
+		if not RepairTask.matches(data.active.puzzle): return false
 	if data.active.remaining > 0:
 		return false
 	var code: String = data.active.code
@@ -105,6 +110,17 @@ func tick(seconds: float) -> bool:
 	if code == "lantern": data.errand.stage = "ready"
 	notice = action.name + " complete" + (" · +%s StreetCoins" % action.coins if action.has("coins") else "")
 	return true
+
+func repair_move(tile: int) -> Dictionary:
+	if data.active.get("code", "") != "gig" or not data.active.has("puzzle"):
+		return {"ok": false, "message": "Start Yemi's radio test before turning a dial."}
+	if tile < 0 or tile > 5: return {"ok": false, "message": "Choose a channel from A to F."}
+	var puzzle: Dictionary = data.active.puzzle
+	if RepairTask.matches(puzzle): return {"ok": false, "message": "All channels match. The radio test is finishing."}
+	puzzle.turns[tile] = (puzzle.turns[tile] + 1) % 4
+	puzzle.solved = RepairTask.matches(puzzle)
+	if puzzle.solved: tick(0)
+	return {"ok": true, "message": "Channel adjusted."}
 
 func repair_problem(code: String) -> String:
 	var job: Dictionary = REPAIR_JOBS[code]
@@ -307,6 +323,10 @@ func load_json(json_text: String, catch_up: bool = true) -> Dictionary:
 		if ACTIONS.has(active.get("code", "")) and (active.get("remaining") is float or active.get("remaining") is int):
 			var total: float = ACTIONS[active.code].seconds
 			data.active = {"code": active.code, "total": total, "remaining": clampf(float(active.remaining), 0, total)}
+			if active.has("puzzle"):
+				var puzzle := RepairTask.normalize(active.puzzle)
+				if active.code == "gig" and not puzzle.is_empty(): data.active.puzzle = puzzle
+				else: data.active = {}
 	if incoming.get("posts") is Array:
 		for item in incoming.posts.slice(0, 3):
 			if item is Dictionary and item.get("title") is String and (item.get("budget") is int or item.get("budget") is float):

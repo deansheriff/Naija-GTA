@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import type {FastifyInstance} from 'fastify';
 import type {Intent} from '../src/rules.js';
+import {solveRadio} from './radio-helper.js';
 
 // Shared HTTP contract: SQLite locally, embedded PostgreSQL locally, PostgreSQL 17 in CI.
 export async function careerContract(app: FastifyInstance, advance: (ms: number) => void) {
@@ -17,7 +18,7 @@ export async function careerContract(app: FastifyInstance, advance: (ms: number)
   assert.equal((await raw({kind: 'buy', item: 'coin_printer'})).statusCode, 400);
   assert.equal((await raw({kind: 'furnish', item: 'plant', choice: 'place'})).statusCode, 422);
   await send({kind: 'begin', action: 'learn'}); advance(8000); await send({kind: 'sync'});
-  await send({kind: 'begin', action: 'gig'}); advance(10000);
+  await solveRadio(await send({kind: 'begin', action: 'gig'}), send); advance(10000);
   let state = await send({kind: 'sync'});
   assert.equal(state.coins, 330); assert.equal(state.repair, 2);
   const before = state.energy;

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import type {FastifyInstance} from 'fastify';
 import type {Intent} from '../src/rules.js';
+import {solveRadio} from './radio-helper.js';
 
 export async function errandContract(app: FastifyInstance, advance: (ms: number) => void) {
   const ids: string[] = [];
@@ -19,7 +20,7 @@ export async function errandContract(app: FastifyInstance, advance: (ms: number)
     assert.equal((await raw({...choice('finish'), errand: {stage: 'installed', spot}})).statusCode, 400);
     await send({kind: 'greet'});
     await send({kind: 'begin', action: 'learn'}); advance(8000); await send({kind: 'sync'});
-    await send({kind: 'begin', action: 'gig'}); advance(10000); await send({kind: 'sync'});
+    await solveRadio(await send({kind: 'begin', action: 'gig'}), send); advance(10000); await send({kind: 'sync'});
     await send({kind: 'neighbor', choice: 'park_space'});
     let state = await send(choice('accept'));
     assert.deepEqual(state.errand, {stage: 'collect', spot: ''});

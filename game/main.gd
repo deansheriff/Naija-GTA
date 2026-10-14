@@ -14,6 +14,8 @@ const MUTED = Color("a6b9ad")
 const CREAM = Color("f4efdb")
 const LIME = Color("d4ed85")
 const GOLD = Color("edc06d")
+const RepairTask = preload("res://core/repair_task.gd")
+const RADIO_TITLE = "Yemi's radio · signal test"
 
 var sim = Simulation.new()
 var cloud = Cloud.new()
@@ -38,6 +40,7 @@ var mission_button: Button
 var save_label: Label
 var activity_label: Label
 var activity_bar: ProgressBar
+var activity_task_button: Button
 var stat_bars: Dictionary = {}
 var modal: ColorRect
 var modal_panel: PanelContainer
@@ -363,6 +366,9 @@ func _build_hud() -> void:
 	activity_bar.custom_minimum_size.y = 8
 	active.add_child(activity_label)
 	active.add_child(activity_bar)
+	activity_task_button = _button("Open radio signal test", _open_repair_task, true)
+	active.add_child(activity_task_button)
+	activity_task_button.hide()
 	activity_panel.visible = false
 	toast_label = _label("", 17, INK)
 	toast_label.add_theme_stylebox_override("normal", _style(CREAM, 10, 14))
@@ -423,6 +429,9 @@ func _resize() -> void:
 	mobile_nav.size = Vector2(size.x - 32, 48)
 	activity_panel.position = Vector2(16, size.y - 318) if small else Vector2(290, size.y - 108)
 	activity_panel.size = Vector2(size.x - 32, 84) if small else Vector2(size.x - 604, 84)
+	if activity_task_button.visible:
+		activity_panel.position.y = size.y - (370 if small else 156)
+		activity_panel.size.y = 136
 	toast_label.position = Vector2(16, 326) if small else Vector2(290, 122)
 	toast_label.size = Vector2(size.x - 32, 56) if small else Vector2(size.x - 604, 56)
 	world.resize_view(size)
@@ -445,8 +454,13 @@ func _refresh() -> void:
 	for key in stat_bars:
 		stat_bars[key].value = sim.data[key]
 	activity_panel.visible = not sim.data.active.is_empty()
+	var has_task: bool = sim.data.active.has("puzzle")
+	if activity_task_button.visible != has_task:
+		activity_task_button.visible = has_task
+		call_deferred("_settle_layout")
 	if activity_panel.visible:
 		activity_label.text = "%s · %ss" % [Simulation.ACTIONS[sim.data.active.code].name, ceili(sim.data.active.remaining)]
+		if has_task and sim.data.active.remaining <= 0: activity_label.text = "Radio test · match the remaining channels"
 		activity_bar.value = 100 * (1 - sim.data.active.remaining / sim.data.active.total)
 	brand_subtitle.text = WorldPlan.profile(district_id).name + " · Your neighborhood"
 	for label in get_tree().get_nodes_in_group("career_status"):
@@ -460,6 +474,7 @@ func _refresh() -> void:
 		journey_bar.value = trip.progress() * 100
 		brand_subtitle.text = "On the danfo · " + WorldPlan.profile(trip.destination).name
 	_travel_visibility()
+	_update_repair_task()
 
 func _settle_layout() -> void:
 	# Containers measure wrapped text after their first layout pass.
@@ -582,7 +597,7 @@ func _open_place(place: String) -> void:
 		var gig := _button("Repair Yemi's radio · earn 90 SC", _start.bind("gig"))
 		gig.disabled = sim.data.repair < 1 or sim.data.gig_done
 		modal_body.add_child(gig)
-		modal_body.add_child(_label("Completed — Yemi's radio works again." if sim.data.gig_done else "Unlocks after one practice. Costs 12 energy; takes 10 seconds.", 15, MUTED))
+		modal_body.add_child(_label("Completed — Yemi's radio works again." if sim.data.gig_done else "Unlocks after one practice. Match six signal channels; at least 10 seconds, 12 energy on completion.", 15, MUTED))
 		_career_board()
 	elif place == "home":
 		_dialog("Your little corner", "No matter how loud the street gets, this place is yours.")
@@ -900,8 +915,60 @@ func _start(code: String) -> void:
 	if result.ok:
 		_close_modal()
 		_save()
+		if sim.data.active.has("puzzle"): _open_repair_task()
 	_toast(result.message)
 	_refresh()
+
+func _open_repair_task() -> void:
+	if not sim.data.active.has("puzzle"): return
+	_dialog(RADIO_TITLE, "Turn each channel clockwise until its direction matches the target. Use touch, mouse, or Tab and Enter/Space. Take your time: you can close this test and resume from the activity panel.")
+	var status := _label("", 20, GOLD)
+	status.add_to_group("radio_status")
+	modal_body.add_child(status)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	modal_body.add_child(grid)
+	for index in range(6):
+		var button := _button("", _radio_turn.bind(index))
+		button.custom_minimum_size = Vector2(0, 88)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", 16)
+		button.set_meta("tile", index)
+		button.add_to_group("radio_dial")
+		grid.add_child(button)
+	var feedback := _label("", 16, MUTED)
+	feedback.add_to_group("radio_feedback")
+	modal_body.add_child(feedback)
+	modal_body.add_child(_label("Payment: 90 SC once · costs 12 energy on completion. The test runs for at least 10 seconds and finishes when all six channels match.", 15, MUTED))
+	modal_body.add_child(_button("Put the radio down for now", _close_modal))
+	_update_repair_task()
+
+func _update_repair_task() -> void:
+	if modal == null or last_dialog != RADIO_TITLE: return
+	if not sim.data.active.has("puzzle"):
+		_dialog("Radio repaired", "Yemi: Clear as anything! Good work, neighbour. Your one-time 90 StreetCoins and Repair progress are saved." if sim.data.gig_done else "This radio test is no longer active. Reopen the workshop for your current activities.")
+		modal_body.add_child(_button("Back to the workshop", _open_place.bind("repair"), true))
+		return
+	var puzzle: Dictionary = sim.data.active.puzzle
+	var matched := 0
+	for index in range(6):
+		if puzzle.turns[index] == puzzle.target[index]: matched += 1
+	for label in get_tree().get_nodes_in_group("radio_status"):
+		label.text = "%s / 6 channels matched" % matched
+		if matched == 6: label.text = "All channels match · testing for %ss" % ceili(maxf(0, sim.data.active.remaining))
+	for button in get_tree().get_nodes_in_group("radio_dial"):
+		var index: int = button.get_meta("tile")
+		var correct: bool = puzzle.turns[index] == puzzle.target[index]
+		button.text = "%s · target %s\nNow %s\n%s" % [char(65 + index), RepairTask.DIRECTIONS[puzzle.target[index]], RepairTask.DIRECTIONS[puzzle.turns[index]], "Matched" if correct else "Turn clockwise"]
+		button.modulate = LIME if correct else Color.WHITE
+		button.disabled = correct or (cloud.enabled() and (cloud.busy or not cloud.connected or not cloud.pending.is_empty()))
+
+func _radio_turn(index: int) -> void:
+	var result: Dictionary = await cloud.submit("repair_move", {"tile": index}) if cloud.enabled() else sim.repair_move(index)
+	if result.ok: _save()
+	_update_repair_task()
+	for label in get_tree().get_nodes_in_group("radio_feedback"): label.text = "Channel adjusted." if result.ok else result.message
 
 func _decorate(color: String) -> void:
 	if cloud.enabled():

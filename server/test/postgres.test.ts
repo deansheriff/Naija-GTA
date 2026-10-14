@@ -8,6 +8,7 @@ import type {Intent} from '../src/rules.js';
 import {neighborContract} from './neighbor-contract.js';
 import {careerContract} from './career-contract.js';
 import {errandContract} from './errand-contract.js';
+import {radioContract} from './radio-contract.js';
 import {operationsContract,fixtureOwner} from './operations-contract.js';
 
 // Embedded PostgreSQL validates real SQL locally. CI uses a multi-connection PostgreSQL service.
@@ -54,6 +55,8 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     now += 8000;
     await command('finish-practice-01', {kind: 'sync', revision: 2});
     await command('start-paid-gig-001', {kind: 'begin', action: 'gig', revision: 3});
+    // A saved pre-0.11 activity must still settle under its original timer.
+    await pool.query("UPDATE characters SET state=state #- '{active,puzzle}' WHERE id=$1", [guest.character.id]);
     now += 10000;
     const paidPayload = {kind: 'sync', revision: 4} as const;
     const payments = await Promise.all([command('finish-paid-gig-01', paidPayload), command('finish-paid-gig-01', paidPayload)]);
@@ -98,6 +101,9 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     }
     await pool.query("UPDATE characters SET state=(state - 'errand') WHERE id=$1", [legacy.character.id]);
     assert.deepEqual((await store.read(legacy.character.id)).state.errand, {stage: 'available', spot: ''});
+    now += 60000;
+    const radioIds = await radioContract(app, ms => {now += ms;});
+    for (const id of radioIds) assert.equal((await pool.query("SELECT delta FROM ledger WHERE character_id=$1 AND reason='starter_gig'", [id])).rows.length, 1);
     await operationsContract(store,app);
     await assert.rejects(pool.query("UPDATE owner_audit SET reason='changed'"),/append-only/);
     const counts=await Promise.all(Array.from({length:12},()=>store.ops.consumeRate('a'.repeat(64),now+60000)));
