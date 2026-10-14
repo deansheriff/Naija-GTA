@@ -2,13 +2,15 @@ extends Control
 const Campaign = preload("res://core/campaign.gd")
 const Stage = preload("res://world/campaign_stage.gd")
 const RoadView = preload("res://world/driving_view.gd")
+const CanteenView = preload("res://world/canteen_view.gd")
 signal requested(kind: String, stage: int, choice: String)
 signal exit_requested
 const NAMES = {"tunde": "Tunde · Baba God Dey", "ngozi": "Ngozi · Aunty Boss", "kc": "KC · Content is loading"}
 const BIOS = {"tunde": "A danfo driver dreaming of a fleet. His shortcuts need witnesses.", "ngozi": "Canteen queen and savings-circle organiser. Every grand speech still needs an invoice.", "kc": "A content creator learning the difference between attention and trust."}
-const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record"}
+const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18"}
 var content: VBoxContainer
 var feedback: Label
+var feedback_text := "Choose below. There is no timer or penalty for a retry."
 var scroll: ScrollContainer
 var controls: Array[Button] = []
 var snapshot: Dictionary = {}
@@ -107,6 +109,7 @@ func display(campaign: Dictionary, waiting: bool = false) -> void:
 			if is_instance_valid(focus_before_wait) and focus_before_wait.is_visible_in_tree() and not focus_before_wait.is_queued_for_deletion(): focus_before_wait.grab_focus()
 			else: back_button.grab_focus()
 		_update_drive()
+		_update_feedback()
 		return
 	fingerprint = next_fingerprint
 	show_summary = false
@@ -131,12 +134,14 @@ func build() -> void:
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission == "A11"
-	var stage: Control = RoadView.new() if road_scene else Stage.new()
+	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
 	if road_scene:
 		road_view = stage
 		stage.update_state(c.drive if c.drive is Dictionary else {"distance": 0.0, "speed": 0.0, "lane": 1, "ready": false, "misses": 0}, float(task.get("target", 350)))
+	elif c.mission == "A12":
+		stage.scene_id = task.get("scene", "canteen")
 	else:
 		stage.lead = c.lead
 		if c.status == "playing": stage.scene_id = task.scene
@@ -156,18 +161,21 @@ func build() -> void:
 		content.add_child(label(NAMES[c.lead] + "\n" + BIOS[c.lead], 18, Color("d4ed85")))
 		var next_index: int = Campaign.ORDER.find(c.mission) + 1
 		if next_index < Campaign.ORDER.size():
-			var next_title: String = Campaign.story(Campaign.ORDER[next_index]).title
-			content.add_child(button("Continue · " + next_title + " (Tunde)", func(): requested.emit("campaign_continue", -1, "")))
+			var next_story := Campaign.story(Campaign.ORDER[next_index])
+			var next_lead: String = next_story.stages[0].lead.capitalize()
+			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label("Act 1 · " + ("Tunde's morning route is ready above." if next_index < Campaign.ORDER.size() else "Ajo Day is the next mission in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label("Act 1 · " + ("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Four Percent is the next mission in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
 		content.add_child(label(NAMES[c.lead], 16, Color("d4ed85")))
 		content.add_child(label(task.summary if show_summary else task.text))
+		for record in task.get("records", []): _record_card(record)
 		content.add_child(button("Full scene" if show_summary else "Read summary", func(): show_summary = not show_summary; build()))
-		feedback = label("Choose below. There is no timer or penalty for a retry.", 16, Color("d4ed85"))
+		feedback_text = "Choose below. There is no timer or penalty for a retry."
+		feedback = label(feedback_text, 16, Color("d4ed85"))
 		content.add_child(feedback)
 		if c.paused:
 			content.add_child(button("Resume this checkpoint", func(): requested.emit("campaign_resume", -1, "")))
@@ -181,6 +189,25 @@ func build() -> void:
 		if is_instance_valid(node): node.disabled = busy
 	if not busy: back_button.grab_focus()
 	_update_drive()
+	_update_feedback()
+
+func _record_card(record: Dictionary) -> void:
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("e9dec2")
+	style.set_corner_radius_all(10)
+	style.content_margin_left = 16
+	style.content_margin_right = 16
+	style.content_margin_top = 12
+	style.content_margin_bottom = 12
+	panel.add_theme_stylebox_override("panel", style)
+	panel.add_to_group("campaign_record")
+	content.add_child(panel)
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 6)
+	panel.add_child(stack)
+	stack.add_child(label(record.title, 19, Color("25483a")))
+	stack.add_child(label("\n".join(record.lines), 17, Color("25483a")))
 
 func _drive_controls() -> void:
 	drive_status = label("Driving checkpoint", 17, Color("d4ed85"))
@@ -247,4 +274,8 @@ func stop_driving(reason: String) -> void:
 	_update_drive()
 
 func message(text: String) -> void:
-	if is_instance_valid(feedback): feedback.text = text
+	feedback_text = text
+	_update_feedback()
+
+func _update_feedback() -> void:
+	if is_instance_valid(feedback): feedback.text = "Saving or refreshing your cloud checkpoint…" if busy else feedback_text

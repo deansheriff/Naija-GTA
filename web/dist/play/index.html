@@ -12,7 +12,7 @@
 </head>
 <body>
 <canvas id="canvas" tabindex="0" aria-label="Naija Street Life illustrated game. Use arrows or WASD to walk; E to interact; Tab to navigate menus.">Your browser needs WebGL 2 and WebAssembly. <a href="../">Return to the guide</a>.</canvas>
-<div id="loading" role="status" aria-live="polite"><small>NAIJA STREET LIFE · EARLY BUILD</small><h1>Your street is loading.</h1><p>A little room. A familiar face. A fresh start.</p><progress id="progress"></progress><p id="message">Downloading the game engine…</p><p id="error"></p><a href="../">Back to the guide</a></div>
+<div id="loading" role="status" aria-live="polite"><small>NAIJA STREET LIFE · EARLY BUILD</small><h1>Your street is loading.</h1><p>A little room. A familiar face. A fresh start.</p><progress id="progress"></progress><p id="message">Downloading the game engine…</p><p id="error"></p><div id="retry-loading" hidden><p>Taking longer than expected? You can retry loading. Existing saved progress stays on this device or your connected server.</p><button id="retry" type="button" style="font:inherit;padding:14px 24px;background:#d4ed85;color:#193c32;border:0;border-radius:8px;cursor:pointer">Retry loading</button></div><a href="../">Back to the guide</a></div>
 <script>
 window.NSLSaveStore = {
   write(payload) {try {localStorage.setItem('nsl-local-v1',payload);return true;}catch {return false;}},
@@ -29,6 +29,8 @@ window.NSLCloudCacheStore = {
   write(payload) {try {localStorage.setItem('nsl-cloud-cache-v1',payload);return true;}catch {return false;}},
   preserveInvalid(payload) {try {localStorage.setItem('nsl-cloud-cache-v1.invalid-'+Date.now(),payload);}catch {}}
 };
+document.getElementById('retry').addEventListener('click',()=>location.reload());
+const startupWatchdog=setTimeout(()=>{document.getElementById('retry-loading').hidden=false;},30000);
 // Ship a ~9MB gzip file on static hosts, then stream-decompress it for Godot.
 // No response headers, third-party CDN, or oversized raw-WASM upload needed.
 const fetchOriginal = window.fetch.bind(window);
@@ -47,7 +49,7 @@ window.fetch = async function(input, init) {
 </script>
 <script src="index.js?v=e3f56ee40e6f"></script>
 <script>
-const config = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":12959908,"index.wasm":37700666},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const config = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":12974264,"index.wasm":37700666},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 config.onPrintError = (...args) => {console.log('NSL engine error:', ...args);console.error(...args);};
 const loadStart = performance.now();
 const engine = new Engine(config);
@@ -55,7 +57,7 @@ const overlay = document.getElementById('loading');
 const progress = document.getElementById('progress');
 const message = document.getElementById('message');
 const missing = Engine.getMissingFeatures({threads: false});
-function fail(error) {document.getElementById('error').textContent = error.message || String(error); message.textContent = 'Unable to start this build.'; console.error(error);}
+function fail(error) {clearTimeout(startupWatchdog);document.getElementById('retry-loading').hidden=false;document.getElementById('error').textContent = error.message || String(error); message.textContent = 'Unable to start this build.'; console.error(error);}
 if(missing.length) fail(new Error('This browser is missing: ' + missing.join(', ')));
 else (async () => {
   try {
@@ -63,6 +65,6 @@ else (async () => {
     if(response.ok && (await response.json()).application==='naija-street-life') window.NSLCloudURL=location.origin+'/api';
   }catch {}
   return engine.startGame({onProgress(current,total){if(total>0){progress.max=total;progress.value=current;message.textContent='Preparing the neighborhood… '+Math.min(100,Math.round(current/total*100))+'%';}}});
-})().then(()=>{console.log('NSL startup_ms',Math.round(performance.now()-loadStart));overlay.remove();document.getElementById('canvas').focus();},fail);
+})().then(()=>{clearTimeout(startupWatchdog);console.log('NSL startup_ms',Math.round(performance.now()-loadStart));overlay.remove();document.getElementById('canvas').focus();},fail);
 </script>
 </body></html>

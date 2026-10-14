@@ -1,20 +1,22 @@
 import story from './prologue.json' with {type:'json'};
 import tunde from './tunde-intro.json' with {type:'json'};
+import ngozi from './ngozi-intro.json' with {type:'json'};
 import {freshDrive,advanceDrive,driveInputs,type DrivingState} from './driving-task.js';
 export const prologue=story;
 export const leads=['tunde','ngozi','kc'] as const;
 export type Lead=typeof leads[number];
 export type StoryChoice={id:string;label:string;correct:boolean;hint?:string};
-export type StoryStage={id:string;lead:string;scene:string;title:string;text:string;summary:string;kind?:string;target?:number;choices:StoryChoice[]};
+export type StoryStage={id:string;lead:string;scene:string;title:string;text:string;summary:string;kind?:string;target?:number;records?:{title:string;lines:string[]}[];choices:StoryChoice[]};
 export type Mission={id:string;title:string;summary:string;stages:StoryStage[];mastery:Partial<Record<Lead,number>>;evidence:string[]};
-export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde};
-export const missionOrder=['P00','A11'];
-export const CAMPAIGN_VERSION=2;
+export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde,A12:ngozi};
+export const missionOrder=['P00','A11','A12'];
+export const CAMPAIGN_VERSION=3;
 export type Campaign={version:number;mission:string;status:'unstarted'|'playing'|'hub';stage:number;lead:Lead;completed:string[];mastery:Record<Lead,number>;evidence:string[];paused:boolean;choices:Record<string,string>;drive:DrivingState|null};
 export class CampaignError extends Error {}
 export function freshCampaign():Campaign{return {version:CAMPAIGN_VERSION,mission:'P00',status:'unstarted',stage:0,lead:'tunde',completed:[],mastery:{tunde:0,ngozi:0,kc:0},evidence:[],paused:true,choices:{},drive:null};}
 export function upgradeCampaign(value:Campaign):Campaign {
   if(value.version===1)return {...freshCampaign(),...value,version:CAMPAIGN_VERSION,mission:'P00',choices:{},drive:null};
+  if(value.version===2)return {...value,version:CAMPAIGN_VERSION};
   return value;
 }
 export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:string,now=Date.now()):void {

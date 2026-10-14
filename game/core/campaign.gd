@@ -1,14 +1,16 @@
 extends RefCounted
-const VERSION = 2
+const VERSION = 3
 const STORY_PATH = "res://story/prologue.json"
 const TUNDE_PATH = "res://story/tunde-intro.json"
+const NGOZI_PATH = "res://story/ngozi-intro.json"
 const LEADS = ["tunde", "ngozi", "kc"]
-const ORDER = ["P00", "A11"]
+const ORDER = ["P00", "A11", "A12"]
 const Drive = preload("res://core/driving_task.gd")
 
 static func story(id: String = "P00") -> Dictionary:
 	if not id in ORDER: return {}
-	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(STORY_PATH if id == "P00" else TUNDE_PATH))
+	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH}[id]
+	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if id == "P00":
 		content.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
 		content.evidence = ["wedding_clip"]
@@ -26,6 +28,9 @@ static func normalize(value: Variant) -> Dictionary:
 		value.mission = "P00"
 		value.choices = {}
 		value.drive = null
+	elif value.get("version") == 2:
+		value = value.duplicate(true)
+		value.version = VERSION
 	if value.get("version") != VERSION or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()
 	if not value.get("mission") in ORDER: return value.duplicate(true)
 	var content := story(value.mission)

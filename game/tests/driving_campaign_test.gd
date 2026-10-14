@@ -29,7 +29,7 @@ func _initialize() -> void:
 	check(guided.ready and guided.distance == 350 and guided.speed == 0, "Guided approach reaches the same safe stop")
 	var old := {"version": 1, "status": "hub", "stage": 14, "lead": "kc", "paused": true, "completed": ["P00"], "mastery": {"tunde": 1, "ngozi": 1, "kc": 1}, "evidence": ["wedding_clip"]}
 	var c := Campaign.normalize(old)
-	check(c.version == 2 and c.mission == "P00" and c.stage == 14 and c.evidence == ["wedding_clip"], "Existing completed wedding upgrades without replay")
+	check(c.version == Campaign.VERSION and c.mission == "P00" and c.stage == 14 and c.evidence == ["wedding_clip"], "Existing completed wedding upgrades without replay")
 	Campaign.command(c, "campaign_resume", -1, "", 1000)
 	check(Campaign.command(c, "campaign_continue", -1, "", 1000).ok and c.mission == "A11" and c.lead == "tunde", "Continue enters Tunde's authored mission")
 	var story := Campaign.story("A11")
@@ -50,7 +50,7 @@ func _initialize() -> void:
 				Campaign.command(c, "campaign_choose", i, option.id, now)
 				break
 	check(c.status == "hub" and c.completed == ["P00", "A11"] and c.mastery.tunde == 3 and c.evidence == ["wedding_clip", "bag_record"], "Tunde grants mastery and evidence once")
-	check(not Campaign.command(c, "campaign_continue").ok and not Campaign.command(c, "campaign_choose", story.stages.size(), "next").ok, "Unbuilt chapter and duplicate mission rewards blocked")
+	check(not Campaign.command(c, "campaign_choose", story.stages.size(), "next").ok, "Duplicate mission rewards blocked")
 	call_deferred("scene_checks")
 func scene_checks() -> void:
 	var scene = load("res://main.tscn").instantiate()

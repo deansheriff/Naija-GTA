@@ -39,6 +39,6 @@ export async function tundeContract(app:FastifyInstance,advance:(ms:number)=>voi
   }
   assert.equal(state.campaign.status,'hub');assert.deepEqual(state.campaign.completed,['P00','A11']);assert.equal(state.campaign.mastery.tunde,3);assert.equal(state.campaign.mastery.ngozi,1);
   assert.deepEqual(state.campaign.evidence,['wedding_clip','bag_record']);assert.equal(state.coins,240);
-  assert.equal((await raw({kind:'campaign_continue'})).statusCode,422);assert.equal((await raw({kind:'campaign_choose',stage:missions.A11.stages.length,choice:'next'})).statusCode,422);
+  assert.equal((await raw({kind:'campaign_choose',stage:missions.A11.stages.length,choice:'next'})).statusCode,422);
   return guest.character.id as string;
 }

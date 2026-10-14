@@ -7,7 +7,7 @@ import {Store} from '../src/store.js';
 import {createApp} from '../src/app.js';
 import {tundeContract} from './tunde-contract.js';
 import {freshDrive,advanceDrive} from '../src/driving-task.js';
-import {upgradeCampaign,prologue,type Campaign} from '../src/campaign.js';
+import {upgradeCampaign,prologue,CAMPAIGN_VERSION,type Campaign} from '../src/campaign.js';
 import type {Intent} from '../src/rules.js';
 
 test('Tunde mission: three authoritative road legs, checkpoints, recovery and once-only bag/mastery',async()=>{
@@ -36,6 +36,6 @@ test('driving rules: pace bounds, braking, lane requirements, missed-bay recover
 });
 test('campaign version 1 upgrades without resetting a completed or unfinished wedding',()=>{
   for(const status of ['hub','playing'] as const){const old={version:1,status,stage:status==='hub'?14:6,lead:'ngozi',paused:true,completed:status==='hub'?['P00']:[],mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']} as unknown as Campaign;
-    const result=upgradeCampaign(old);assert.equal(result.version,2);assert.equal(result.mission,'P00');assert.equal(result.stage,old.stage);assert.equal(result.status,status);assert.deepEqual(result.mastery,old.mastery);assert.deepEqual(result.evidence,old.evidence);}
+    const result=upgradeCampaign(old);assert.equal(result.version,CAMPAIGN_VERSION);assert.equal(result.mission,'P00');assert.equal(result.stage,old.stage);assert.equal(result.status,status);assert.deepEqual(result.mastery,old.mastery);assert.deepEqual(result.evidence,old.evidence);}
   assert.deepEqual(JSON.parse(readFileSync(new URL('../../game/story/tunde-intro.json',import.meta.url),'utf8')),JSON.parse(readFileSync(new URL('../src/tunde-intro.json',import.meta.url),'utf8')));
 });

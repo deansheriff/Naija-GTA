@@ -3,6 +3,7 @@ extends Node
 signal changed
 signal notice(message: String)
 const PATH = "user://cloud-connection-v1.json"
+const Campaign = preload("res://core/campaign.gd")
 var sim
 var base_url := ""
 var token := ""
@@ -52,7 +53,9 @@ func _process(delta: float) -> void:
 			if not pending.is_empty():
 				retry_pending()
 			elif connected:
-				submit("sync")
+				# Story time is frozen and every chosen action validates its revision.
+				# Avoid disabling dialogue controls for an unnecessary idle refresh.
+				if not Campaign.active(sim.data.campaign): submit("sync")
 			else:
 				refresh()
 

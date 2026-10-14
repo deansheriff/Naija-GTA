@@ -102,3 +102,7 @@ The woven mat, potted desk plant and table radio are original code-native polygo
 ## Park lantern — 0.10
 
 The installed rechargeable lantern, mounting post, handle and soft evening pools are code-native geometry in `game/world/modular_scenery.gd`. No new raster or external reference is used. The two possible anchors lie inside the existing board/bench solid footprints; the new object shares street depth sorting and adds no collision obstruction. Low keeps the visible lantern and static evening glow with effects/shadows disabled. This is a local visual consequence of saved quest state, not a shared-world lighting system.
+
+## Ajo Day canteen — 0.15
+
+The existing original `campaign-heroes.png` Ngozi pose is drawn behind a shaded counter in `game/world/canteen_view.gd`. The awning, walls, covered dishes, fictional terminal and document tray are code-native painted geometry; there is no new raster, generated source or third-party reference. This is posed staging, without a claimed walking/serving animation. All record contents are readable UI cards and included in the owner review hash. No actual payment branding or provider integration is bundled.
