@@ -24,6 +24,7 @@ func reset() -> void:
 		"repair": 0, "digital": 0, "social": 0, "met_amaka": false,
 		"gig_done": false, "decorated": false, "wall": "sage", "active": {},
 		"day": 1, "minutes": 480.0, "posts": [], "vote": "", "last_saved": 0.0,
+		"world_seed": 260713,
 		"neighbors": {"amaka": 0, "yemi": 0, "park": 0, "park_choice": ""}, "favor": "available",
 		"settings": {"quality": "Medium", "shadows": true, "effects": true, "distance": 1,
 			"fps": 30, "data_saver": true, "manual": false},
@@ -175,6 +176,8 @@ func load_json(json_text: String, catch_up: bool = true) -> Dictionary:
 	if not parsed is Dictionary or parsed.get("version") != VERSION or not parsed.get("state") is Dictionary:
 		return {"ok": false, "message": "Save could not be read. A backup has been kept."}
 	var incoming: Dictionary = parsed.state
+	if incoming.get("world_seed") is float or incoming.get("world_seed") is int:
+		data.world_seed = clampi(int(incoming.world_seed), 1, 2147483646)
 	# Whitelist schema, types and known enums; local saves are not trusted online records.
 	for key in ["coins", "repair", "digital", "social", "day"]:
 		if incoming.get(key) is float or incoming.get(key) is int:

@@ -8,6 +8,7 @@ export const actions = {
 } as const;
 export type Action = keyof typeof actions;
 export type State = {
+  world_seed: number;
   name: string; bio: string; coins: number; food: number; energy: number; comfort: number;
   repair: number; digital: number; social: number; met_amaka: boolean; gig_done: boolean;
   decorated: boolean; wall: 'sage' | 'clay' | 'ocean';
@@ -21,13 +22,14 @@ export class RuleError extends Error {
   constructor(public code: string, message: string, public status = 422) {super(message);}
 }
 export function initialState(now: number): State {
-  return {name: 'New neighbor', bio: 'Finding my feet, one small win at a time.', coins: 240, food: 65, energy: 78, comfort: 70,
+  return {world_seed: 260713, name: 'New neighbor', bio: 'Finding my feet, one small win at a time.', coins: 240, food: 65, energy: 78, comfort: 70,
     repair: 0, digital: 0, social: 0, met_amaka: false, gig_done: false,
     decorated: false, wall: 'sage', day: 1, minutes: 480, posts: [], vote: '', active: null, updatedAt: now,
     neighbors: {amaka: 0, yemi: 0, park: 0, park_choice: ''}, favor: 'available'};
 }
 // Additive save upgrade: existing JSON characters keep their balances, receipts and schema.
 export function upgradeState(state: State): State {
+  state.world_seed ??= 260713;
   state.neighbors ??= {amaka: state.met_amaka ? 1 : 0, yemi: 0, park: 0, park_choice: ''};
   state.favor ??= 'available';
   return state;

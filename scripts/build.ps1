@@ -24,6 +24,8 @@ if ($LASTEXITCODE -ne 0) { throw 'District collision/navigation checks failed.' 
 if ($LASTEXITCODE -ne 0) { throw 'Seeded world/vehicle travel checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/npc_routines_test.gd
 if ($LASTEXITCODE -ne 0) { throw 'NPC routine/relationship checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/operations_client_test.gd
+if ($LASTEXITCODE -ne 0) { throw 'Owner settings/client checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/layout_test.gd
 if ($LASTEXITCODE -ne 0) { throw 'Scene layout check failed.' }
 if ($Target -eq 'test') { exit 0 }

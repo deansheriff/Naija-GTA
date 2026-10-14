@@ -3,6 +3,7 @@ extends RefCounted
 
 const VERSION = 2
 const SEED = 260713
+static var character_seed := SEED
 const DISTRICTS = [
 	{"id": 0, "name": "Home street", "seed": 0, "description": "Amaka, Yemi and your little corner."},
 	{"id": 1, "name": "Market Road", "seed": SEED + 101, "description": "Busy storefronts and a shaded neighborhood square."},
@@ -13,10 +14,12 @@ static func valid(id: int) -> bool:
 	return id >= 0 and id < DISTRICTS.size()
 
 static func profile(id: int) -> Dictionary:
-	return DISTRICTS[id].duplicate(true) if valid(id) else DISTRICTS[0].duplicate(true)
+	var result: Dictionary = DISTRICTS[id].duplicate(true) if valid(id) else DISTRICTS[0].duplicate(true)
+	if result.id != 0: result.seed = character_seed + int(result.id) * 101
+	return result
 
 static func chunk_seed(origin: int, destination: int, index: int, last: int) -> int:
 	if index <= 0: return profile(origin).seed
 	if index == last: return profile(destination).seed
 	# Arithmetic mixing, not a process-dependent hash or wall-clock random seed.
-	return (SEED * 48271 + origin * 7919 + destination * 104729 + index * 15485863) % 2147483647
+	return (character_seed * 48271 + origin * 7919 + destination * 104729 + index * 15485863) % 2147483647

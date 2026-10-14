@@ -21,9 +21,10 @@ static func relationship(level: int) -> String:
 static func favor_goal(favor: String) -> String:
 	return {"available": "A plate for Yemi · Say hello and ask Amaka about a favor.", "carrying": "A plate for Yemi · Carry the covered lunch plate to Yemi.", "delivered": "A plate for Yemi · Return to Amaka for her thank-you.", "complete": "A plate for Yemi · Complete. One-time reward: 30 SC."}.get(favor, "")
 
-static func neighbor_line(who: String, state: Dictionary, status: String) -> String:
+static func neighbor_line(who: String, state: Dictionary, status: String, content: Dictionary = {}) -> String:
 	var context := status + ". "
 	if who == "amaka":
+		if not state.met_amaka and not str(content.get("amakaLine", "")).is_empty(): return context + str(content.amakaLine)
 		if not state.met_amaka: return context + "Welcome, neighbor. I'm Amaka. There's always room for one more person on this street."
 		match state.favor:
 			"available": return context + "Yemi forgets lunch when he's fixing things. Could you take this covered plate to him? No rush, and it's fine to say no."
@@ -33,6 +34,7 @@ static func neighbor_line(who: String, state: Dictionary, status: String) -> Str
 	if state.favor == "carrying": return context + "Ah, Amaka sent food? That woman remembers everybody. Let me put these tools down."
 	if state.favor == "delivered": return context + "That lunch was perfect. Tell Amaka thank you. I'm washing the plate before I return it."
 	if state.favor == "complete": return context + "Good to see you, my friend. You brought lunch when I needed it. The repair bench is always here for you."
+	if not str(content.get("yemiLine", "")).is_empty(): return context + str(content.yemiLine)
 	return context + ("Your radio repair is still playing beautifully. Good work, neighbor." if state.gig_done else "I'm Yemi. Take your time at the practice bench; a steady hand comes with practice.")
 
 const CHATTER = [

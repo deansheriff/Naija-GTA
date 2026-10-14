@@ -13,6 +13,7 @@ var busy := false
 var connected := false
 var status := "Local play"
 var poll_time := 0.0
+var world_settings: Dictionary = {}
 
 func enabled() -> bool:
 	return not base_url.is_empty()
@@ -82,6 +83,7 @@ func _request(path: String, method: int, body: Dictionary = {}, key: String = ""
 	if not payload is Dictionary:
 		payload = {}
 	var valid := payload.get("character") is Dictionary and payload.character.get("state") is Dictionary
+	if path == "/v1/world": valid = payload.get("settings") is Dictionary
 	return {"ok": response[0] == HTTPRequest.RESULT_SUCCESS and response[1] >= 200 and response[1] < 300 and valid, "code": response[1], "payload": payload, "message": payload.get("message", "Connection unavailable or this URL is not the game server. Your pending action is kept for retry.")}
 
 func configure(url: String, code: String = "") -> void:
@@ -114,6 +116,7 @@ func connect_save() -> void:
 	busy = true
 	status = "Connecting…"
 	changed.emit()
+	await _load_world_settings()
 	var result: Dictionary
 	if not token.is_empty():
 		result = await _request("/v1/me", HTTPClient.METHOD_GET)
@@ -160,6 +163,7 @@ func _apply(payload: Dictionary) -> void:
 func refresh() -> void:
 	if busy or token.is_empty(): return
 	busy = true
+	await _load_world_settings()
 	var result := await _request("/v1/me", HTTPClient.METHOD_GET)
 	if result.ok:
 		_apply(result.payload)
@@ -184,6 +188,7 @@ func submit(kind: String, args: Dictionary = {}) -> Dictionary:
 func retry_pending() -> Dictionary:
 	if busy or pending.is_empty(): return {"ok": false, "message": "No action ready for retry."}
 	busy = true
+	if pending.body.kind == "sync": await _load_world_settings()
 	var result := await _request("/v1/intents", HTTPClient.METHOD_POST, pending.body, pending.key)
 	if result.ok:
 		pending = {}
@@ -200,6 +205,27 @@ func retry_pending() -> Dictionary:
 	else:
 		connected = false
 		status = "Offline · action kept for retry"
+	busy = false
+	changed.emit()
+	return result
+
+func _load_world_settings() -> void:
+	var response: Dictionary = await _request("/v1/world", HTTPClient.METHOD_GET)
+	if response.ok: world_settings = response.payload.settings
+
+func replace_save_code() -> Dictionary:
+	if busy or not pending.is_empty() or not connected: return {"ok": false, "message": "Connect and finish pending actions before replacing your code."}
+	if not _persist(): return {"ok": false, "message": "Device storage is unavailable. No replacement was requested."}
+	busy = true
+	var result: Dictionary = await _request("/v1/save-code", HTTPClient.METHOD_POST, {"revision": revision})
+	if result.ok:
+		recovery_code = result.payload.recoveryCode
+		_apply(result.payload)
+		if not _persist():
+			notice.emit("Keep the new code shown here. This device could not store it.")
+		result.message = "Access code replaced. Other devices were signed out. Keep the new code privately."
+	else:
+		result.message = "Code replacement was not confirmed. Reconnect and try again. A successful replacement keeps the requesting session."
 	busy = false
 	changed.emit()
 	return result

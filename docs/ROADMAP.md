@@ -34,7 +34,13 @@ Plan faction/conflict behavior, safe ways to decline and player recovery before 
 
 ## 0.8 — Owner tools and live operations
 
-Build an authenticated admin panel for NPC/dialogue content, world seeds, quest availability, player-save inspection, moderation and audit logs. Add save-code rotation/account recovery, database backups with restore proof, receipt/session retention, observability and rate limiting that works behind the Coolify/Cloudflare proxy. Keep these infrastructure checks running alongside world milestones before opening the game to wider access.
+Implemented in 0.8.0: opt-in authenticated `/owner/` console with overview, paginated save/ledger inspection, suspension/resume, device revocation, validated/revision-checked content controls and append-only audit. Player self-service code replacement retains the requesting session and progress while invalidating the old code and other devices. Shared database rate limits, explicit trusted proxy IP/CIDRs, retention tooling, transactional migration 2 and PostgreSQL dump/restore CI proof are included. See [owner tools milestone](MILESTONE_7.md) and [Coolify setup/operations](OWNER_PANEL.md).
+
+Broader quest/dialogue authoring, delegated staff roles/MFA, verified accounts/email recovery, external monitoring and actual off-host backup scheduling/restore proof remain production-readiness extensions. These are not established by a local panel review or CI restore test.
+
+## 0.9 — Repeatable careers and home inventory
+
+Build a repeatable repair-career loop with server-owned eligibility, cooldowns and replay-safe rewards. Add clear progression, meaningful energy/food/rest tradeoffs and persistent home items bought with fictional StreetCoins. Retain the starter gig and lunch-favor history. Balance repeatable earnings and recovery paths before expanding to shared marketplace applications, deliverables, reviews or moderation queues.
 
 ## Up NEPA! — campaign production track
 

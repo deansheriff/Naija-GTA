@@ -67,6 +67,7 @@ var journey_bar: ProgressBar
 func _ready() -> void:
 	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
 	var loaded: Dictionary = _load_progress()
+	WorldPlan.character_seed = sim.data.world_seed
 	world = Neighborhood.new()
 	add_child(world)
 	_build_hud()
@@ -739,12 +740,12 @@ func _open_neighbor(who: String) -> void:
 	if world.hero.position.distance_to(world.speakers[who].position) > 125:
 		_find_neighbor(who)
 		return
-	var line: String = StreetDialogue.neighbor_line(who, sim.data, world.neighbor_status(who))
+	var line: String = StreetDialogue.neighbor_line(who, sim.data, world.neighbor_status(who), cloud.world_settings if cloud.enabled() else {})
 	_dialog(who.capitalize() + " · Neighbor", line)
 	modal_body.add_child(_label("RELATIONSHIP · " + StreetDialogue.relationship(sim.data.neighbors[who]), 14, GOLD))
 	if who == "amaka":
 		if not sim.data.met_amaka: modal_body.add_child(_button("Introduce yourself", _hello, true))
-		if sim.data.met_amaka and sim.data.favor == "available":
+		if sim.data.met_amaka and sim.data.favor == "available" and cloud.world_settings.get("favorEnabled", true):
 			modal_body.add_child(_button("Take a lunch plate to Yemi", _choose_neighbor.bind("favor_accept", who), true))
 		if sim.data.favor == "delivered":
 			modal_body.add_child(_button("Yemi got his lunch · receive 30 SC", _choose_neighbor.bind("favor_finish", who), true))
@@ -975,8 +976,10 @@ func _apply_graphics() -> void:
 	if journey_view != null: journey_view.apply_settings(sim.data.settings)
 
 func _open_settings() -> void:
+	# Settings are fetched from the connected server; local play retains defaults.
 	_dialog("Make it work for your device", "Graphics change presentation, never rewards or task eligibility. " + ("Native Android build." if OS.has_feature("Android") else "Browser/desktop-compatible build."))
 	modal_body.add_child(_button(cloud.status + " · Cloud save", _open_cloud))
+	modal_body.add_child(_button("Street notice & activity status", _open_street_notice))
 	modal_body.add_child(_label("QUALITY · " + sim.data.settings.quality.to_upper(), 14, GOLD))
 	var presets := HBoxContainer.new()
 	modal_body.add_child(presets)
@@ -1045,10 +1048,17 @@ func _open_component_licenses() -> void:
 		modal_body.add_child(_label(licenses[license_name], 12, MUTED))
 
 func _cloud_changed() -> void:
+	WorldPlan.character_seed = sim.data.world_seed
 	world.set_wall(sim.data.wall)
 	world.set_context(sim.data)
 	_refresh()
 	_save()
+
+func _open_street_notice() -> void:
+	var settings: Dictionary = cloud.world_settings if cloud.enabled() else {}
+	_dialog("From the neighborhood", settings.get("announcement", "") if not str(settings.get("announcement", "")).is_empty() else "No street announcement. Enjoy your day, neighbor.")
+	modal_body.add_child(_label("Activities paused for maintenance. Existing results still sync." if settings.get("maintenance", false) else "Street activities are open.", 17, GOLD))
+	modal_body.add_child(_label("New lunch favors are open." if settings.get("favorEnabled", true) else "New lunch favors are paused. Accepted favors can still be completed.", 16, MUTED))
 
 func _open_cloud() -> void:
 	_dialog("Your street, across devices", "Connect to your game server to save progress online. Local prototype balances are not imported. Your save access code opens the same character on another device; keep it private and safe. Lost codes cannot be recovered yet.")
@@ -1085,4 +1095,16 @@ func _open_cloud() -> void:
 		access.custom_minimum_size.y = 48
 		modal_body.add_child(access)
 		modal_body.add_child(_button("Show / hide my save access code", func(): access.secret = not access.secret))
+	if cloud.connected:
+		modal_body.add_child(_button("Replace my access code & sign out other devices", _confirm_code_replace))
 	modal_body.add_child(_label("Activities, skills, coins, profile, home color and private drafts use server rules when connected. Graphics settings stay on each device. This is an early self-hosted save system; shared marketplace, elections, payments and email recovery are not available.", 14, MUTED))
+
+func _confirm_code_replace() -> void:
+	_dialog("Replace your save access code?", "Your old code will stop working, and other devices will be signed out. This device keeps its current session. Keep the new code privately before leaving. If the connection fails, your current session can reconnect and request a replacement again.")
+	modal_body.add_child(_button("Replace code and sign out other devices", _replace_code, true))
+	modal_body.add_child(_button("Keep my current code", _open_cloud))
+
+func _replace_code() -> void:
+	var result: Dictionary = await cloud.replace_save_code()
+	_open_cloud()
+	_toast(result.message)

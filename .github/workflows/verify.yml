@@ -30,6 +30,16 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://nsl:disposable-ci-password@localhost:5432/nsl_test
       - run: docker build -t naija-street-life:test .
+      - name: PostgreSQL backup restores all persistent records and protections
+        env:
+          DATABASE_URL: postgresql://nsl:disposable-ci-password@localhost:5432/nsl_test
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          node server/dist/backup-check.js record /tmp/nsl-backup-proof.json
+          docker exec "$PG_CONTAINER" pg_dump -U nsl -d nsl_test -Fc --no-owner --no-privileges -f /tmp/nsl-proof.dump
+          docker exec "$PG_CONTAINER" createdb -U nsl nsl_restore_ci
+          docker exec "$PG_CONTAINER" pg_restore -U nsl --exit-on-error --no-owner --no-privileges -d nsl_restore_ci /tmp/nsl-proof.dump
+          DATABASE_URL=postgresql://nsl:disposable-ci-password@localhost:5432/nsl_restore_ci node server/dist/backup-check.js verify /tmp/nsl-backup-proof.json
       - name: Container starts with PostgreSQL and serves the game
         run: |
           docker run -d --name nsl-smoke --network host -e DATABASE_URL=postgresql://nsl:disposable-ci-password@localhost:5432/nsl_test naija-street-life:test
@@ -40,6 +50,9 @@ jobs:
           curl --fail http://localhost:8787/api/health
           curl --fail http://localhost:8787/play/ -o /tmp/game.html
           grep -q NSLPrivateStore /tmp/game.html
+          curl --fail http://localhost:8787/owner/ -o /tmp/owner.html
+          grep -q 'Owner console' /tmp/owner.html
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8787/api/owner/overview)" = 404
           docker stop nsl-smoke
       - name: Compose starts with punctuation in the database password
         env:

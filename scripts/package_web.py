@@ -20,9 +20,10 @@ shell_path = PLAY / "index.html"
 shell_path.write_text(shell_path.read_text(encoding="utf-8").replace('src="index.js"', f'src="index.js?v={engine_hash}"').rstrip() + "\n", encoding="utf-8")
 (PLAY / "index.wasm.gz").write_bytes(gzip.compress(wasm, compresslevel=9, mtime=0))
 shutil.copy2(SITE / "index.html", DIST / "index.html")
+shutil.copytree(SITE / "owner", DIST / "owner", dirs_exist_ok=True)
 shutil.copy2(ROOT / "game" / "icon.svg", DIST / "icon.svg")
 shutil.copy2(ROOT / "docs" / "screenshots" / "milestone6-favor-desktop.png", DIST / "neighborhood-preview.png")
-report = {"version": "0.7.0", "engine": "4.6.3", "files": []}
+report = {"version": "0.8.0", "engine": "4.6.3", "files": []}
 for item in sorted(PLAY.iterdir()):
     if item.is_file():
         report["files"].append({"name": item.name, "bytes": item.stat().st_size, "sha256": hashlib.sha256(item.read_bytes()).hexdigest()})
