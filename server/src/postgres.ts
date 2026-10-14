@@ -21,7 +21,7 @@ export class PostgresStore implements GameStore {
     try {
       await client.query('SELECT pg_advisory_lock(193714209)');
       await client.query('CREATE TABLE IF NOT EXISTS schema_versions(version integer PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
-      for (const [version, name] of [[1, '001_initial.sql'], [2, '002_operations.sql']] as const) {
+      for (const [version, name] of [[1, '001_initial.sql'], [2, '002_operations.sql'], [3, '003_content_reviews.sql']] as const) {
       if (!(await client.query('SELECT version FROM schema_versions WHERE version=$1', [version])).rows.length) {
         await client.query('BEGIN');
         try {

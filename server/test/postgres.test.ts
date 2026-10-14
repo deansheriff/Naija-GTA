@@ -10,6 +10,7 @@ import {careerContract} from './career-contract.js';
 import {errandContract} from './errand-contract.js';
 import {radioContract} from './radio-contract.js';
 import {campaignContract} from './campaign-contract.js';
+import {contentReviewContract} from './content-review-contract.js';
 import {operationsContract,fixtureOwner} from './operations-contract.js';
 
 // Embedded PostgreSQL validates real SQL locally. CI uses a multi-connection PostgreSQL service.
@@ -82,7 +83,7 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     assert.equal(restored.character.state.coins, 230);
     assert.notEqual(restored.token, guest.token);
     assert.equal((await app.inject({method: 'POST', url: '/api/v1/sessions', payload: {recoveryCode: 'x'.repeat(43)}})).statusCode, 401);
-    assert.equal((await pool.query('SELECT version FROM schema_versions')).rows.length, 2);
+    assert.equal((await pool.query('SELECT version FROM schema_versions')).rows.length, 3);
     const neighborId = await neighborContract(app);
     const favorLedger = (await pool.query("SELECT delta FROM ledger WHERE character_id=$1 AND reason='neighbor_lunch_favor'", [neighborId])).rows;
     assert.equal(favorLedger.length, 1); assert.equal(Number(favorLedger[0].delta), 30);
@@ -109,6 +110,9 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     const campaignId = await campaignContract(app, ms => {now += ms;});
     assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1', [campaignId])).rows[0].total), 1);
     await operationsContract(store,app);
+    now += 60000;
+    await contentReviewContract(store,app);
+    await assert.rejects(pool.query("UPDATE content_reviews SET notes='changed'"),/append-only/);
     await assert.rejects(pool.query("UPDATE owner_audit SET reason='changed'"),/append-only/);
     const counts=await Promise.all(Array.from({length:12},()=>store.ops.consumeRate('a'.repeat(64),now+60000)));
     assert.deepEqual(counts.map(Number).sort((a,b)=>a-b),Array.from({length:12},(_,i)=>i+1));

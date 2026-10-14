@@ -1,25 +1,29 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let csrfToken = '', settings, playersCursor = '', auditCursor = '', pendingReview;
+let reviewUnits = [], selectedReview, historyCursor = null;
 const message = (text, error = false) => {const box = $('message'); box.textContent = text; box.classList.toggle('error', error); box.hidden = !text;};
 const el = (tag, text, cls) => {const node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (cls) node.className = cls; return node;};
 async function api(path, method = 'GET', body) {
+  const sessionAtRequest=csrfToken;
   const response = await fetch('/api/owner' + path, {method, credentials: 'same-origin', headers: {'Content-Type':'application/json', 'X-CSRF-Token':csrfToken}, ...(body ? {body:JSON.stringify(body)} : {})});
   const result = await response.json();
+  if(path!=='/login'&&sessionAtRequest!==csrfToken)throw new Error('Owner session changed. Open the section again.');
   if (response.status === 401) signedOut();
   if (!response.ok) throw new Error(response.status === 404 ? 'Owner access is not enabled. Configure OWNER_USERNAME, OWNER_PASSWORD_HASH and PUBLIC_ORIGIN in Coolify.' : result.message || 'Request failed. Refresh and try again.');
   return result;
 }
 const run = fn => async event => {event?.preventDefault(); try {await fn(event);} catch (error) {message(error.message, true);}};
-function signedOut() {csrfToken = ''; settings = undefined; pendingReview = undefined; $('review').close(); $('login').hidden = false; $('workspace').hidden = true; $('logout').hidden = true; $('identity').textContent = 'Private owner access'; $('password').value = ''; for(const id of ['players-body','player-detail','audit-body','stats','runtime','published-notice','world-status'])$(id).replaceChildren();}
+function signedOut() {resetContent(); csrfToken = ''; settings = undefined; pendingReview = undefined; $('review').close(); $('login').hidden = false; $('workspace').hidden = true; $('logout').hidden = true; $('identity').textContent = 'Private owner access'; $('password').value = ''; for(const id of ['players-body','player-detail','audit-body','stats','runtime','published-notice','world-status'])$(id).replaceChildren();}
 async function signedIn(session) {csrfToken = session.csrfToken; $('identity').textContent = session.username + ' · Owner'; $('login').hidden = true; $('workspace').hidden = false; $('logout').hidden = false; $('password').value = ''; message(''); await view('overview');}
 async function view(name) {
-  for (const section of ['overview','players','settings','audit']) $('view-' + section).hidden = section !== name;
+  for (const section of ['overview','players','settings','content','audit']) $('view-' + section).hidden = section !== name;
   document.querySelectorAll('nav [data-view]').forEach(button => {if (button.dataset.view === name) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');});
   if (name === 'overview') await overview();
   if (name === 'players') await players();
   if (name === 'settings') await loadSettings();
   if (name === 'audit') await audit();
+  if (name === 'content') await loadContent();
   $('main').focus({preventScroll:true}); window.scrollTo({top:0});
 }
 document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', run(() => view(button.dataset.view))));
@@ -74,4 +78,61 @@ async function audit(before=''){
   $('audit-body').replaceChildren(...data.events.map(event=>{const row=el('tr'),who=el('td',new Date(Number(event.created_at)).toLocaleString());who.append(el('small',event.actor));const target=el('td',event.reason);target.append(el('small',event.target||'—'));row.append(who,el('td',event.action),target);return row;}));$('next-audit').hidden=!auditCursor;
 }
 $('refresh-audit').addEventListener('click',run(()=>audit()));$('next-audit').addEventListener('click',run(()=>audit(auditCursor)));
-api('/session').then(signedIn).catch(error=>{signedOut();if(!error.message.includes('Sign in as the owner.'))message(error.message,true);});
+api('/session').then(signedIn).catch(error=>{if(csrfToken)return;signedOut();if(!error.message.includes('Sign in as the owner.'))message(error.message,true);});
+
+const reviewDrafts = new Map();
+function resetContent() {
+  reviewUnits=[]; selectedReview=undefined; historyCursor=null; reviewDrafts.clear();
+  for (const id of ['content-counts','content-detail','content-history','content-unit']) $(id).replaceChildren();
+  $('content-review-form').hidden=true; $('content-detail').hidden=true; $('content-notes').value=''; $('content-search').value=''; $('content-coverage').textContent='';
+}
+async function loadContent() {
+  const data=await api('/content'); reviewUnits=data.units;
+  $('content-counts').replaceChildren(tag(data.counts.total+' text units'),tag(data.counts.approved+' approved'),tag(data.counts.pending+' pending',data.counts.pending>0),tag(data.counts.changesRequested+' changes requested',data.counts.changesRequested>0));
+  $('content-coverage').textContent=data.coverage;
+  filterContent();
+}
+function filterContent() {
+  const search=$('content-search').value.toLocaleLowerCase(), status=$('content-status-filter').value, channel=$('content-channel-filter').value;
+  const matches=reviewUnits.filter(unit=>(status==='all'||unit.status===status)&&(channel==='all'||unit.channel===channel)&&[unit.context,unit.text,...unit.choices].join(' ').toLocaleLowerCase().includes(search));
+  const old=selectedReview?.id;
+  $('content-unit').replaceChildren(...matches.map(unit=>{const option=el('option',unit.context+' · '+unit.status.replaceAll('_',' '));option.value=unit.id;return option;}));
+  if(matches.some(unit=>unit.id===old))$('content-unit').value=old;
+  if(!matches.length){selectedReview=undefined;$('content-detail').hidden=true;$('content-review-form').hidden=true;$('content-history').replaceChildren(el('p','No text matches these filters.'));$('content-history-next').hidden=true;return;}
+  selectContent();
+}
+async function selectContent() {
+  selectedReview=reviewUnits.find(unit=>unit.id===$('content-unit').value);
+  if(!selectedReview)return;
+  const unit=selectedReview, panel=$('content-detail'); panel.hidden=false;
+  panel.replaceChildren(el('span',unit.channel==='campaign'?'UP NEPA! · CURRENT GAME TEXT':'STREET · CURRENT GAME TEXT','eyebrow'),el('h2',unit.context),tag(unit.status.replaceAll('_',' '),unit.status!=='approved'),el('p',unit.text,'dialogue-copy'));
+  if(unit.changedSinceReview)panel.append(el('p','Text changed since the last review. The previous decision does not approve this version.','notice-preview'));
+  for(const choice of unit.choices)panel.append(el('p',choice,'review-choice'));
+  panel.append(el('p','Text version '+unit.hash,'review-version'));
+  $('content-review-form').hidden=false;
+  const draft=reviewDrafts.get(unit.id); $('content-notes').value=draft?.notes||''; $('content-decision').value=draft?.status||'changes_requested'; $('content-save-status').textContent='';
+  try {await contentHistory();} catch(error){message(error.message,true);}
+}
+async function contentHistory(before='') {
+  if(!selectedReview)return;
+  const id=selectedReview.id, data=await api('/content/'+encodeURIComponent(id)+'/history'+(before?'?before='+encodeURIComponent(before):''));
+  if(selectedReview?.id!==id)return;
+  historyCursor=data.next; $('content-history-next').hidden=!historyCursor;
+  $('content-history').replaceChildren(...data.reviews.map(record=>{const block=el('div',undefined,'review-history');block.append(el('b',record.status.replaceAll('_',' ')+' · '+record.actor),el('small',' · '+new Date(record.created_at).toLocaleString()),el('p',record.notes),el('p','Text '+record.content_hash,'review-version'));return block;}));
+  if(!data.reviews.length)$('content-history').append(el('p','No admin review recorded for this text yet.'));
+}
+function rememberReviewDraft(){if(selectedReview)reviewDrafts.set(selectedReview.id,{notes:$('content-notes').value,status:$('content-decision').value});}
+$('refresh-content').addEventListener('click',run(loadContent));
+$('content-search').addEventListener('input',filterContent);
+for(const id of ['content-status-filter','content-channel-filter'])$(id).addEventListener('change',filterContent);
+$('content-unit').addEventListener('change',selectContent);
+$('content-notes').addEventListener('input',rememberReviewDraft);$('content-decision').addEventListener('change',rememberReviewDraft);
+$('content-history-next').addEventListener('click',run(()=>contentHistory(historyCursor)));
+$('content-review-form').addEventListener('submit',run(async()=>{
+  if(!selectedReview)return;
+  const unit=selectedReview, button=$('content-review-form').querySelector('button');button.disabled=true;
+  try{
+    await api('/content/review','POST',{unitId:unit.id,contentHash:unit.hash,revision:unit.revision,status:$('content-decision').value,notes:$('content-notes').value.trim()});
+    reviewDrafts.delete(unit.id); await loadContent(); $('content-save-status').textContent='Review saved for this text version. History and audit updated.';message('Review saved. Changed wording is prepared in a new game build and will need review again.');
+  } finally {button.disabled=false;}
+}));

@@ -1,5 +1,5 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "engine": "4.6.3",
   "files": [
     {
@@ -35,7 +35,7 @@
     {
       "name": "index.pck",
       "bytes": 12941564,
-      "sha256": "15dbfc42afe720682c2088162e2b6235188d5e970d418135fe9cdaf43211492f"
+      "sha256": "3c71b1c48b9900963f64b3c048a9c6fd261131cc2bbb80f3cd5de5e4b477f67b"
     },
     {
       "name": "index.png",

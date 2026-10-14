@@ -2,6 +2,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {createHash, randomBytes, randomUUID} from 'node:crypto';
 import {applyIntent, initialState, upgradeState, RuleError, type Intent, type State} from './rules.js';
 import {allowIntent, defaultSettings, type Operations, type WorldSettings} from './operations.js';
+import type {ReviewRecord} from './content-review.js';
 
 export type Character = {id: string; revision: number; state: State};
 type Row = {id: string; revision: number; state: string};
@@ -36,8 +37,21 @@ export class Store {
       CREATE TABLE IF NOT EXISTS rate_buckets(key TEXT PRIMARY KEY, window_end INTEGER NOT NULL, count INTEGER NOT NULL);`);
     if (!this.db.prepare('PRAGMA table_info(commands)').all().some(column => column.name === 'created_at')) this.db.exec('ALTER TABLE commands ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0');
     this.db.prepare('INSERT OR IGNORE INTO world_settings VALUES(1,?)').run(JSON.stringify(defaultSettings()));
+    this.db.exec(`CREATE TABLE IF NOT EXISTS content_reviews(id INTEGER PRIMARY KEY AUTOINCREMENT, unit_id TEXT NOT NULL, content_hash TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('approved','changes_requested','pending')), notes TEXT NOT NULL, actor TEXT NOT NULL, created_at INTEGER NOT NULL);
+      CREATE INDEX IF NOT EXISTS content_reviews_unit ON content_reviews(unit_id,id DESC);
+      CREATE TRIGGER IF NOT EXISTS content_review_no_update BEFORE UPDATE ON content_reviews BEGIN SELECT RAISE(ABORT,'content review is append-only'); END;
+      CREATE TRIGGER IF NOT EXISTS content_review_no_delete BEFORE DELETE ON content_reviews BEGIN SELECT RAISE(ABORT,'content review is append-only'); END;`);
     const audit = (actor: string, action: string, target: string, reason: string) => {this.db.prepare('INSERT INTO owner_audit(actor,action,target,reason,created_at) VALUES(?,?,?,?,?)').run(actor, action, target, reason, this.clock());};
     this.ops = {
+      contentReviews: () => this.db.prepare('SELECT * FROM content_reviews WHERE id IN (SELECT MAX(id) FROM content_reviews GROUP BY unit_id)').all() as unknown as ReviewRecord[],
+      contentHistory: (unitId, before) => this.db.prepare('SELECT * FROM content_reviews WHERE unit_id=? AND id<? ORDER BY id DESC LIMIT 31').all(unitId, before) as unknown as ReviewRecord[],
+      reviewContent: (value, actor) => this.transaction(() => {
+        const latest = Number(this.db.prepare('SELECT MAX(id) AS id FROM content_reviews WHERE unit_id=?').get(value.unitId)?.id ?? 0);
+        if (latest !== value.revision) throw new RuleError('review_conflict', 'This review changed. Reload the text and review history first.', 409);
+        const row = this.db.prepare('INSERT INTO content_reviews(unit_id,content_hash,status,notes,actor,created_at) VALUES(?,?,?,?,?,?) RETURNING *').get(value.unitId,value.contentHash,value.status,value.notes,actor,this.clock()) as unknown as ReviewRecord;
+        audit(actor, 'content.review', value.unitId, value.status + ' / text ' + value.contentHash.slice(0,12));
+        return row;
+      }),
       settings: () => JSON.parse(this.db.prepare('SELECT value FROM world_settings WHERE id=1').get()!.value as string) as WorldSettings,
       updateSettings: (expected, value, actor, reason) => this.transaction(() => {
         if ((this.ops.settings() as WorldSettings).revision !== expected) throw new RuleError('revision_conflict', 'Settings changed. Reload before publishing.', 409);

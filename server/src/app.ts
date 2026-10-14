@@ -43,7 +43,7 @@ export function createApp(store: GameStore, options: {staticRoot?: string; mode?
     const owner = (authorization: string | undefined) => store.authorize(authorization?.startsWith('Bearer ') ? authorization.slice(7) : undefined);
     api.get('/health', async (_request, reply) => {
       if (!(await store.health())) return reply.code(503).send({ok: false});
-      return {ok: true, application: 'naija-street-life', mode: options.mode ?? 'local-development', schema: 2};
+      return {ok: true, application: 'naija-street-life', mode: options.mode ?? 'local-development', schema: 3};
     });
     api.post('/v1/guests', {schema: {body: {type: 'object', additionalProperties: false, properties: {}}}}, async (_request, reply) => reply.code(201).send(await store.createGuest()));
     api.post<{Body: {recoveryCode: string}}>('/v1/sessions', {

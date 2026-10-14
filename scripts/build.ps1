@@ -10,6 +10,8 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/prologue.json') -Dest
 if ($LASTEXITCODE -ne 0) { throw 'Godot import failed.' }
 & $enginePath --headless --path $gamePath --script res://main.gd --check-only
 if ($LASTEXITCODE -ne 0) { throw 'Game script compilation failed.' }
+& $enginePath --headless --path $gamePath --script (Join-Path $PSScriptRoot 'export_review_catalogue.gd') -- --test
+if ($LASTEXITCODE -ne 0) { throw 'Street dialogue review export failed.' }
 & $enginePath --headless --path $gamePath --script (Join-Path $PSScriptRoot 'measure_sprite_atlases.gd')
 if ($LASTEXITCODE -ne 0) { throw 'Sprite alpha measurement failed.' }
 & $enginePath --headless --path $gamePath --script (Join-Path $PSScriptRoot 'measure_environment_atlas.gd')

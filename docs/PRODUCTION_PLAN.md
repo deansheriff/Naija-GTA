@@ -14,7 +14,7 @@ The approved story bible/brief remain the creative source. The new authorisation
 - [x] 0.11 playable starter radio test, validated server moves, resume/retry and legacy-save compatibility.
 - [x] Campaign production specification: complete mission list, protagonist progression, Prologue/Act 1 scripts, dialogue banks and integration/checkpoint rules, in the supplied deliverable order. Drafted; real cultural/native-speaker review remains a release gate.
 - [x] 0.12 campaign foundation/wedding introduction: distinct posed protagonist art, Family Meeting, text-first scenes/summaries and 14 server checkpoints separate from sandbox. Richer task animation, directional movement and chapter replay remain subsequent work.
-- [ ] Admin dialogue/cultural-review queue with exact-content status, notes and audit history, as requested by the owner; actual review completion remains a release gate.
+- [x] 0.13 admin dialogue/cultural-review queue with exact-content status, notes and append-only history/audit, as requested by the owner. Actual admin review completion and full-content coverage remain release gates.
 - [ ] Act 1: Baba God Dey, Ajo Day, Four Percent and the Family Meeting convergence, with playable driving/conversation, negotiation and filming tasks.
 - [ ] Act 2: Generator Wars, Japa Interview, Danfo Chase, Aso-Ebi Infiltration, the revised receipt/witness collection mission, Fuel Queue Standoff and Viral. Carry evidence/relationship consequences forward.
 - [ ] Act 3: fictional council-contest simulation, power-restoration exposure finale and all four attainable, tested endings.

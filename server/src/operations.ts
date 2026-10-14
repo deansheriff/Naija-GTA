@@ -1,12 +1,16 @@
 import {createHash, randomBytes, scryptSync, timingSafeEqual} from 'node:crypto';
 import {isIP} from 'node:net';
 import {RuleError} from './rules.js';
+import type {ReviewRecord, ReviewSubmission} from './content-review.js';
 
 export const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 export type WorldSettings = {revision: number; announcement: string; maintenance: boolean; favorEnabled: boolean; newCharacterSeed: number; amakaLine: string; yemiLine: string};
 export const defaultSettings = (): WorldSettings => ({revision: 0, announcement: '', maintenance: false, favorEnabled: true, newCharacterSeed: 260713, amakaLine: '', yemiLine: ''});
 export type OwnerConfig = {username: string; passwordHash: string; origin: string; secure: boolean};
 export type Operations = {
+  contentReviews(): Promise<ReviewRecord[]> | ReviewRecord[];
+  contentHistory(unitId: string, before: number): Promise<ReviewRecord[]> | ReviewRecord[];
+  reviewContent(value: ReviewSubmission, actor: string): Promise<ReviewRecord> | ReviewRecord;
   settings(): Promise<WorldSettings> | WorldSettings;
   updateSettings(expected: number, value: WorldSettings, actor: string, reason: string): Promise<WorldSettings> | WorldSettings;
   ownerSession(hash: string, fingerprint: string): Promise<number> | number;
@@ -53,6 +57,6 @@ export function validateSettings(input: WorldSettings): WorldSettings {
   return {revision: input.revision, announcement: input.announcement.trim(), maintenance: input.maintenance, favorEnabled: input.favorEnabled, newCharacterSeed: input.newCharacterSeed, amakaLine: input.amakaLine.trim(), yemiLine: input.yemiLine.trim()};
 }
 export function allowIntent(settings: WorldSettings, kind: string, choice?: string): void {
-  if (settings.maintenance && kind !== 'sync') throw new RuleError('maintenance', 'Street activities are paused for maintenance. Existing activity results still sync.', 423);
+  if (settings.maintenance && !['sync','campaign_pause'].includes(kind)) throw new RuleError('maintenance', 'Street activities are paused for maintenance. Existing activity results still sync; you can pause your campaign.', 423);
   if (!settings.favorEnabled && kind === 'neighbor' && choice === 'favor_accept') throw new RuleError('favor_paused', 'New lunch favors are paused. Accepted favors can still be completed.');
 }

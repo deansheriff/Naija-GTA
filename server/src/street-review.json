@@ -1,0 +1,427 @@
+{
+  "sources": {
+    "../scripts/export_review_catalogue.gd": "d6d636574cfbe6091bb596b72256aa9c9836b8905f5385e98f23a0906d9131c2",
+    "core/neighborhood_errand.gd": "11baf38000b682de714e035236e6b15e62341f378769b10f9c3a7cc47e339b9d",
+    "core/street_dialogue.gd": "18e5066a802f93376b88eb5f0d5f1b59a30bcaf8d1edc796856dd1bb18e35357"
+  },
+  "units": [
+    {
+      "choices": [
+        "I'd like to introduce myself now.",
+        "Thanks. I'll keep walking."
+      ],
+      "context": "CHIDI · PARK CREW / park conversation / space",
+      "id": "park-space",
+      "text": "You asked for space last time. We remember. The path is clear; just say if you feel like talking today."
+    },
+    {
+      "choices": [
+        "I'm your new neighbor.",
+        "What's happening on this street?",
+        "I'll keep my distance."
+      ],
+      "context": "RAZOR · PARK CREW / park conversation / intro",
+      "id": "park-intro",
+      "text": "Omo, new face! You dey pass, or you wan gist? This corner gets loud, but everybody still has to share it."
+    },
+    {
+      "choices": [
+        "What's the argument?",
+        "Any useful street advice?",
+        "Just passing through."
+      ],
+      "context": "RAZOR · PARK CREW / park conversation / return",
+      "id": "park-return",
+      "text": "Our new neighbor! You don come back. Smallie is still arguing about football. What brings you?"
+    },
+    {
+      "choices": [
+        "So this is your hangout?",
+        "Who's winning the football argument?",
+        "Nice meeting you. I should go."
+      ],
+      "context": "SMALLIE · PARK CREW / park conversation / welcome",
+      "id": "park-welcome",
+      "text": "Then welcome. Razor talks tough, but he was the one carrying benches when the rain came. Don't tell him I said that."
+    },
+    {
+      "choices": [
+        "What would make this park better?",
+        "Point me toward honest work.",
+        "I'll see you around."
+      ],
+      "context": "CHIDI · PARK CREW / park conversation / corner",
+      "id": "park-corner",
+      "text": "We chill here, play drafts, and hear half the street's gist. Aunty Amaka says we must leave space for other people. Fair enough."
+    },
+    {
+      "choices": [
+        "Tell me about work.",
+        "How's the park doing?",
+        "Back to the gist."
+      ],
+      "context": "CHIDI · PARK CREW / park conversation / street",
+      "id": "park-street",
+      "text": "Yemi's workshop is good for learning a repair. Amaka feeds half the neighborhood. Watch the road; the keke drivers are always in a hurry."
+    },
+    {
+      "choices": [
+        "Everybody is a striker from the bench.",
+        "I'll leave you to settle it."
+      ],
+      "context": "SMALLIE · PARK CREW / park conversation / football",
+      "id": "park-football",
+      "text": "Razor said he could have scored that last chance. The man can't even kick his slipper into the right corner!"
+    },
+    {
+      "choices": [
+        "Deal. What else is happening?",
+        "Enjoy your afternoon."
+      ],
+      "context": "RAZOR · PARK CREW / park conversation / banter",
+      "id": "park-banter",
+      "text": "Ah! You too? Alright, alright. Next match, all of you are watching me. Chidi, keep the score properly this time."
+    },
+    {
+      "choices": [
+        "Show me the neighborhood poll.",
+        "Let's keep talking.",
+        "I'll think about it."
+      ],
+      "context": "CHIDI · PARK CREW / park conversation / park",
+      "id": "park-park",
+      "text": "More lights, a bin that gets emptied, and a bench nobody has to fight over. There is a neighborhood noticeboard here if you want to have your say."
+    },
+    {
+      "choices": [
+        "Take me to Yemi's workshop.",
+        "Thanks. Back to the park gist.",
+        "I'll find my way."
+      ],
+      "context": "RAZOR · PARK CREW / park conversation / work",
+      "id": "park-work",
+      "text": "If you're looking for a clean start, learn at Yemi's bench. He's straight with people. Finish his radio and he'll pay you for the job."
+    },
+    {
+      "choices": [
+        "Actually, let me introduce myself.",
+        "Carry on walking."
+      ],
+      "context": "RAZOR · PARK CREW / park conversation / distance",
+      "id": "park-distance",
+      "text": "No wahala. You don't owe us a conversation. The path is open; safe journey, neighbor."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / first meeting / radio not repaired / lunch available / lantern available / board",
+      "id": "amaka-available-00-available-board",
+      "text": "At the counter. Welcome, neighbor. I'm Amaka. There's always room for one more person on this street."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / first meeting / radio not repaired / lunch available / lantern collect / board",
+      "id": "amaka-available-00-collect-board",
+      "text": "At the counter. AMAKA: Ask Chidi for the old lantern. He keeps it beside the park bench. You don't have to join their football argument."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / first meeting / radio not repaired / lunch available / lantern repair / board",
+      "id": "amaka-available-00-repair-board",
+      "text": "At the counter. AMAKA: Yemi is expecting the lantern. Use his workshop bench; his note keeps the job available if he steps out."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / first meeting / radio not repaired / lunch available / lantern ready / board",
+      "id": "amaka-available-00-ready-board",
+      "text": "At the counter. AMAKA: Working again? Let the park crew choose with you where it will help most."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / first meeting / radio not repaired / lunch available / lantern installed / board",
+      "id": "amaka-available-00-installed-board",
+      "text": "At the counter. AMAKA: I saw the light! Thank you for seeing it through. Here are 40 StreetCoins from the neighbourhood collection."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / first meeting / radio not repaired / lunch available / lantern complete / board",
+      "id": "amaka-available-00-complete-board",
+      "text": "At the counter. AMAKA: My lantern neighbour! People can sit and read the noticeboard after supper now. Small work, plenty of difference."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / introduced / radio not repaired / lunch available / lantern available / board",
+      "id": "amaka-available-10-available-board",
+      "text": "At the counter. Yemi forgets lunch when he's fixing things. Could you take this covered plate to him? No rush, and it's fine to say no."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / introduced / radio not repaired / lunch carrying / lantern available / board",
+      "id": "amaka-carrying-10-available-board",
+      "text": "At the counter. The plate is wrapped and ready. Hand it to Yemi when you see him; then come back and gist."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / introduced / radio not repaired / lunch delivered / lantern available / board",
+      "id": "amaka-delivered-10-available-board",
+      "text": "At the counter. He ate? Better! Thank you for looking out for him. I kept 30 StreetCoins aside for your trouble."
+    },
+    {
+      "choices": [],
+      "context": "Amaka / introduced / radio not repaired / lunch complete / lantern available / board",
+      "id": "amaka-complete-10-available-board",
+      "text": "At the counter. My trusted neighbor! Yemi is still talking about that jollof you brought him. How is your day going?"
+    },
+    {
+      "choices": [],
+      "context": "Yemi / first meeting / radio not repaired / lunch available / lantern available / board",
+      "id": "yemi-available-00-available-board",
+      "text": "At the counter. I'm Yemi. Take your time at the practice bench; a steady hand comes with practice."
+    },
+    {
+      "choices": [],
+      "context": "Yemi / first meeting / radio not repaired / lunch available / lantern collect / board",
+      "id": "yemi-available-00-collect-board",
+      "text": "At the counter. YEMI: Amaka mentioned the square needs a light. Collect Chidi's old lantern first; then we'll work on it here."
+    },
+    {
+      "choices": [],
+      "context": "Yemi / first meeting / radio not repaired / lunch available / lantern repair / board",
+      "id": "yemi-available-00-repair-board",
+      "text": "At the counter. YEMI: Chidi's lantern! The bench is ready. Ten seconds of careful work together, then take it back to the square. No charge for parts."
+    },
+    {
+      "choices": [],
+      "context": "Yemi / first meeting / radio not repaired / lunch available / lantern ready / board",
+      "id": "yemi-available-00-ready-board",
+      "text": "At the counter. YEMI: That lantern is ready for the square. A repair means more when people can use it. Your regular repair jobs are still here."
+    },
+    {
+      "choices": [],
+      "context": "Yemi / first meeting / radio repaired / lunch available / lantern available / board",
+      "id": "yemi-available-01-available-board",
+      "text": "At the counter. Your radio repair is still playing beautifully. Good work, neighbor."
+    },
+    {
+      "choices": [],
+      "context": "Yemi / first meeting / radio not repaired / lunch carrying / lantern available / board",
+      "id": "yemi-carrying-00-available-board",
+      "text": "At the counter. Ah, Amaka sent food? That woman remembers everybody. Let me put these tools down."
+    },
+    {
+      "choices": [],
+      "context": "Yemi / first meeting / radio not repaired / lunch delivered / lantern available / board",
+      "id": "yemi-delivered-00-available-board",
+      "text": "At the counter. That lunch was perfect. Tell Amaka thank you. I'm washing the plate before I return it."
+    },
+    {
+      "choices": [],
+      "context": "Yemi / first meeting / radio not repaired / lunch complete / lantern available / board",
+      "id": "yemi-complete-00-available-board",
+      "text": "At the counter. Good to see you, my friend. You brought lunch when I needed it. The repair bench is always here for you."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 1 / razor / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-0",
+      "text": "Razor: Smallie, who won that match?"
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 2 / smallie / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-1",
+      "text": "Smallie: You watched it! Stop asking."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 3 / amaka / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-2",
+      "text": "Amaka: Yemi, your food is getting cold!"
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 4 / yemi / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-3",
+      "text": "Yemi: One last screw, Aunty. I'm coming!"
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 5 / chidi / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-4",
+      "text": "Chidi: Leave space. People need to pass."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 6 / razor / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-5",
+      "text": "Razor: Alright. Shift the chair small."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 7 / conductor / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-6",
+      "text": "Conductor: Next stop! Make space inside."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 8 / smallie / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-7",
+      "text": "Smallie: This sun needs its own umbrella."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 9 / chidi / lunch available / lantern available / working",
+      "id": "chatter-available-0-available-8",
+      "text": "Chidi: You can share mine if you stop arguing."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 1 / razor / lunch available / lantern installed / working",
+      "id": "chatter-available-0-installed-0",
+      "text": "Razor: Smallie, the lantern is for gist, not a stadium floodlight."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 2 / smallie / lunch available / lantern installed / working",
+      "id": "chatter-available-0-installed-1",
+      "text": "Smallie: Then stop giving stadium commentary!"
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 5 / chidi / lunch available / lantern installed / working",
+      "id": "chatter-available-0-installed-4",
+      "text": "Chidi: Our neighbour fixed the lantern. Keep the space around it clear."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 6 / razor / lunch available / lantern installed / working",
+      "id": "chatter-available-0-installed-5",
+      "text": "Razor: Done. There's room for everyone."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 3 / amaka / lunch available / lantern available / on break",
+      "id": "chatter-available-1-available-2",
+      "text": "Amaka: Tools down small, Yemi. Take five in the shade."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 4 / yemi / lunch available / lantern available / on break",
+      "id": "chatter-available-1-available-3",
+      "text": "Yemi: You're right. The bench will still be there after tea."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 3 / amaka / lunch carrying / lantern available / working",
+      "id": "chatter-carrying-0-available-2",
+      "text": "Amaka: Yemi, our neighbor is bringing your covered lunch plate."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 4 / yemi / lunch carrying / lantern available / working",
+      "id": "chatter-carrying-0-available-3",
+      "text": "Yemi: Good timing. Let me clear a space and wash my hands."
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 3 / amaka / lunch delivered / lantern available / working",
+      "id": "chatter-delivered-0-available-2",
+      "text": "Amaka: Yemi, did our neighbor's lunch delivery reach you?"
+    },
+    {
+      "choices": [],
+      "context": "Nearby exchange 4 / yemi / lunch delivered / lantern available / working",
+      "id": "chatter-delivered-0-available-3",
+      "text": "Yemi: Every grain! Thank you, Aunty. That one is a good neighbor."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / available / food / board",
+      "id": "errand-available-board-food",
+      "text": "AMAKA: The square gets dark after supper. Chidi has an old rechargeable lantern, and Yemi can help you fix it. Would you carry it between them? No rush; you can come back whenever you like."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / available / repair / board",
+      "id": "errand-available-board-repair",
+      "text": "YEMI: Amaka mentioned the square needs a light. Collect Chidi's old lantern first; then we'll work on it here."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / available / park / board",
+      "id": "errand-available-board-park",
+      "text": "SMALLIE: A light for this corner? Tell Amaka we're interested. We can manage the football argument without another spotlight."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / collect / food / board",
+      "id": "errand-collect-board-food",
+      "text": "AMAKA: Ask Chidi for the old lantern. He keeps it beside the park bench. You don't have to join their football argument."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / collect / park / board",
+      "id": "errand-collect-board-park",
+      "text": "CHIDI: Amaka sent you? Here's the old rechargeable lantern. Take it to Yemi's bench. We'll keep the path clear while you pass."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / repair / food / board",
+      "id": "errand-repair-board-food",
+      "text": "AMAKA: Yemi is expecting the lantern. Use his workshop bench; his note keeps the job available if he steps out."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / repair / repair / board",
+      "id": "errand-repair-board-repair",
+      "text": "YEMI: Chidi's lantern! The bench is ready. Ten seconds of careful work together, then take it back to the square. No charge for parts."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / repair / park / board",
+      "id": "errand-repair-board-park",
+      "text": "CHIDI: You've got the lantern. Yemi's workshop is the next stop; we'll keep a space for it here."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / ready / food / board",
+      "id": "errand-ready-board-food",
+      "text": "AMAKA: Working again? Let the park crew choose with you where it will help most."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / ready / repair / board",
+      "id": "errand-ready-board-repair",
+      "text": "YEMI: That lantern is ready for the square. A repair means more when people can use it. Your regular repair jobs are still here."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / ready / park / board",
+      "id": "errand-ready-board-park",
+      "text": "RAZOR: See light! Put it by the noticeboard for the announcements, or by the shaded bench for evening gist. Your choice, neighbour."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / installed / food / board",
+      "id": "errand-installed-board-food",
+      "text": "AMAKA: I saw the light! Thank you for seeing it through. Here are 40 StreetCoins from the neighbourhood collection."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / installed / park / board",
+      "id": "errand-installed-board-park",
+      "text": "CHIDI: The noticeboard looks different with that lantern. We remember who helped. And if you need space, the path is still yours."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / installed / park / bench",
+      "id": "errand-installed-bench-park",
+      "text": "CHIDI: The shaded bench looks different with that lantern. We remember who helped. And if you need space, the path is still yours."
+    },
+    {
+      "choices": [],
+      "context": "Lantern errand / complete / food / board",
+      "id": "errand-complete-board-food",
+      "text": "AMAKA: My lantern neighbour! People can sit and read the noticeboard after supper now. Small work, plenty of difference."
+    }
+  ]
+}

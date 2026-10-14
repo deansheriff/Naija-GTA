@@ -62,3 +62,11 @@ Choose your actual private directory; the example path is not created by the app
 GitHub Actions records hashes/counts from its disposable PostgreSQL 17 test data, performs `pg_dump`/`pg_restore` into a second database, compares character state, sessions, receipts, ledger, settings, owner sessions, access controls and audit, then probes restored append-only triggers inside rolled-back transactions. This proves the tested database format can restore; it does not establish that your production host has an off-host backup schedule or a measured recovery objective. The workflow uses PostgreSQL's supported [custom archive backup](https://www.postgresql.org/docs/17/app-pgdump.html) and [restore utility](https://www.postgresql.org/docs/17/app-pgrestore.html).
 
 SQL migration **2** adds operations tables and receipt timestamps transactionally under the existing advisory lock. Game save JSON remains **version 1**; world layout remains **version 2**. Do not delete the PostgreSQL volume to install this release.
+
+## Dialogue and cultural review (0.13)
+
+After deploying the current branch, sign into `/owner/` and choose **Dialogue review**. Search or filter the 77 current wedding/street text units, inspect dialogue/context/choices/hints, then select **Approve this text**, **Request changes** or **Return to pending**. Add notes explaining the decision or suggesting wording. The owner identity and timestamp are recorded; no review is automatically marked complete by this tool.
+
+Each decision applies only to the displayed content hash. New wording/context/choices/hints return to pending while preserving prior history. Reload before reviewing a changed version or resolving a conflict with another browser tab. Notes are review suggestions; source changes are prepared and tested in a new game build rather than being published live from this panel. Review future chapters, art/staging and remaining UI as coverage expands.
+
+Migration 3 adds append-only content-review storage and includes it in CI restore proof. Keep the existing PostgreSQL volume/password and back up before deployment. Existing owner configuration and CSRF/session controls apply; player save codes cannot review content. Delegated reviewers/staff MFA and actual off-host backup scheduling remain separate release work.

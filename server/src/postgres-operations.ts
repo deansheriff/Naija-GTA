@@ -1,9 +1,20 @@
 import type {SqlPool, SqlConnection} from './postgres.js';
 import {RuleError, upgradeState} from './rules.js';
 import type {Operations, WorldSettings} from './operations.js';
+import type {ReviewRecord} from './content-review.js';
 export function postgresOperations(pool: SqlPool, transaction: <T>(run: (client: SqlConnection) => Promise<T>) => Promise<T>, clock: () => number): Operations {
   const audit = async (client: SqlConnection, actor: string, action: string, target: string, reason: string) => {await client.query('INSERT INTO owner_audit(actor,action,target,reason,created_at) VALUES($1,$2,$3,$4,$5)', [actor, action, target, reason, clock()]);};
   return {
+    contentReviews: async () => (await pool.query('SELECT * FROM content_reviews WHERE id IN (SELECT MAX(id) FROM content_reviews GROUP BY unit_id)')).rows.map(row => ({...row,id:Number(row.id),created_at:Number(row.created_at)})) as ReviewRecord[],
+    contentHistory: async (unitId, before) => (await pool.query('SELECT * FROM content_reviews WHERE unit_id=$1 AND id<$2 ORDER BY id DESC LIMIT 31', [unitId,before])).rows.map(row => ({...row,id:Number(row.id),created_at:Number(row.created_at)})) as ReviewRecord[],
+    reviewContent: (value, actor) => transaction(async client => {
+      await client.query('SELECT pg_advisory_xact_lock(193714211,hashtext($1))', [value.unitId]);
+      const latest = Number((await client.query('SELECT MAX(id) AS id FROM content_reviews WHERE unit_id=$1', [value.unitId])).rows[0].id ?? 0);
+      if (latest !== value.revision) throw new RuleError('review_conflict', 'This review changed. Reload the text and review history first.', 409);
+      const row = (await client.query('INSERT INTO content_reviews(unit_id,content_hash,status,notes,actor,created_at) VALUES($1,$2,$3,$4,$5,$6) RETURNING *', [value.unitId,value.contentHash,value.status,value.notes,actor,clock()])).rows[0];
+      await audit(client, actor, 'content.review', value.unitId, value.status + ' / text ' + value.contentHash.slice(0,12));
+      return {...row,id:Number(row.id),created_at:Number(row.created_at)} as ReviewRecord;
+    }),
     settings: async () => (await pool.query('SELECT value FROM world_settings WHERE id=1')).rows[0].value,
     updateSettings: (expected, value, actor, reason) => transaction(async client => {
       const current = (await client.query('SELECT value FROM world_settings WHERE id=1 FOR UPDATE')).rows[0].value as WorldSettings;

@@ -21,6 +21,8 @@ export async function operationsContract(store: GameStore, app: FastifyInstance)
   const profile=await inject({url:'/api/owner/players/'+guest.character.id,headers});
   assert.equal(profile.statusCode,200);assert.ok(!profile.body.includes(guest.token) && !profile.body.includes(guest.recoveryCode) && !profile.body.includes('save_key_hash'));
   assert.equal((await inject({url:'/api/owner/overview',headers:auth})).statusCode,401);
+  const storyGuest=await store.createGuest();
+  await store.execute(storyGuest.character.id,'maintenance-story-start',{kind:'campaign_start',revision:0});
   const settings={...(await store.ops.settings()),announcement:'The square is open for everyone.',newCharacterSeed:991337,maintenance:true,favorEnabled:false,amakaLine:'Welcome to our street, neighbor.'};
   const publish=(h:Record<string,string>,value=settings)=>app.inject({method:'PUT',url:'/api/owner/settings',headers:h,payload:{settings:value,reason:'Testing scheduled neighborhood maintenance'}});
   assert.equal((await publish({cookie,origin})).statusCode,403);
@@ -28,6 +30,7 @@ export async function operationsContract(store: GameStore, app: FastifyInstance)
   assert.equal((await publish({...headers,origin:'https://other.test'})).statusCode,403);
   assert.equal((await publish(headers,{...settings,newCharacterSeed:-1})).statusCode,400);
   assert.equal((await publish(headers)).statusCode,200);
+  assert.equal((await app.inject({method:'POST',url:'/api/v1/intents',headers:{authorization:`Bearer ${storyGuest.token}`,'idempotency-key':'maintenance-story-pause'},payload:{kind:'campaign_pause',revision:1}})).statusCode,200,'maintenance still permits leaving the campaign');
   assert.equal((await publish(headers)).statusCode,409);
   assert.equal((await store.read(guest.character.id)).state.world_seed,260713);
   const future=(await inject({method:'POST',url:'/api/v1/guests',payload:{}})).json();

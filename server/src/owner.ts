@@ -3,6 +3,7 @@ import type {FastifyInstance, FastifyRequest} from 'fastify';
 import type {GameStore} from './contract.js';
 import {checkPassword, digest, validateSettings, type OwnerConfig, type WorldSettings} from './operations.js';
 import {RuleError} from './rules.js';
+import {contentUnits, reviewQueue, type ReviewSubmission} from './content-review.js';
 
 const uuid = {type: 'string', pattern: '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'};
 const reason = {type: 'string', minLength: 5, maxLength: 160, pattern: '\\S.{3,}\\S'};
@@ -36,6 +37,19 @@ export async function ownerRoutes(app: FastifyInstance, store: GameStore, config
   app.get('/session', async request => ({username: config!.username, csrfToken: csrf(tokenFrom(request)), expiresAt: await store.ops.ownerSession(digest(tokenFrom(request)), fingerprint)}));
   app.post('/logout', async (request, reply) => {await store.ops.closeOwnerSession(digest(tokenFrom(request)), config!.username); reply.header('Set-Cookie', cookie('', 0)); return {ok: true};});
   app.get('/overview', async () => ({counts: await store.ops.overview(), runtime: metrics(), settings: await store.ops.settings(), serverTime: store.now(), retention: {receiptsDays: 90, ledger: 'Permanent', audit: 'Permanent'}}));
+  app.get('/content', async () => reviewQueue(await store.ops.contentReviews()));
+  const unitId = {type:'string', pattern:'^[A-Za-z0-9._-]{1,100}$'};
+  app.get<{Params:{id:string};Querystring:{before?:string}}>('/content/:id/history', {schema:{params:{type:'object',required:['id'],properties:{id:unitId}},querystring:{type:'object',additionalProperties:false,properties:{before:{type:'string',pattern:'^[1-9][0-9]{0,14}$'}}}}}, async request => {
+    if (!contentUnits.some(unit => unit.id === request.params.id)) throw new RuleError('not_found','Content unit not found.',404);
+    const rows = await store.ops.contentHistory(request.params.id,Number(request.query.before ?? Number.MAX_SAFE_INTEGER));
+    return {reviews:rows.slice(0,30),next:rows.length>30?rows[29].id:null};
+  });
+  app.post<{Body:ReviewSubmission}>('/content/review', {schema:{body:{type:'object',additionalProperties:false,required:['unitId','contentHash','revision','status','notes'],properties:{unitId,contentHash:{type:'string',pattern:'^[a-f0-9]{64}$'},revision:{type:'integer',minimum:0,maximum:2147483646},status:{enum:['approved','changes_requested','pending']},notes:{type:'string',minLength:5,maxLength:2000,pattern:'\\S.{3,}\\S'}}}}}, async request => {
+    const unit = contentUnits.find(unit => unit.id === request.body.unitId);
+    if (!unit) throw new RuleError('not_found','Content unit not found.',404);
+    if (unit.hash !== request.body.contentHash) throw new RuleError('content_changed','This text changed in a game build. Reload the current version before reviewing.',409);
+    return {review:await store.ops.reviewContent({...request.body,notes:request.body.notes.trim()},config!.username)};
+  });
   app.get<{Querystring: {after?: string}}>('/players', {schema: {querystring: {type: 'object', additionalProperties: false, properties: {after: uuid}}}}, async request => {
     const rows = await store.ops.players(request.query.after ?? '') as Array<{id: string}>;
     return {players: rows.slice(0, 30), next: rows.length > 30 ? rows[29].id : null};

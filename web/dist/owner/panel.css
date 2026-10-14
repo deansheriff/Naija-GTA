@@ -2,3 +2,5 @@
 
 @media(min-width:651px){nav{position:sticky;top:22px}}
 main:focus{outline:2px solid #c9d5b5;outline-offset:-2px}@media(max-width:650px){nav button{font-size:11px;padding:10px 8px}}
+
+select{font:inherit;color:var(--green);background:#fffef7;border:1px solid #bccab8;border-radius:9px;padding:12px;min-height:44px;width:100%}.review-filters{display:grid;grid-template-columns:1fr 1fr;gap:16px}.review-filters label{margin:0}.dialogue-copy{white-space:pre-wrap;color:var(--green);line-height:1.7}.review-choice{white-space:pre-wrap;padding:10px 14px;background:#f0f2e5;border-radius:8px;margin:8px 0}.review-history{border-top:1px solid var(--line);padding:16px 0}.review-history p{white-space:pre-wrap;overflow-wrap:anywhere}.review-version{overflow-wrap:anywhere;font:12px ui-monospace,monospace;color:var(--muted)}@media(max-width:650px){.review-filters{grid-template-columns:1fr}}
