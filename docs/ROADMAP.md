@@ -44,7 +44,11 @@ Implemented in 0.9.0: two repeatable repair jobs with server-owned eligibility, 
 
 ## 0.10 — Neighborhood errands and interactions
 
-Extend the neighborhood loop with a bounded authored errand chain for the existing cast and more context-aware park/workshop dialogue. Use explicit quest stages, saved consequences and the existing receipt/ledger rules for any rewards. Keep clear routes, continuous pedestrian crossings and Low-tier animation. Shared marketplace applications, deliverables, reviews and moderation remain separate later work; expand those after the repeatable economy has been playtested.
+Implemented in 0.10.0: **A light for the square**, an authored Amaka → park → workshop → park → Amaka errand. Saved stages and a journal track collection, timed repair, the chosen noticeboard/bench installation and the one-time 40 SC thank-you. The installed lantern remains in the world with an evening glow on Low; dialogue and paired park chatter remember the outcome. Existing lunch/career/home history and requests for park space remain independent. See [neighbourhood errand milestone](MILESTONE_9.md).
+
+## 0.11 — Hands-on repair tasks
+
+Replace the first timed repair activity with a small playable repair task, using clear touch/mouse/keyboard controls and readable feedback. The server should issue/validate puzzle state and own eligibility, rewards and replay protection; a client-reported success flag cannot pay a job. Keep the existing career, recovery and save history, and retain an accessible low-motion presentation. Playtest this bounded interaction and the current earning/recovery balance before shared marketplace applications, deliverables, reviews or moderation.
 
 ## Up NEPA! — campaign production track
 

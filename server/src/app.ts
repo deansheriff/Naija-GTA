@@ -54,8 +54,8 @@ export function createApp(store: GameStore, options: {staticRoot?: string; mode?
       schema: {
         headers: {type: 'object', required: ['idempotency-key'], properties: {'idempotency-key': {type: 'string', minLength: 16, maxLength: 80, pattern: '^[A-Za-z0-9_-]+$'}}},
         body: {type: 'object', additionalProperties: false, required: ['revision', 'kind'], properties: {
-          revision: {type: 'integer', minimum: 0, maximum: 2147483647}, kind: {enum: ['sync', 'greet', 'begin', 'decorate', 'profile', 'post', 'cancel', 'poll', 'neighbor', 'buy', 'furnish']},
-          action: {enum: ['learn', 'gig', 'eat', 'communitymeal', 'rest', 'wash', 'study', 'fan', 'inverter']}, item: {enum: ['rug', 'plant', 'radio']}, wall: {enum: ['sage', 'clay', 'ocean']},
+          revision: {type: 'integer', minimum: 0, maximum: 2147483647}, kind: {enum: ['sync', 'greet', 'begin', 'decorate', 'profile', 'post', 'cancel', 'poll', 'neighbor', 'buy', 'furnish', 'errand']},
+          action: {enum: ['learn', 'gig', 'eat', 'communitymeal', 'rest', 'wash', 'study', 'fan', 'inverter', 'lantern']}, item: {enum: ['rug', 'plant', 'radio']}, wall: {enum: ['sage', 'clay', 'ocean']},
           name: {type: 'string', minLength: 1, maxLength: 30}, bio: {type: 'string', maxLength: 160},
           title: {type: 'string', minLength: 5, maxLength: 60}, budget: {type: 'integer', minimum: 10, maximum: 10000},
           jobId: {type: 'string', maxLength: 10}, choice: {type: 'string', maxLength: 80}

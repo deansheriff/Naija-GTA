@@ -31,7 +31,7 @@ Authenticated routes use `Authorization: Bearer <token>`. Intent commands requir
 {"revision":0,"kind":"begin","action":"learn"}
 ```
 
-Kinds: `sync`, `greet`, `begin` (learn/gig/eat/communitymeal/rest/wash/study/fan/inverter), `decorate` (sage/clay/ocean), `profile` (name/bio), `post` (title/budget), `cancel` (jobId), `poll` (listed practice choice), `neighbor` (authored choice), `buy` (item), `furnish` (item plus place/store choice). Drafts and polls are private to the character; they are not shared listings or actual ballots. No client coin, skill, reward, completion timestamp or local save import is accepted.
+Kinds: `sync`, `greet`, `begin` (learn/gig/eat/communitymeal/rest/wash/study/fan/inverter/lantern), `decorate` (sage/clay/ocean), `profile` (name/bio), `post` (title/budget), `cancel` (jobId), `poll` (listed practice choice), `neighbor` (authored choice), `buy` (item), `furnish` (item plus place/store choice), `errand` (authored lantern choice). Drafts and polls are private to the character; they are not shared listings or actual ballots. No client coin, skill, reward, completion timestamp or local save import is accepted.
 
 Server time owns activity deadlines. `sync` completes an existing activity once, bounds offline decay to 20 minutes and starts no new work. Wallet changes append ledger entries in the same transaction. Triggers reject ledger UPDATE/DELETE. An identical repeated command/key returns its original response; a changed body/key collision or stale revision returns 409. Rejected commands roll back. PostgreSQL locks the character row before checking receipts, so concurrent retries and writes serialize.
 
@@ -69,3 +69,11 @@ Additive JSON fields: `career: {completed, readyAt}` (absolute server millisecon
 The shared career HTTP contract covers both storage adapters, real PostgreSQL concurrency in CI, progression gates, upfront needs, deadlines, shared cooldowns, stale/concurrent commands, exact receipt replay, one-time purchase charges, nonnegative balances and recovery. SQLite additionally tests restart persistence and legacy-state upgrade; client checks cover offline settlement, server timestamp conversion, untrusted-save filtering and furnishings/doorway access.
 
 `communitymeal` is a free 12-second recovery activity adding 25 food, available only when food <20 and coins <25. It grants no currency or skill. Both adapters test the empty-wallet recovery path and reject repeat claims after the player is fed.
+
+## Neighbourhood errand — 0.10
+
+Additive `errand: {stage, spot}` defaults to `{stage: available, spot: ''}` for existing saves; JSON stays version 1, SQL stays migration 2. `errand` choices are `accept` (requires greeting Amaka and starter radio completion), `collect`, `install_board|install_bench`, and `finish`. Stage order is available → collect → repair → ready → installed → complete. `begin` with `lantern` is allowed only at repair with Repair >=1 and energy >=15; 10 seconds later it advances to ready and consumes 8 energy. It awards no skill, career-job credit or coins.
+
+Installation records one immutable board/bench choice; returning to Amaka awards 40 SC once with ledger reason `square_lantern_errand`, +1 Social and bounded relationship updates. A request for park space is retained. Lunch favour, paid repair jobs, inventory and wall choices stay independent. No expiry or repeatable payout is added. Existing maintenance/suspension, revisions and exact durable receipts apply. Proximity/travel and lighting remain client presentation; these intents validate quest order, not authoritative location.
+
+The shared HTTP contract tests both branches on SQLite/embedded PostgreSQL and real PostgreSQL 17 in CI, including illegal stages, forged state, the repair deadline, active-job exclusion, intermediate save recovery, concurrent payment retry, duplicate payouts, stale revisions and final recovery. SQLite also tests restart/legacy-state normalization; PostgreSQL checks the one-entry reward ledger and old-save defaults. Back up before deployment; older backends do not understand an active lantern repair, so rollback needs compatible code and its matching database snapshot.

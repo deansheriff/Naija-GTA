@@ -59,6 +59,7 @@ var clock := 0.0
 var animate := true
 var routines: RefCounted
 var favor_state := "available"
+var errand_state: Dictionary = {}
 
 func _ready() -> void:
 	if layout == null: layout = DistrictLayout.new()
@@ -269,6 +270,8 @@ func neighbor_hit(point: Vector2) -> String:
 
 func set_context(state: Dictionary) -> void:
 	if scenery != null and people != null: scenery.furnish_home(people, state.get("inventory", {}).get("equipped", []))
+	if scenery != null and people != null and not travel_chunk: scenery.update_lantern(people, state.get("errand", {}), state.minutes)
+	errand_state = state.get("errand", {})
 	favor_state = state.favor
 	park_familiar = state.neighbors.park > 0
 	park_boundary = state.neighbors.park_choice == "space"
@@ -378,7 +381,7 @@ func _tick_chatter(delta: float) -> void:
 	if chatter_timer <= 0:
 		chatter_timer = 5.5
 		if not conversation_focus and animate:
-			var lines: Array = Dialogue.chatter(favor_state, routines != null and routines.agents.amaka.phase == "break")
+			var lines: Array = Dialogue.chatter(favor_state, routines != null and routines.agents.amaka.phase == "break", errand_state)
 			# Pick a nearby speaker, then their reply on the following turn.
 			for attempt in range(lines.size()):
 				var item: Array = lines[chatter_index]

@@ -5,6 +5,7 @@ const VERSION = 1
 const ACTIONS = {
 	"eat": {"name": "Jollof at Amaka's", "seconds": 6.0, "cost": 25, "food": 35, "energy": 4},
 	"communitymeal": {"name": "Amaka's community plate", "seconds": 12.0, "cost": 0, "food": 25},
+	"lantern": {"name": "Repair the park lantern", "seconds": 10.0, "cost": 0, "energy": -8},
 	"learn": {"name": "Practice a repair", "seconds": 8.0, "cost": 0, "energy": -8, "repair": 1},
 	"gig": {"name": "Repair Yemi's radio", "seconds": 10.0, "cost": 0, "energy": -12, "coins": 90, "repair": 1},
 	"rest": {"name": "Rest at home", "seconds": 8.0, "cost": 0, "energy": 35},
@@ -39,6 +40,7 @@ func reset() -> void:
 		"world_seed": 260713,
 		"neighbors": {"amaka": 0, "yemi": 0, "park": 0, "park_choice": ""}, "favor": "available",
 		"career": {"completed": 0, "cooldown": 0.0}, "inventory": {"owned": [], "equipped": []},
+		"errand": {"stage": "available", "spot": ""},
 		"settings": {"quality": "Medium", "shadows": true, "effects": true, "distance": 1,
 			"fps": 30, "data_saver": true, "manual": false},
 	}
@@ -48,6 +50,8 @@ func begin_action(code: String) -> Dictionary:
 		return {"ok": false, "message": "That activity is unavailable."}
 	if not data.active.is_empty():
 		return {"ok": false, "message": "Finish your current activity first."}
+	if code == "lantern" and (data.errand.stage != "repair" or data.repair < 1):
+		return {"ok": false, "message": "Collect the park lantern and bring it to the repair bench first."}
 	if code == "communitymeal" and (data.coins >= 25 or data.food >= 20):
 		return {"ok": false, "message": "Community plates are for neighbors below 20 food with fewer than 25 SC."}
 	if code == "gig" and data.gig_done:
@@ -98,6 +102,7 @@ func tick(seconds: float) -> bool:
 	data.coins += action.get("coins", 0)
 	if code == "gig":
 		data.gig_done = true
+	if code == "lantern": data.errand.stage = "ready"
 	notice = action.name + " complete" + (" · +%s StreetCoins" % action.coins if action.has("coins") else "")
 	return true
 
@@ -159,6 +164,32 @@ func neighbor_choice(choice: String) -> Dictionary:
 		_: return {"ok": false, "message": "Choose a listed neighbor conversation."}
 	return {"ok": true, "message": "Your neighbor remembers."}
 
+func errand_choice(choice: String) -> Dictionary:
+	var stage: String = data.errand.stage
+	match choice:
+		"accept":
+			if stage != "available" or not data.met_amaka or not data.gig_done: return {"ok": false, "message": "Say hello to Amaka and finish Yemi's starter radio first."}
+			data.errand.stage = "collect"
+		"collect":
+			if stage != "collect": return {"ok": false, "message": "Accept Amaka's lantern errand first."}
+			data.errand.stage = "repair"
+			data.neighbors.park = maxi(1, data.neighbors.park)
+		"install_board", "install_bench":
+			if stage != "ready": return {"ok": false, "message": "Repair the lantern at Yemi's first."}
+			data.errand.stage = "installed"
+			data.errand.spot = "board" if choice == "install_board" else "bench"
+			data.neighbors.park = maxi(2, data.neighbors.park)
+		"finish":
+			if stage != "installed": return {"ok": false, "message": "Install the repaired lantern in the square first."}
+			data.errand.stage = "complete"
+			data.coins += 40
+			data.social = mini(100, data.social + 1)
+			data.neighbors.amaka = maxi(2, data.neighbors.amaka)
+			data.neighbors.yemi = maxi(2, data.neighbors.yemi)
+			data.neighbors.park = 3
+		_: return {"ok": false, "message": "Choose a listed lantern errand action."}
+	return {"ok": true, "message": "Lantern errand updated."}
+
 func decorate(color: String) -> void:
 	if color in ["sage", "clay", "ocean"]:
 		data.wall = color
@@ -189,6 +220,9 @@ func cancel_job(id: String) -> bool:
 	return false
 
 func goal() -> Dictionary:
+	if data.errand.stage in ["collect", "repair", "ready", "installed"]:
+		var objective: Dictionary = preload("res://core/neighborhood_errand.gd").objective(data.errand)
+		return {"step": 8, "title": "A light for the square", "body": objective.get("hud", objective.text), "place": objective.place}
 	if data.favor in ["carrying", "delivered"]:
 		return {"step": 6, "title": "A plate for Yemi", "body": "Deliver Amaka's covered lunch plate to Yemi." if data.favor == "carrying" else "Tell Amaka the lunch arrived. One-time thank-you: 30 SC.", "place": "repair" if data.favor == "carrying" else "food"}
 	if not data.met_amaka:
@@ -252,6 +286,12 @@ func load_json(json_text: String, catch_up: bool = true) -> Dictionary:
 			data.neighbors.park_choice = incoming.neighbors.park_choice
 	if data.met_amaka: data.neighbors.amaka = maxi(1, data.neighbors.amaka)
 	if incoming.get("favor") in ["available", "carrying", "delivered", "complete"]: data.favor = incoming.favor
+	if incoming.get("errand") is Dictionary:
+		var errand: Dictionary = incoming.errand
+		if errand.get("stage") in ["available", "collect", "repair", "ready", "installed", "complete"]:
+			data.errand = {"stage": errand.stage, "spot": ""}
+			if errand.stage in ["installed", "complete"]:
+				data.errand.spot = errand.get("spot") if errand.get("spot") in ["board", "bench"] else "board"
 	if incoming.get("career") is Dictionary:
 		var career: Dictionary = incoming.career
 		if career.get("completed") is float or career.get("completed") is int: data.career.completed = clampi(int(career.completed), 0, 1000000)

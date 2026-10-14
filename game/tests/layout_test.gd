@@ -42,5 +42,13 @@ func run() -> void:
 		var fits: bool = rect.position.y >= 0 and rect.end.y <= scene.get_viewport().get_visible_rect().size.y and scene.modal_scroll.size.y > 100
 		print(page, " modal fit/scroll: ", "PASS" if fits else "FAIL")
 		sane = sane and fits
+	for stage in ["collect", "repair", "ready", "installed"]:
+		scene.sim.data.errand = {"stage": stage, "spot": "board" if stage == "installed" else ""}
+		scene._refresh()
+		scene._open_errand(scene.sim.goal().place)
+		for i in range(6): await process_frame
+		var clear: bool = scene.mission_panel.get_rect().end.y <= scene.needs_panel.position.y
+		print(stage, " errand HUD avoids needs: ", "PASS" if clear else "FAIL")
+		sane = sane and clear
 	print("Desktop layout: ", "PASS" if sane else "FAIL")
 	quit(0 if sane else 1)

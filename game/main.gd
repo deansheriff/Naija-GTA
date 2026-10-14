@@ -438,7 +438,7 @@ func _refresh() -> void:
 	var hours := int(sim.data.minutes / 60)
 	clock_label.text = "DAY %s · %02d:%02d" % [sim.data.day, hours, int(sim.data.minutes) % 60]
 	var goal: Dictionary = sim.goal()
-	mission_step.text = "REPAIR CAREER" if goal.step == 7 else ("NEIGHBOR FAVOR" if goal.step == 6 else "FIRST STEPS  ·  %s / 4" % mini(4, goal.step))
+	mission_step.text = "NEIGHBORHOOD ERRAND" if goal.step == 8 else ("REPAIR CAREER" if goal.step == 7 else ("NEIGHBOR FAVOR" if goal.step == 6 else "FIRST STEPS  ·  %s / 4" % mini(4, goal.step)))
 	mission_title.text = goal.title
 	mission_body.text = goal.body
 	mission_button.text = "Explore the square" if goal.step == 5 else "Take me there"
@@ -509,7 +509,7 @@ func _toast(message: String) -> void:
 	toast_label.visible = true
 
 func _travel_goal() -> void:
-	if district_id == 0 and sim.data.favor in ["carrying", "delivered"]:
+	if district_id == 0 and sim.goal().step == 6:
 		_find_neighbor("yemi" if sim.data.favor == "carrying" else "amaka")
 		return
 	_travel(sim.goal().place)
@@ -541,6 +541,7 @@ func _walk_to(point: Vector2, place: String) -> bool:
 func _open_explore() -> void:
 	_dialog(WorldPlan.profile(district_id).name, "Walk to the local danfo stop, or ride to another district. Starter venues are on Home street.")
 	modal_body.add_child(_button("Ride between districts", _open_routes, true))
+	modal_body.add_child(_button("Neighbourhood errands · journal", _open_errands))
 	modal_body.add_child(_button("Walk to the local danfo stop", _travel.bind("bus")))
 	modal_body.add_child(_label("HOME STREET VENUES", 13, GOLD))
 	for key in ["food", "repair", "home", "square", "park"]:
@@ -571,9 +572,11 @@ func _open_place(place: String) -> void:
 		community.disabled = sim.data.coins >= 25 or sim.data.food >= 20
 		modal_body.add_child(community)
 		modal_body.add_child(_label("A plate is reserved for neighbors below 20 food with fewer than 25 SC. Rest at home is always free.", 14, MUTED))
+		_errand_entry("food")
 	elif place == "repair":
 		_dialog("Yemi's workshop", "Fix something small. Build a skill that lasts.")
 		modal_body.add_child(_label("REPAIR SKILL · LEVEL %s" % sim.data.repair, 15, GOLD))
+		_errand_entry("repair")
 		_neighbor_venue("yemi")
 		modal_body.add_child(_button("Practice at the bench · 8 sec", _start.bind("learn"), true))
 		var gig := _button("Repair Yemi's radio · earn 90 SC", _start.bind("gig"))
@@ -622,6 +625,59 @@ func _career_board() -> void:
 	modal_body.add_child(_button("Rest at home", _travel.bind("home")))
 	modal_body.add_child(_button("Eat at Amaka's · 25 SC", _travel.bind("food")))
 	_refresh()
+
+func _errand_entry(place: String) -> void:
+	modal_body.add_child(HSeparator.new())
+	modal_body.add_child(_button("A light for the square · errand", _open_errand.bind(place), true))
+	modal_body.add_child(_label(preload("res://core/neighborhood_errand.gd").objective(sim.data.errand).text, 15, MUTED))
+
+func _open_errands() -> void:
+	var objective: Dictionary = preload("res://core/neighborhood_errand.gd").objective(sim.data.errand)
+	_dialog("Neighbourhood errands", "Small jobs that change the street. No time limit; pause and come back whenever you like.")
+	modal_body.add_child(_label("A LIGHT FOR THE SQUARE · %s / 5" % objective.step, 18, GOLD))
+	modal_body.add_child(_label(objective.text, 20))
+	modal_body.add_child(_label("Carrying: " + {"collect": "nothing yet", "repair": "Chidi's old lantern", "ready": "repaired lantern", "installed": "nothing · lantern installed", "complete": "nothing · errand complete"}.get(sim.data.errand.stage, "nothing yet"), 16, MUTED))
+	modal_body.add_child(_button("Visit " + Neighborhood.PLACES[objective.place].name, _travel.bind(objective.place), true))
+	modal_body.add_child(_label("A plate for Yemi", 18, GOLD))
+	modal_body.add_child(_label(StreetDialogue.favor_goal(sim.data.favor), 16))
+	if sim.data.favor in ["carrying", "delivered"]:
+		modal_body.add_child(_button("Continue the lunch favour", _travel.bind("repair" if sim.data.favor == "carrying" else "food")))
+
+func _open_errand(place: String, message: String = "") -> void:
+	var quest = preload("res://core/neighborhood_errand.gd")
+	_dialog("A light for the square", quest.line(place, sim.data))
+	if not message.is_empty(): modal_body.add_child(_label(message, 16, GOLD))
+	modal_body.add_child(_label("OBJECTIVE · " + quest.objective(sim.data.errand).text, 18, GOLD))
+	var stage: String = sim.data.errand.stage
+	if stage == "available" and place == "food":
+		var accept := _button("I'll help · collect Chidi's lantern", _errand_reply.bind("accept", place), true)
+		accept.disabled = not sim.data.met_amaka or not sim.data.gig_done
+		modal_body.add_child(accept)
+		if not sim.data.met_amaka: modal_body.add_child(_button("Say hello to Amaka first", _hello))
+	elif stage == "collect" and place == "park":
+		modal_body.add_child(_button("Collect the old lantern", _errand_reply.bind("collect", place), true))
+	elif stage == "repair" and place == "repair":
+		var repair := _button("Repair lantern · 10 sec · 8 energy", _start.bind("lantern"), true)
+		repair.disabled = not sim.data.active.is_empty() or sim.data.energy < 15
+		modal_body.add_child(repair)
+		modal_body.add_child(_button("Rest at home first", _travel.bind("home")))
+	elif stage == "ready" and place == "park":
+		modal_body.add_child(_button("Place it by the noticeboard", _errand_reply.bind("install_board", place), true))
+		modal_body.add_child(_button("Place it by the shaded bench", _errand_reply.bind("install_bench", place)))
+	elif stage == "installed" and place == "food":
+		modal_body.add_child(_button("Tell Amaka · receive 40 SC", _errand_reply.bind("finish", place), true))
+	var target: String = quest.objective(sim.data.errand).place
+	if target != place: modal_body.add_child(_button("Continue at " + Neighborhood.PLACES[target].name, _travel.bind(target), true))
+	modal_body.add_child(_button("Errand journal", _open_errands))
+	modal_body.add_child(_button("I'll come back later", _close_modal))
+
+func _errand_reply(choice: String, place: String) -> void:
+	var result: Dictionary = await cloud.submit("errand", {"choice": choice}) if cloud.enabled() else sim.errand_choice(choice)
+	if result.ok:
+		world.set_context(sim.data)
+		_save()
+		_refresh()
+	_open_errand(place, "Errand complete · +40 StreetCoins. The square keeps your lantern." if result.ok and choice == "finish" else result.message)
 
 func _open_home_inventory(message: String = "") -> void:
 	_dialog("Home catalogue & inventory", "Buy once with fictional StreetCoins. New items are placed automatically. Place or store owned items for free. These decorations have no stat bonuses.")
@@ -760,6 +816,7 @@ func _open_park_page(page: String) -> void:
 	for i in range(entry.choices.size()):
 		var choice: Array = entry.choices[i]
 		modal_body.add_child(_button(choice[0], _park_reply.bind(choice[1]), i == 0))
+	_errand_entry("park")
 
 func _park_reply(next_page: String) -> void:
 	if next_page in ["welcome", "distance"]:
@@ -802,6 +859,7 @@ func _open_neighbor(who: String) -> void:
 	var line: String = StreetDialogue.neighbor_line(who, sim.data, world.neighbor_status(who), cloud.world_settings if cloud.enabled() else {})
 	_dialog(who.capitalize() + " · Neighbor", line)
 	modal_body.add_child(_label("RELATIONSHIP · " + StreetDialogue.relationship(sim.data.neighbors[who]), 14, GOLD))
+	_errand_entry("food" if who == "amaka" else "repair")
 	if who == "amaka":
 		if not sim.data.met_amaka: modal_body.add_child(_button("Introduce yourself", _hello, true))
 		if sim.data.met_amaka and sim.data.favor == "available" and cloud.world_settings.get("favorEnabled", true):
@@ -942,6 +1000,7 @@ func _open_profile() -> void:
 	modal_body.add_child(_label("Repair: %s   ·   Digital: %s   ·   Connection: %s" % [sim.data.repair, sim.data.digital, sim.data.social], 18))
 	modal_body.add_child(_label("Experience: " + ("Completed Yemi's radio repair." if sim.data.gig_done else "Your first gig is still ahead."), 16, MUTED))
 	modal_body.add_child(_label("Repair career: %s completed jobs · %s home items owned" % [sim.data.career.completed, sim.data.inventory.owned.size()], 16, GOLD))
+	modal_body.add_child(_button("Neighbourhood errands · journal", _open_errands))
 	modal_body.add_child(_label("NEIGHBORS & FAVORS", 14, GOLD))
 	for who in ["amaka", "yemi", "park"]:
 		modal_body.add_child(_label(who.capitalize() + ": " + StreetDialogue.relationship(sim.data.neighbors[who]), 16, MUTED))
@@ -962,6 +1021,7 @@ func _open_profile() -> void:
 
 func _open_market() -> void:
 	_dialog("Good work starts here", "Private gig drafts · StreetCoins only. Drafts are not published to other players. Cloud-connected drafts save with your character.")
+	modal_body.add_child(_button("Neighbourhood errands · journal", _open_errands, true))
 	modal_body.add_child(_label("REPAIR · STARTER GIG", 13, GOLD))
 	modal_body.add_child(_label("Yemi's radio needs a second life", 24))
 	modal_body.add_child(_label("Learn Repair 1, then finish the task at Yemi's workshop. Payment: 90 SC. No real money or professional qualification implied.", 17, MUTED))

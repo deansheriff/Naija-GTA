@@ -92,3 +92,7 @@ Final extraction prompt: Use case: background-extraction. Change ONLY the brown 
 ## Home furnishings — 0.9
 
 The woven mat, potted desk plant and table radio are original code-native polygons in `game/world/modular_scenery.gd`, extending the existing furniture kit. No new raster asset or external reference is used. Accessories sit on the existing solid desk; the flat mat stays within the open doorway. Each object shares the street depth sorting and roof occlusion, remains visible on Low, and creates no extra collision obstacle.
+
+## Park lantern — 0.10
+
+The installed rechargeable lantern, mounting post, handle and soft evening pools are code-native geometry in `game/world/modular_scenery.gd`. No new raster or external reference is used. The two possible anchors lie inside the existing board/bench solid footprints; the new object shares street depth sorting and adds no collision obstruction. Low keeps the visible lantern and static evening glow with effects/shadows disabled. This is a local visual consequence of saved quest state, not a shared-world lighting system.

@@ -79,9 +79,11 @@ func _request(path: String, method: int, body: Dictionary = {}, key: String = ""
 		return {"ok": false, "code": 0, "message": "Connection unavailable. Your pending action is kept for retry."}
 	var response: Array = await request.request_completed
 	request.queue_free()
-	var payload: Variant = JSON.parse_string(response[3].get_string_from_utf8())
-	if not payload is Dictionary:
-		payload = {}
+	# Offline/proxy responses may be empty or HTML. Treat them as a failed
+	# request without the console error produced by JSON.parse_string().
+	var parser := JSON.new()
+	var decoded := parser.parse(response[3].get_string_from_utf8())
+	var payload: Dictionary = parser.data if decoded == OK and parser.data is Dictionary else {}
 	var valid := payload.get("character") is Dictionary and payload.character.get("state") is Dictionary
 	if path == "/v1/world": valid = payload.get("settings") is Dictionary
 	return {"ok": response[0] == HTTPRequest.RESULT_SUCCESS and response[1] >= 200 and response[1] < 300 and valid, "code": response[1], "payload": payload, "message": payload.get("message", "Connection unavailable or this URL is not the game server. Your pending action is kept for retry.")}

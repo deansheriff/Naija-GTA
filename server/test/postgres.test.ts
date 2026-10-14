@@ -7,6 +7,7 @@ import {createApp} from '../src/app.js';
 import type {Intent} from '../src/rules.js';
 import {neighborContract} from './neighbor-contract.js';
 import {careerContract} from './career-contract.js';
+import {errandContract} from './errand-contract.js';
 import {operationsContract,fixtureOwner} from './operations-contract.js';
 
 // Embedded PostgreSQL validates real SQL locally. CI uses a multi-connection PostgreSQL service.
@@ -90,6 +91,13 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     await pool.query("UPDATE characters SET state=(state - 'career' - 'inventory') WHERE id=$1", [legacy.character.id]);
     assert.deepEqual((await store.read(legacy.character.id)).state.career, {completed: 0, readyAt: 0});
     assert.deepEqual((await store.read(legacy.character.id)).state.inventory, {owned: [], equipped: []});
+    const errandIds = await errandContract(app, ms => {now += ms;});
+    for (const id of errandIds) {
+      const entries = (await pool.query("SELECT delta FROM ledger WHERE character_id=$1 AND reason='square_lantern_errand'", [id])).rows;
+      assert.equal(entries.length, 1); assert.equal(Number(entries[0].delta), 40);
+    }
+    await pool.query("UPDATE characters SET state=(state - 'errand') WHERE id=$1", [legacy.character.id]);
+    assert.deepEqual((await store.read(legacy.character.id)).state.errand, {stage: 'available', spot: ''});
     await operationsContract(store,app);
     await assert.rejects(pool.query("UPDATE owner_audit SET reason='changed'"),/append-only/);
     const counts=await Promise.all(Array.from({length:12},()=>store.ops.consumeRate('a'.repeat(64),now+60000)));

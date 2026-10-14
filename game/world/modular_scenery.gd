@@ -18,6 +18,39 @@ var district: RefCounted
 var parked_bus: Node2D
 var home_decor: Array[Node2D] = []
 var home_decor_signature := "unset"
+var square_lantern: Node2D
+var lantern_glow: Polygon2D
+var lantern_pool: Polygon2D
+var lantern_spot := ""
+
+func update_lantern(sorted_world: Node2D, errand: Dictionary, minutes: float) -> void:
+	if district == null or district.seed_value != 0: return
+	var spot: String = errand.get("spot", "") if errand.get("stage", "available") in ["installed", "complete"] else ""
+	if spot != lantern_spot:
+		lantern_spot = spot
+		if square_lantern != null:
+			square_lantern.get_parent().remove_child(square_lantern)
+			square_lantern.queue_free()
+			square_lantern = null
+		if not spot.is_empty():
+			square_lantern = Node2D.new()
+			square_lantern.name = "NeighbourhoodLantern"
+			# Anchored within an existing solid board/bench footprint; no new obstacle.
+			square_lantern.position = Vector2(487, 767) if spot == "board" else Vector2(582, 874)
+			sorted_world.add_child(square_lantern)
+			lantern_pool = _ellipse(square_lantern, Vector2(39, 9), Color(1, 0.77, 0.35, 0.22))
+			_box(square_lantern, Rect2(-3, -102, 6, 102), Color("5d614c"))
+			_box(square_lantern, Rect2(-13, -137, 26, 35), Color("3c5146"))
+			_box(square_lantern, Rect2(-9, -132, 18, 24), Color("f4d589"))
+			_box(square_lantern, Rect2(-16, -142, 32, 5), Color("956849"))
+			_box(square_lantern, Rect2(-9, -151, 18, 4), Color("5d614c"))
+			for x in [-10, 7]: _box(square_lantern, Rect2(x, -150, 3, 11), Color("5d614c"))
+			lantern_glow = _ellipse(square_lantern, Vector2(23, 28), Color(1, 0.80, 0.41, 0.15))
+			lantern_glow.position.y = -120
+	if square_lantern != null:
+		var evening := minutes >= 1080 or minutes < 360
+		lantern_glow.visible = evening
+		lantern_pool.visible = evening
 
 func furnish_home(sorted_world: Node2D, equipped: Array) -> void:
 	if district == null or district.seed_value != 0: return

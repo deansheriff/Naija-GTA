@@ -23,6 +23,8 @@ static func favor_goal(favor: String) -> String:
 
 static func neighbor_line(who: String, state: Dictionary, status: String, content: Dictionary = {}) -> String:
 	var context := status + ". "
+	if state.get("errand", {}).get("stage", "available") != "available" and not state.favor in ["carrying", "delivered"]:
+		return context + preload("res://core/neighborhood_errand.gd").line("food" if who == "amaka" else "repair", state)
 	if who == "amaka":
 		if not state.met_amaka and not str(content.get("amakaLine", "")).is_empty(): return context + str(content.amakaLine)
 		if not state.met_amaka: return context + "Welcome, neighbor. I'm Amaka. There's always room for one more person on this street."
@@ -49,7 +51,7 @@ const CHATTER = [
 	["chidi", "Chidi: You can share mine if you stop arguing."],
 ]
 
-static func chatter(favor: String, on_break: bool) -> Array:
+static func chatter(favor: String, on_break: bool, errand: Dictionary = {}) -> Array:
 	var lines := CHATTER.duplicate(true)
 	if favor in ["delivered", "complete"]:
 		lines[2] = ["amaka", "Amaka: Yemi, did our neighbor's lunch delivery reach you?"]
@@ -60,4 +62,9 @@ static func chatter(favor: String, on_break: bool) -> Array:
 	elif on_break:
 		lines[2] = ["amaka", "Amaka: Tools down small, Yemi. Take five in the shade."]
 		lines[3] = ["yemi", "Yemi: You're right. The bench will still be there after tea."]
+	if errand.get("stage", "available") in ["installed", "complete"]:
+		lines[0] = ["razor", "Razor: Smallie, the lantern is for gist, not a stadium floodlight."]
+		lines[1] = ["smallie", "Smallie: Then stop giving stadium commentary!"]
+		lines[4] = ["chidi", "Chidi: Our neighbour fixed the lantern. Keep the space around it clear."]
+		lines[5] = ["razor", "Razor: Done. There's room for everyone."]
 	return lines

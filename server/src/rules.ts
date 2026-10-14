@@ -3,6 +3,7 @@ export const actions = {
   gig: {seconds: 10, cost: 0, energy: 12},
   eat: {seconds: 6, cost: 25, energy: 0},
   communitymeal: {seconds: 12, cost: 0, energy: 0},
+  lantern: {seconds: 10, cost: 0, energy: 8},
   rest: {seconds: 8, cost: 0, energy: 0},
   wash: {seconds: 5, cost: 0, energy: 0},
   study: {seconds: 8, cost: 0, energy: 8},
@@ -27,8 +28,9 @@ export type State = {
   favor: 'available' | 'carrying' | 'delivered' | 'complete';
   career: {completed: number; readyAt: number};
   inventory: {owned: string[]; equipped: string[]};
+  errand: {stage: 'available' | 'collect' | 'repair' | 'ready' | 'installed' | 'complete'; spot: '' | 'board' | 'bench'};
 };
-export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish'; action?: Action; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
+export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand'; action?: Action; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
 export class RuleError extends Error {
   constructor(public code: string, message: string, public status = 422) {super(message);}
 }
@@ -37,7 +39,7 @@ export function initialState(now: number): State {
     repair: 0, digital: 0, social: 0, met_amaka: false, gig_done: false,
     decorated: false, wall: 'sage', day: 1, minutes: 480, posts: [], vote: '', active: null, updatedAt: now,
     neighbors: {amaka: 0, yemi: 0, park: 0, park_choice: ''}, favor: 'available',
-    career: {completed: 0, readyAt: 0}, inventory: {owned: [], equipped: []}};
+    career: {completed: 0, readyAt: 0}, inventory: {owned: [], equipped: []}, errand: {stage: 'available', spot: ''}};
 }
 // Additive save upgrade: existing JSON characters keep their balances, receipts and schema.
 export function upgradeState(state: State): State {
@@ -46,6 +48,7 @@ export function upgradeState(state: State): State {
   state.favor ??= 'available';
   state.career ??= {completed: 0, readyAt: 0};
   state.inventory ??= {owned: [], equipped: []};
+  state.errand ??= {stage: 'available', spot: ''};
   return state;
 }
 export function applyIntent(state: State, intent: Intent, now: number): Array<{delta: number; reason: string}> {
@@ -65,6 +68,9 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
       case 'rest': state.energy = Math.min(100, state.energy + 35); break;
       case 'eat': state.food = Math.min(100, state.food + 35); state.energy = Math.min(100, state.energy + 4); break;
       case 'communitymeal': state.food = Math.min(100, state.food + 25); break;
+      case 'lantern':
+        if (state.errand.stage === 'repair') {state.errand.stage = 'ready'; state.energy = Math.max(0, state.energy - 8);}
+        break;
       case 'wash': state.comfort = Math.min(100, state.comfort + 20); break;
       case 'fan': case 'inverter': {
         const job = repairJobs[state.active.code];
@@ -85,6 +91,29 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
   state.posts ??= []; state.vote ??= '';
   switch (intent.kind) {
     case 'sync': break;
+    case 'errand': {
+      const quest = state.errand;
+      const locked = () => {throw new RuleError('errand_locked', 'Follow the current objective in A light for the square.');};
+      switch (intent.choice) {
+        case 'accept':
+          if (quest.stage !== 'available' || !state.met_amaka || !state.gig_done) locked();
+          quest.stage = 'collect'; break;
+        case 'collect':
+          if (quest.stage !== 'collect') locked();
+          quest.stage = 'repair'; state.neighbors.park = Math.max(1, state.neighbors.park); break;
+        case 'install_board': case 'install_bench':
+          if (quest.stage !== 'ready') locked();
+          quest.stage = 'installed'; quest.spot = intent.choice === 'install_board' ? 'board' : 'bench';
+          state.neighbors.park = Math.max(2, state.neighbors.park); break;
+        case 'finish':
+          if (quest.stage !== 'installed') locked();
+          quest.stage = 'complete'; state.coins += 40; state.social = Math.min(100, state.social + 1);
+          state.neighbors.amaka = Math.max(2, state.neighbors.amaka); state.neighbors.yemi = Math.max(2, state.neighbors.yemi); state.neighbors.park = 3;
+          ledger.push({delta: 40, reason: 'square_lantern_errand'}); break;
+        default: throw new RuleError('invalid_errand_choice', 'Choose a listed lantern errand action.');
+      }
+      break;
+    }
     case 'greet':
       if (!state.met_amaka) {state.met_amaka = true; state.social++;}
       state.neighbors.amaka = Math.max(1, state.neighbors.amaka);
@@ -116,6 +145,7 @@ export function applyIntent(state: State, intent: Intent, now: number): Array<{d
       if (!intent.action || !Object.hasOwn(actions, intent.action)) throw new RuleError('unknown_action', 'Choose a known activity.');
       const action = actions[intent.action];
       if (state.active) throw new RuleError('busy', 'Finish your current activity first.');
+      if (intent.action === 'lantern' && (state.errand.stage !== 'repair' || state.repair < 1)) throw new RuleError('lantern_locked', 'Collect the park lantern and bring it to the repair bench first.');
       if (intent.action === 'communitymeal' && (state.coins >= 25 || state.food >= 20)) throw new RuleError('meal_reserved', 'Community plates are for neighbors below 20 food with fewer than 25 SC.');
       if (intent.action === 'gig' && (state.repair < 1 || state.gig_done)) throw new RuleError('gig_locked', 'Practice Repair first; the starter gig pays once.');
       if (intent.action === 'fan' || intent.action === 'inverter') {
