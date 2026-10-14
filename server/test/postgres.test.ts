@@ -9,6 +9,7 @@ import {neighborContract} from './neighbor-contract.js';
 import {careerContract} from './career-contract.js';
 import {errandContract} from './errand-contract.js';
 import {radioContract} from './radio-contract.js';
+import {campaignContract} from './campaign-contract.js';
 import {operationsContract,fixtureOwner} from './operations-contract.js';
 
 // Embedded PostgreSQL validates real SQL locally. CI uses a multi-connection PostgreSQL service.
@@ -104,6 +105,9 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     now += 60000;
     const radioIds = await radioContract(app, ms => {now += ms;});
     for (const id of radioIds) assert.equal((await pool.query("SELECT delta FROM ledger WHERE character_id=$1 AND reason='starter_gig'", [id])).rows.length, 1);
+    now += 60000;
+    const campaignId = await campaignContract(app, ms => {now += ms;});
+    assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1', [campaignId])).rows[0].total), 1);
     await operationsContract(store,app);
     await assert.rejects(pool.query("UPDATE owner_audit SET reason='changed'"),/append-only/);
     const counts=await Promise.all(Array.from({length:12},()=>store.ops.consumeRate('a'.repeat(64),now+60000)));

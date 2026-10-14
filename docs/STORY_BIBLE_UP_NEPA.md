@@ -1,10 +1,10 @@
 # Naija Street Life: Up NEPA!
 
-**Draft story bible · awaiting narrative review · not a shipped campaign**
+**Production story bible · cultural/native-speaker review pending**
 
 “When the light comes back, everybody will see what you did.”
 
-This bible develops the owner's supplied brief. The platform remains **Naija Street Life**; **Up NEPA!** is the campaign title. The complete brief is preserved in [STORY_BRIEF_UP_NEPA.txt](STORY_BRIEF_UP_NEPA.txt). Full mission lists, ability balancing and scripts follow review of this bible, in the order requested by the brief.
+This bible develops the owner's supplied brief. The platform remains **Naija Street Life**; **Up NEPA!** is the campaign title. The complete brief is preserved in [STORY_BRIEF_UP_NEPA.txt](STORY_BRIEF_UP_NEPA.txt). On 14 October 2026 the owner authorised continuous building of the full game including this campaign, superseding the former stop-after-bible handoff. Deliverables follow the original order: [missions](CAMPAIGN_MISSIONS.md), [progression](CAMPAIGN_PROGRESSION.md), [opening scripts](CAMPAIGN_SCRIPTS_ACT1.md), [dialogue banks](CAMPAIGN_DIALOGUE.md), then [integration](CAMPAIGN_INTEGRATION.md). This does not substitute for native-speaker/cultural release review.
 
 ## Premise and player promise
 
@@ -120,4 +120,4 @@ Cutscenes use in-engine staging with text and a skip/summary path. Low-bandwidth
 
 Review premise, character voices/secrets, relationship arcs, the fictional election boundary, the revised evidence mission and the four endings first. Then produce the full mission list, ability/progression specification, Prologue/Act 1 scripts, dialogue banks and integration specification, in that order. This document does not approve services, music purchases, real-money rewards or a release rating.
 
-The immediate build is the authored modular neighborhood foundation. Its independent objects, walkable shop thresholds, collisions and route planning support future canteens, bus stops and wedding locations. The first story implementation after review is a small replayable Prologue slice with all three perspectives and checkpoint recovery—not the entire campaign at once.
+The authored modular neighbourhood now supports independent objects, walkable thresholds, collisions and route planning. The first campaign implementation is the text-first wedding introduction with original posed character art and saved objectives for all three leads. Further acts, original directional hero animation, chapter replay and the full production gates continue under [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md).

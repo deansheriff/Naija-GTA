@@ -15,6 +15,8 @@ const CREAM = Color("f4efdb")
 const LIME = Color("d4ed85")
 const GOLD = Color("edc06d")
 const RepairTask = preload("res://core/repair_task.gd")
+const Campaign = preload("res://core/campaign.gd")
+const CampaignView = preload("res://campaign_view.gd")
 const RADIO_TITLE = "Yemi's radio · signal test"
 
 var sim = Simulation.new()
@@ -66,6 +68,7 @@ var journey_panel: PanelContainer
 var journey_label: Label
 var journey_status: Label
 var journey_bar: ProgressBar
+var campaign_view: Control
 
 func _ready() -> void:
 	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
@@ -89,6 +92,7 @@ func _ready() -> void:
 	_toast(loaded.message)
 	if not loaded.ok and not cloud.enabled():
 		_open_welcome()
+	if Campaign.active(sim.data.campaign): call_deferred("_open_campaign")
 	if OS.has_feature("web") and not JavaScriptBridge.get_interface("NSLSaveStore").available():
 		_toast("Browser storage is unavailable. Progress may not survive closing this tab.")
 
@@ -97,7 +101,7 @@ func _notification(what: int) -> void:
 		_save()
 
 func _process(delta: float) -> void:
-	if cloud.enabled():
+	if cloud.enabled() and not Campaign.active(sim.data.campaign):
 		sim.data.career.cooldown = maxf(0, sim.data.career.cooldown - delta)
 		if not sim.data.active.is_empty():
 			sim.data.active.remaining = maxf(0, sim.data.active.remaining - delta)
@@ -116,7 +120,7 @@ func _process(delta: float) -> void:
 	toast_label.visible = toast_remaining > 0
 	world.conversation_focus = modal != null
 	world.set_context(sim.data)
-	if modal == null and journey_view == null:
+	if modal == null and journey_view == null and campaign_view == null:
 		_move_player(delta)
 	if benchmark_time < 8 and delta < 0.25:
 		benchmark_time += delta
@@ -169,6 +173,9 @@ func _move_player(delta: float) -> void:
 		world.resize_view(get_viewport().get_visible_rect().size)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if campaign_view != null:
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE: _exit_campaign()
+		return
 	if journey_view != null:
 		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE: _cancel_ride()
 		return
@@ -318,6 +325,7 @@ func _build_hud() -> void:
 	sidebar.add_child(side_scroll)
 	var side := _column(side_scroll)
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	side.add_child(_button("Up NEPA! · Story mode", _open_campaign, true))
 	side.add_child(_label("HOME STREET VENUES", 13, MUTED))
 	for key in ["food", "repair", "home", "square", "park"]:
 		var info: Dictionary = Neighborhood.PLACES[key]
@@ -441,8 +449,12 @@ func _resize() -> void:
 	_travel_visibility()
 	if modal != null:
 		_layout_modal()
+	if campaign_view != null: _hide_street_hud()
 
 func _refresh() -> void:
+	if campaign_view != null:
+		_hide_street_hud()
+		return
 	wallet_label.text = "%s SC" % sim.data.coins
 	var hours := int(sim.data.minutes / 60)
 	clock_label.text = "DAY %s · %02d:%02d" % [sim.data.day, hours, int(sim.data.minutes) % 60]
@@ -483,6 +495,7 @@ func _settle_layout() -> void:
 	_resize()
 
 func _load_progress() -> Dictionary:
+	if OS.get_cmdline_user_args().has("--test"): return {"ok": true, "message": "Isolated test scene"}
 	var connection_text := ""
 	if OS.has_feature("web"):
 		connection_text = str(JavaScriptBridge.get_interface("NSLPrivateStore").read())
@@ -505,6 +518,7 @@ func _load_progress() -> Dictionary:
 	return sim.load_from(path, catch_up)
 
 func _save() -> void:
+	if OS.get_cmdline_user_args().has("--test"): return
 	var saved := false
 	if OS.has_feature("web"):
 		sim.data.last_saved = Time.get_unix_time_from_system()
@@ -555,6 +569,7 @@ func _walk_to(point: Vector2, place: String) -> bool:
 
 func _open_explore() -> void:
 	_dialog(WorldPlan.profile(district_id).name, "Walk to the local danfo stop, or ride to another district. Starter venues are on Home street.")
+	modal_body.add_child(_button("Up NEPA! · Story mode", _open_campaign, true))
 	modal_body.add_child(_button("Ride between districts", _open_routes, true))
 	modal_body.add_child(_button("Neighbourhood errands · journal", _open_errands))
 	modal_body.add_child(_button("Walk to the local danfo stop", _travel.bind("bus")))
@@ -1248,6 +1263,65 @@ func _cloud_changed() -> void:
 	world.set_context(sim.data)
 	_refresh()
 	_save()
+	if Campaign.active(sim.data.campaign) and campaign_view == null: _open_campaign()
+	if campaign_view != null: campaign_view.display(sim.data.campaign, cloud.busy or not cloud.connected or not cloud.pending.is_empty())
+
+func _open_campaign() -> void:
+	if journey_view != null:
+		_toast("Finish your ride before opening the campaign.")
+		return
+	_close_modal()
+	walking = false
+	walking_route.clear()
+	if campaign_view == null:
+		campaign_view = CampaignView.new()
+		hud.add_child(campaign_view)
+		world.hide()
+		campaign_view.requested.connect(_campaign_command)
+		campaign_view.exit_requested.connect(_exit_campaign)
+		_hide_street_hud()
+	campaign_view.display(sim.data.campaign, cloud.enabled() and (cloud.busy or not cloud.connected or not cloud.pending.is_empty()))
+	if sim.data.campaign.get("paused", true) and sim.data.campaign.get("status") != "unstarted": _campaign_command("campaign_resume", -1, "")
+
+func _campaign_command(kind: String, stage: int, choice: String) -> void:
+	var result: Dictionary
+	if cloud.enabled():
+		if campaign_view != null: campaign_view.display(sim.data.campaign, true)
+		var args := {}
+		if stage >= 0: args.stage = stage
+		if not choice.is_empty(): args.choice = choice
+		result = await cloud.submit(kind, args)
+	else:
+		result = sim.campaign_command(kind, stage, choice)
+		if result.ok: _save()
+	if kind == "campaign_pause" and result.ok:
+		_close_campaign()
+	elif campaign_view != null:
+		campaign_view.display(sim.data.campaign, cloud.enabled() and (cloud.busy or not cloud.connected or not cloud.pending.is_empty()))
+		campaign_view.message(result.message)
+	_refresh()
+
+func _exit_campaign() -> void:
+	if sim.data.campaign.get("version") != 1 or sim.data.campaign.get("status") == "unstarted" or sim.data.campaign.get("paused", false):
+		_close_campaign()
+	else: _campaign_command("campaign_pause", -1, "")
+
+func _close_campaign() -> void:
+	if campaign_view != null:
+		hud.remove_child(campaign_view)
+		campaign_view.queue_free()
+		campaign_view = null
+		world.show()
+		for child in hud.get_children():
+			if child is Control: child.show()
+		journey_panel.hide()
+		toast_label.visible = toast_remaining > 0
+		_resize()
+		_refresh()
+
+func _hide_street_hud() -> void:
+	for child in hud.get_children():
+		if child is Control and child != campaign_view: child.hide()
 
 func _open_street_notice() -> void:
 	var settings: Dictionary = cloud.world_settings if cloud.enabled() else {}

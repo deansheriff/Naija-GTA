@@ -19,6 +19,7 @@ func enabled() -> bool:
 	return not base_url.is_empty()
 
 func _ready() -> void:
+	if OS.get_cmdline_user_args().has("--test"): return
 	var raw := ""
 	if OS.has_feature("web"):
 		raw = str(JavaScriptBridge.get_interface("NSLPrivateStore").read())
@@ -182,6 +183,7 @@ func submit(kind: String, args: Dictionary = {}) -> Dictionary:
 	if busy or not pending.is_empty(): return {"ok": false, "message": "An action is waiting. Let it finish or retry it in Cloud save."}
 	if not connected: return {"ok": false, "message": "Reconnect your cloud save before starting an activity."}
 	var crypto := Crypto.new()
+	poll_time = 0
 	pending = {"key": crypto.generate_random_bytes(16).hex_encode(), "body": args.duplicate(true)}
 	pending.body.kind = kind
 	pending.body.revision = revision
@@ -193,6 +195,7 @@ func submit(kind: String, args: Dictionary = {}) -> Dictionary:
 func retry_pending() -> Dictionary:
 	if busy or pending.is_empty(): return {"ok": false, "message": "No action ready for retry."}
 	busy = true
+	changed.emit()
 	if pending.body.kind == "sync": await _load_world_settings()
 	var result := await _request("/v1/intents", HTTPClient.METHOD_POST, pending.body, pending.key)
 	if result.ok:

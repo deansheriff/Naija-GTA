@@ -1,13 +1,13 @@
 # Current production work
 
-The owner selected **the full game including Up NEPA!** and authorised continuous building across milestones. [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md) is the completion checklist; [ROADMAP.md](ROADMAP.md) retains world/campaign dependencies. Do not stop at the next milestone for another “proceed.”
+The owner selected **the full game including Up NEPA!** and authorised continuous building. [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md) tracks completion; [ROADMAP.md](ROADMAP.md) retains dependencies. No milestone requires another “proceed.”
 
-Version **0.11.0** adds a playable starter radio with six server-validated signal channels, persistent boards and replay-safe payment. The neighbourhood, NPC routines, errands, repair career, home inventory and owner console remain available. See [interactive repair](MILESTONE_10.md).
+Version **0.12.0** adds the playable text-first wedding introduction: three original posed leads, 14 server-validated checkpoints, free retry hints, scene summaries, Family Meeting selection and sandbox isolation. The narrative mission/progression/script/dialogue/integration drafts are complete. Later acts, directional movement and chapter replay remain in production. See [wedding milestone](MILESTONE_11.md).
 
-Next: complete the campaign mission list, ability/progression rules, Prologue/Act 1 scripts, dialogue banks and integration specification, in that order. Build the separately saved campaign foundation and **Owambe, Owambe** wedding tutorial with three perspectives, Family Meeting, checkpoints, text-first scenes and skip summaries. Then continue through all three acts and the four endings. Keep sandbox progress separate, story-critical logic scripted and the council contest wholly fictional.
+Next, implement the owner's requested admin dialogue/cultural-review queue in `/owner/`: readable context, exact-text version tracking, notes/status and append-only history. Actual admin review remains pending until performed. Continue Act 1's Baba God Dey, Ajo Day, Four Percent and Family Meeting tasks, then the remaining acts and four endings. Keep critical logic scripted and the council contest wholly fictional.
 
-Continue browser/native exports, meaningful regression/branch tests, actual-scene touch/keyboard reviews and CI verification. The draft story/cultural language still needs real native-speaker review before release; later owner instructions supersede the original stop-after-bible handoff.
+Every milestone includes meaningful regression/branch checks, rebuilt browser/native exports, actual-scene touch/keyboard/visual review, source push and CI. Broader accessibility, original directional hero animation, device performance and content review remain release gates.
 
-External verification remains pending: Coolify/server access, an actual Android device, production signing/distribution ownership, off-host backups and a separate-host restore rehearsal. The latest remote check returned Cloudflare Tunnel 1033, so current deployment has not been verified. Keep the production database volume/password and existing saves. `/owner/` setup and trusted-proxy guidance remain in [OWNER_PANEL.md](OWNER_PANEL.md).
+External inputs are pending: approved Coolify/server access, a real Android test device, production signing/distribution and off-host backup/restore arrangements. The latest public check returned HTTP 200 and build version 0.8.0. The tunnel is reachable again; newer releases remain unverified on Coolify. Keep the database volume/password and existing saves. Deployment/trusted-proxy guidance remains in [OWNER_PANEL.md](OWNER_PANEL.md).
 
-Jev/provider budgets, licensed news, actual elections, payments and reward redemption remain separate integrations. They cannot block scripted campaign progress.
+Jev/provider budgets, licensed news, actual elections, payments and reward redemption remain separate integrations and cannot block the scripted campaign.

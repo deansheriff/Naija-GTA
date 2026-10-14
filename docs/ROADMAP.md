@@ -1,6 +1,6 @@
 # Naija Street Life — world and story roadmap
 
-The playable sandbox and the **Naija Street Life: Up NEPA!** campaign share world technology, art direction and controls. Campaign progress will be versioned separately from existing sandbox saves. The story brief and [draft story bible](STORY_BIBLE_UP_NEPA.md) are now part of this roadmap. The campaign itself is not playable yet.
+The playable sandbox and the **Naija Street Life: Up NEPA!** campaign share world technology, art direction and controls. Campaign progress is versioned separately within the character save. The [story bible](STORY_BIBLE_UP_NEPA.md), narrative deliverables and continuous [production plan](PRODUCTION_PLAN.md) are part of this roadmap. Version 0.12 makes the wedding introduction playable; the full campaign remains in production.
 
 ## 0.4 — Movement and nature
 
@@ -55,9 +55,9 @@ Implemented in 0.11.0: six labelled signal dials replace the timer-only starter 
 | Stage | Deliverable and dependency |
 |---|---|
 | S0 · Drafted | [Story bible](STORY_BIBLE_UP_NEPA.md): premise, themes, Tunde/Ngozi/KC voices and arcs, relationships, secrets, gags, world rules and ending intentions. The owner's continuous full-game instruction permits continuing the deliverables; native-speaker/cultural release review remains pending. |
-| S1 · Planned | Full mission list with objectives, set pieces, comedic beats and rewards, then the three-character ability/progression specification. Separate story props and campaign rewards from sandbox currency. |
-| S2 · Planned | Prologue and Act 1 scripts, followed by ambient/failure/switching dialogue banks and the full systems integration specification. Tag slang and cultural delivery for native-speaker review. |
-| S3 · Planned | A small replayable **Owambe, Owambe** vertical slice: wedding staging, blackout/light restoration, a tutorial perspective for each lead, Family Meeting switching, text-first cutscenes and skip summaries. Requires reviewed scripts, original protagonist art and checkpoint rules. |
+| S1 · Drafted | [Full mission list](CAMPAIGN_MISSIONS.md) with objectives, set pieces, comedic beats, rewards and endings, followed by [protagonist progression](CAMPAIGN_PROGRESSION.md). Story props/mastery stay separate from sandbox currency. |
+| S2 · Drafted | [Prologue/Act 1 scripts](CAMPAIGN_SCRIPTS_ACT1.md), [ambient/failure/switching dialogue](CAMPAIGN_DIALOGUE.md), then [integration/checkpoint specification](CAMPAIGN_INTEGRATION.md). Real cultural/native-speaker review remains pending. |
+| S3 · First slice implemented in 0.12 | **Owambe, Owambe**: original posed protagonist art and layered hall staging, three scripted perspectives, labelled invitation/food/filming choices, 14 resumable checkpoints, static blackout, text summaries and Family Meeting selection. Full directional movement, richer task animation and isolated chapter replay still follow. See [wedding introduction](MILESTONE_11.md). |
 | S4 · Planned | **Light Out**: the danfo/bag discovery, Ajo Day, Four Percent and Family Meeting. Add server-persisted campaign checkpoints, evidence, relationships, meters and replay-safe mission rewards. Vehicle missions depend on 0.6 travel; consequential NPC outcomes depend on 0.7 rules. |
 | S5 · Planned | **Spread**, then the wholly fictional **Election Day** finale and four endings. Add scripted negotiation/chase/filming systems, bounded off-character catch-up incidents, receipt-and-witness investigations and evidence-driven public exposure. Test every branch, recovery path and ending. |
 
@@ -72,3 +72,5 @@ Critical missions and dialogue remain scripted. Jev decisions and licensed live 
 Every milestone ships a rebuilt browser export, native APK, regression checks, an in-motion animation review and screenshots. Recheck the deployed version through `build-info.json`. Physical-phone HTTPS/input/rendering and 20-minute thermal sessions are separate evidence from desktop tests. Larger shared markets, real election data, payments and reward redemption remain separate later work under the original approved plan.
 
 The owner selected the full game including this campaign as the production scope on 14 October 2026. Follow [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md) continuously across milestones without another handoff. A completed prototype milestone does not establish production readiness.
+
+The owner requested dialogue/cultural review through the control panel. Next extend `/owner/` with a content-review queue tied to the exact text version, reviewer notes/status and audit history. This provides the review mechanism; content is not deemed reviewed until an admin actually completes it. Continue Act 1 alongside release work.

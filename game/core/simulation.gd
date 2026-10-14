@@ -3,6 +3,7 @@ extends RefCounted
 
 const VERSION = 1
 const RepairTask = preload("res://core/repair_task.gd")
+const Campaign = preload("res://core/campaign.gd")
 const ACTIONS = {
 	"eat": {"name": "Jollof at Amaka's", "seconds": 6.0, "cost": 25, "food": 35, "energy": 4},
 	"communitymeal": {"name": "Amaka's community plate", "seconds": 12.0, "cost": 0, "food": 25},
@@ -33,6 +34,7 @@ func _init() -> void:
 
 func reset() -> void:
 	data = {
+		"campaign": Campaign.fresh(),
 		"name": "New neighbor", "bio": "Finding my feet, one small win at a time.",
 		"coins": 240, "food": 65.0, "energy": 78.0, "comfort": 70.0,
 		"repair": 0, "digital": 0, "social": 0, "met_amaka": false,
@@ -46,7 +48,11 @@ func reset() -> void:
 			"fps": 30, "data_saver": true, "manual": false},
 	}
 
+func campaign_command(kind: String, stage: int = -1, choice: String = "") -> Dictionary:
+	return Campaign.command(data.campaign, kind, stage, choice)
+
 func begin_action(code: String) -> Dictionary:
+	if Campaign.active(data.campaign): return {"ok": false, "message": "Pause the campaign before continuing street activities."}
 	if not ACTIONS.has(code):
 		return {"ok": false, "message": "That activity is unavailable."}
 	if not data.active.is_empty():
@@ -76,6 +82,7 @@ func begin_action(code: String) -> Dictionary:
 	return {"ok": true, "message": action.name + "…"}
 
 func tick(seconds: float) -> bool:
+	if Campaign.active(data.campaign): return false
 	seconds = maxf(0.0, seconds)
 	data.minutes += seconds * 0.8
 	if data.minutes >= 1440:
@@ -294,6 +301,7 @@ func load_json(json_text: String, catch_up: bool = true) -> Dictionary:
 		data.wall = incoming.wall
 	if incoming.get("minutes") is float or incoming.get("minutes") is int:
 		data.minutes = clampf(float(incoming.minutes), 0, 1439)
+	data.campaign = Campaign.normalize(incoming.get("campaign"))
 	if incoming.get("neighbors") is Dictionary:
 		for who in ["amaka", "yemi", "park"]:
 			var value: Variant = incoming.neighbors.get(who)

@@ -1,4 +1,5 @@
 import {newRadioPuzzle, radioMatches, type RadioPuzzle} from './repair-puzzle.js';
+import {freshCampaign, campaignCommand, CampaignError, type Campaign} from './campaign.js';
 export const actions = {
   learn: {seconds: 8, cost: 0, energy: 8},
   gig: {seconds: 10, cost: 0, energy: 12},
@@ -19,6 +20,7 @@ export const homeItems = {rug: {name: 'Woven floor mat', price: 90}, plant: {nam
 export const REPAIR_COOLDOWN = 45000;
 export type Action = keyof typeof actions;
 export type State = {
+  campaign: Campaign;
   world_seed: number;
   name: string; bio: string; coins: number; food: number; energy: number; comfort: number;
   repair: number; digital: number; social: number; met_amaka: boolean; gig_done: boolean;
@@ -31,12 +33,12 @@ export type State = {
   inventory: {owned: string[]; equipped: string[]};
   errand: {stage: 'available' | 'collect' | 'repair' | 'ready' | 'installed' | 'complete'; spot: '' | 'board' | 'bench'};
 };
-export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand' | 'repair_move'; action?: Action; tile?: number; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
+export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand' | 'repair_move' | 'campaign_start' | 'campaign_choose' | 'campaign_pause' | 'campaign_resume' | 'campaign_switch'; action?: Action; stage?: number; tile?: number; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
 export class RuleError extends Error {
   constructor(public code: string, message: string, public status = 422) {super(message);}
 }
 export function initialState(now: number): State {
-  return {world_seed: 260713, name: 'New neighbor', bio: 'Finding my feet, one small win at a time.', coins: 240, food: 65, energy: 78, comfort: 70,
+  return {campaign: freshCampaign(), world_seed: 260713, name: 'New neighbor', bio: 'Finding my feet, one small win at a time.', coins: 240, food: 65, energy: 78, comfort: 70,
     repair: 0, digital: 0, social: 0, met_amaka: false, gig_done: false,
     decorated: false, wall: 'sage', day: 1, minutes: 480, posts: [], vote: '', active: null, updatedAt: now,
     neighbors: {amaka: 0, yemi: 0, park: 0, park_choice: ''}, favor: 'available',
@@ -44,6 +46,7 @@ export function initialState(now: number): State {
 }
 // Additive save upgrade: existing JSON characters keep their balances, receipts and schema.
 export function upgradeState(state: State): State {
+  state.campaign ??= freshCampaign();
   state.world_seed ??= 260713;
   state.neighbors ??= {amaka: state.met_amaka ? 1 : 0, yemi: 0, park: 0, park_choice: ''};
   state.favor ??= 'available';
@@ -61,6 +64,21 @@ function finishStarterGig(state: State, ledger: Array<{delta: number; reason: st
 }
 export function applyIntent(state: State, intent: Intent, now: number): Array<{delta: number; reason: string}> {
   upgradeState(state);
+  const storyCommand = intent.kind.startsWith('campaign_');
+  const storyActive = state.campaign.status !== 'unstarted' && !state.campaign.paused;
+  // Story never ages sandbox needs or settles an unrelated job. Keep its
+  // remaining duration by shifting the deadline across the paused interval.
+  if (storyCommand || storyActive) {
+    const paused = Math.max(0, now - state.updatedAt);
+    if (state.active) state.active.endsAt += paused;
+    if (state.career.readyAt > state.updatedAt) state.career.readyAt += paused;
+    state.updatedAt = now;
+    if (storyCommand) {
+      try {campaignCommand(state.campaign, intent.kind, intent.stage, intent.choice);}
+      catch (error) {if (error instanceof CampaignError) throw new RuleError('campaign_choice', error.message); throw error;}
+    } else if (intent.kind !== 'sync') throw new RuleError('campaign_active', 'Pause the campaign before continuing street activities.');
+    return [];
+  }
   const ledger: Array<{delta: number; reason: string}> = [];
   const elapsed = Math.max(0, Math.min(1200, (now - state.updatedAt) / 1000));
   state.minutes += elapsed * 0.8;
