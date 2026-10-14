@@ -6,6 +6,7 @@ import {PostgresStore, type SqlPool, type SqlConnection} from '../src/postgres.j
 import {createApp} from '../src/app.js';
 import type {Intent} from '../src/rules.js';
 import {neighborContract} from './neighbor-contract.js';
+import {careerContract} from './career-contract.js';
 import {operationsContract,fixtureOwner} from './operations-contract.js';
 
 // Embedded PostgreSQL validates real SQL locally. CI uses a multi-connection PostgreSQL service.
@@ -84,6 +85,11 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     await pool.query("UPDATE characters SET state=(state - 'neighbors' - 'favor') WHERE id=$1", [legacy.character.id]);
     assert.equal((await store.read(legacy.character.id)).state.favor, 'available');
     assert.equal((await store.read(legacy.character.id)).state.coins, 240);
+    const careerId = await careerContract(app, ms => {now += ms;});
+    assert.equal(Number((await pool.query('SELECT SUM(delta) AS total FROM ledger WHERE character_id=$1', [careerId])).rows[0].total), 210);
+    await pool.query("UPDATE characters SET state=(state - 'career' - 'inventory') WHERE id=$1", [legacy.character.id]);
+    assert.deepEqual((await store.read(legacy.character.id)).state.career, {completed: 0, readyAt: 0});
+    assert.deepEqual((await store.read(legacy.character.id)).state.inventory, {owned: [], equipped: []});
     await operationsContract(store,app);
     await assert.rejects(pool.query("UPDATE owner_audit SET reason='changed'"),/append-only/);
     const counts=await Promise.all(Array.from({length:12},()=>store.ops.consumeRate('a'.repeat(64),now+60000)));

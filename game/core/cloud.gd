@@ -144,6 +144,8 @@ func _apply(payload: Dictionary) -> void:
 	var character: Dictionary = payload.character
 	revision = int(character.revision)
 	var state: Dictionary = character.state.duplicate(true)
+	if state.get("career") is Dictionary:
+		state.career.cooldown = maxf(0, (float(state.career.get("readyAt", 0)) - float(payload.get("serverTime", state.updatedAt))) / 1000.0)
 	var active: Variant = state.get("active")
 	if active is Dictionary:
 		var remaining := maxf(0, (float(active.endsAt) - float(payload.get("serverTime", state.updatedAt))) / 1000.0)

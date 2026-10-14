@@ -4,11 +4,23 @@ extends RefCounted
 const VERSION = 1
 const ACTIONS = {
 	"eat": {"name": "Jollof at Amaka's", "seconds": 6.0, "cost": 25, "food": 35, "energy": 4},
+	"communitymeal": {"name": "Amaka's community plate", "seconds": 12.0, "cost": 0, "food": 25},
 	"learn": {"name": "Practice a repair", "seconds": 8.0, "cost": 0, "energy": -8, "repair": 1},
 	"gig": {"name": "Repair Yemi's radio", "seconds": 10.0, "cost": 0, "energy": -12, "coins": 90, "repair": 1},
 	"rest": {"name": "Rest at home", "seconds": 8.0, "cost": 0, "energy": 35},
 	"wash": {"name": "Freshen up", "seconds": 5.0, "cost": 0, "comfort": 20},
 	"study": {"name": "Learn digital skills", "seconds": 8.0, "cost": 0, "energy": -8, "digital": 1},
+	"fan": {"name": "Service a standing fan", "seconds": 20.0, "cost": 0, "coins": 45, "repair": 1},
+	"inverter": {"name": "Diagnose an inverter", "seconds": 30.0, "cost": 0, "coins": 75, "repair": 1},
+}
+const REPAIR_JOBS = {
+	"fan": {"energy": 18, "food": 8, "skill": 2, "completed": 0},
+	"inverter": {"energy": 26, "food": 12, "skill": 4, "completed": 3},
+}
+const HOME_ITEMS = {
+	"rug": {"name": "Woven floor mat", "price": 90, "detail": "A warm pattern at your doorway."},
+	"plant": {"name": "Desk plant", "price": 60, "detail": "A little green by the window."},
+	"radio": {"name": "Table radio", "price": 180, "detail": "Your own radio on the home desk."},
 }
 
 var data: Dictionary = {}
@@ -26,6 +38,7 @@ func reset() -> void:
 		"day": 1, "minutes": 480.0, "posts": [], "vote": "", "last_saved": 0.0,
 		"world_seed": 260713,
 		"neighbors": {"amaka": 0, "yemi": 0, "park": 0, "park_choice": ""}, "favor": "available",
+		"career": {"completed": 0, "cooldown": 0.0}, "inventory": {"owned": [], "equipped": []},
 		"settings": {"quality": "Medium", "shadows": true, "effects": true, "distance": 1,
 			"fps": 30, "data_saver": true, "manual": false},
 	}
@@ -35,16 +48,24 @@ func begin_action(code: String) -> Dictionary:
 		return {"ok": false, "message": "That activity is unavailable."}
 	if not data.active.is_empty():
 		return {"ok": false, "message": "Finish your current activity first."}
+	if code == "communitymeal" and (data.coins >= 25 or data.food >= 20):
+		return {"ok": false, "message": "Community plates are for neighbors below 20 food with fewer than 25 SC."}
 	if code == "gig" and data.gig_done:
 		return {"ok": false, "message": "Yemi's radio is already repaired."}
 	if code == "gig" and data.repair < 1:
 		return {"ok": false, "message": "Practice once at the repair bench to unlock this gig."}
+	if REPAIR_JOBS.has(code):
+		var problem := repair_problem(code)
+		if not problem.is_empty(): return {"ok": false, "message": problem}
 	var action: Dictionary = ACTIONS[code]
 	if data.coins < action.cost:
 		return {"ok": false, "message": "You need %s StreetCoins." % action.cost}
 	if action.get("energy", 0) < 0 and data.energy < 15:
 		return {"ok": false, "message": "A quick rest at home will help. Energy must be at least 15."}
 	data.coins -= action.cost
+	if REPAIR_JOBS.has(code):
+		data.energy -= REPAIR_JOBS[code].energy
+		data.food -= REPAIR_JOBS[code].food
 	data.active = {"code": code, "remaining": action.seconds, "total": action.seconds}
 	return {"ok": true, "message": action.name + "…"}
 
@@ -57,6 +78,7 @@ func tick(seconds: float) -> bool:
 	data.food = clampf(data.food - seconds * 0.025, 0, 100)
 	data.energy = clampf(data.energy - seconds * 0.015, 0, 100)
 	data.comfort = clampf(data.comfort - seconds * 0.01, 0, 100)
+	data.career.cooldown = maxf(0, data.career.cooldown - seconds)
 	if data.active.is_empty():
 		return false
 	data.active.remaining -= seconds
@@ -64,6 +86,9 @@ func tick(seconds: float) -> bool:
 		return false
 	var code: String = data.active.code
 	var action: Dictionary = ACTIONS[code]
+	if REPAIR_JOBS.has(code):
+		data.career.completed += 1
+		data.career.cooldown = maxf(0, 45 + data.active.remaining)
 	# Clear before awarding: repeated ticks cannot pay the same action twice.
 	data.active = {}
 	for stat in ["food", "energy", "comfort"]:
@@ -73,8 +98,32 @@ func tick(seconds: float) -> bool:
 	data.coins += action.get("coins", 0)
 	if code == "gig":
 		data.gig_done = true
-	notice = action.name + " complete" + (" · +90 StreetCoins" if code == "gig" else "")
+	notice = action.name + " complete" + (" · +%s StreetCoins" % action.coins if action.has("coins") else "")
 	return true
+
+func repair_problem(code: String) -> String:
+	var job: Dictionary = REPAIR_JOBS[code]
+	if not data.gig_done: return "Finish Yemi's starter radio repair first."
+	if data.repair < job.skill or data.career.completed < job.completed:
+		return "Requires Repair %s and %s completed career jobs." % [job.skill, job.completed]
+	if data.career.cooldown > 0: return "Next customer in %ss. Rest or eat while you wait." % ceili(data.career.cooldown)
+	if data.energy < job.energy + 5 or data.food < 20: return "Needs %s energy and at least 20 food. Rest at home or eat at Amaka's." % (job.energy + 5)
+	return ""
+
+func home_intent(kind: String, item: String, choice: String = "") -> Dictionary:
+	if not HOME_ITEMS.has(item): return {"ok": false, "message": "Choose a listed home item."}
+	if kind == "buy":
+		if item in data.inventory.owned: return {"ok": false, "message": "You already own this item."}
+		if data.coins < HOME_ITEMS[item].price: return {"ok": false, "message": "You need more StreetCoins."}
+		data.coins -= HOME_ITEMS[item].price
+		data.inventory.owned.append(item)
+		data.inventory.equipped.append(item)
+	elif kind == "furnish":
+		if not item in data.inventory.owned or not choice in ["place", "store"]: return {"ok": false, "message": "Choose place or store for an owned item."}
+		data.inventory.equipped.erase(item)
+		if choice == "place": data.inventory.equipped.append(item)
+	else: return {"ok": false, "message": "Choose a listed home action."}
+	return {"ok": true, "message": "Home updated. Purchases use fictional StreetCoins."}
 
 func meet_amaka() -> String:
 	data.neighbors.amaka = maxi(1, data.neighbors.amaka)
@@ -150,7 +199,7 @@ func goal() -> Dictionary:
 		return {"step": 3, "title": "Your first honest hustle", "body": "Repair Yemi's radio and earn 90 StreetCoins.", "place": "repair"}
 	if not data.decorated:
 		return {"step": 4, "title": "Make it yours", "body": "Head home and choose an accent color. Your street life has begun.", "place": "home"}
-	return {"step": 5, "title": "You belong here", "body": "Explore, grow a skill or share your view at the community square.", "place": "square"}
+	return {"step": 7, "title": "Build your repair career", "body": "%s jobs completed. Take repeatable work at Yemi's, then furnish your home." % data.career.completed, "place": "repair"}
 
 func save_to(path: String) -> bool:
 	data.last_saved = Time.get_unix_time_from_system()
@@ -203,6 +252,16 @@ func load_json(json_text: String, catch_up: bool = true) -> Dictionary:
 			data.neighbors.park_choice = incoming.neighbors.park_choice
 	if data.met_amaka: data.neighbors.amaka = maxi(1, data.neighbors.amaka)
 	if incoming.get("favor") in ["available", "carrying", "delivered", "complete"]: data.favor = incoming.favor
+	if incoming.get("career") is Dictionary:
+		var career: Dictionary = incoming.career
+		if career.get("completed") is float or career.get("completed") is int: data.career.completed = clampi(int(career.completed), 0, 1000000)
+		if career.get("cooldown") is float or career.get("cooldown") is int: data.career.cooldown = clampf(float(career.cooldown), 0, 45)
+	if incoming.get("inventory") is Dictionary:
+		data.inventory = {"owned": [], "equipped": []}
+		for field in ["owned", "equipped"]:
+			if incoming.inventory.get(field) is Array:
+				for item in incoming.inventory[field]:
+					if item is String and HOME_ITEMS.has(item) and not item in data.inventory[field] and (field == "owned" or item in data.inventory.owned): data.inventory[field].append(item)
 	if incoming.get("active") is Dictionary:
 		var active: Dictionary = incoming.active
 		if ACTIONS.has(active.get("code", "")) and (active.get("remaining") is float or active.get("remaining") is int):
@@ -227,6 +286,6 @@ func load_json(json_text: String, catch_up: bool = true) -> Dictionary:
 	if incoming.get("last_saved") is float or incoming.get("last_saved") is int:
 		elapsed = clampf(Time.get_unix_time_from_system() - float(incoming.last_saved), 0, 1200)
 	# Prototype catch-up only finishes the single paid-for activity; it never starts new ones.
-	if catch_up and not data.active.is_empty():
+	if catch_up and (not data.active.is_empty() or data.career.cooldown > 0):
 		tick(elapsed)
 	return {"ok": true, "message": "Welcome back. Your local progress is restored." + (" " + notice if not notice.is_empty() else "")}

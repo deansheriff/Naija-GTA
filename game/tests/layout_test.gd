@@ -34,5 +34,13 @@ func run() -> void:
 		continuous_gait = continuous_gait and (walker.position.x < -100 if i == 0 else walker.position.x > 1636)
 	print("Off-screen recycling preserves rendered gait/facing: ", "PASS" if continuous_gait else "FAIL")
 	sane = sane and continuous_gait
+	for page in ["inventory", "repair", "food"]:
+		if page == "inventory": scene._open_home_inventory()
+		else: scene._open_place(page)
+		for i in range(6): await process_frame
+		var rect: Rect2 = scene.modal_panel.get_rect()
+		var fits: bool = rect.position.y >= 0 and rect.end.y <= scene.get_viewport().get_visible_rect().size.y and scene.modal_scroll.size.y > 100
+		print(page, " modal fit/scroll: ", "PASS" if fits else "FAIL")
+		sane = sane and fits
 	print("Desktop layout: ", "PASS" if sane else "FAIL")
 	quit(0 if sane else 1)

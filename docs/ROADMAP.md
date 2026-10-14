@@ -40,7 +40,11 @@ Broader quest/dialogue authoring, delegated staff roles/MFA, verified accounts/e
 
 ## 0.9 — Repeatable careers and home inventory
 
-Build a repeatable repair-career loop with server-owned eligibility, cooldowns and replay-safe rewards. Add clear progression, meaningful energy/food/rest tradeoffs and persistent home items bought with fictional StreetCoins. Retain the starter gig and lunch-favor history. Balance repeatable earnings and recovery paths before expanding to shared marketplace applications, deliverables, reviews or moderation queues.
+Implemented in 0.9.0: two repeatable repair jobs with server-owned eligibility, deadlines, a shared cooldown and replay-safe ledger rewards. Food and energy are spent on acceptance; free rest and paid meals provide recovery. Inverter work unlocks after three completed career jobs and Repair 4. Three cosmetic home items can be bought once, placed or stored, and rendered in the actual room. Career progress and ownership persist in local/cloud saves without resetting starter/favor history. See [career and inventory milestone](MILESTONE_8.md). Balance values are provisional and need longer player sessions before expanding the economy.
+
+## 0.10 — Neighborhood errands and interactions
+
+Extend the neighborhood loop with a bounded authored errand chain for the existing cast and more context-aware park/workshop dialogue. Use explicit quest stages, saved consequences and the existing receipt/ledger rules for any rewards. Keep clear routes, continuous pedestrian crossings and Low-tier animation. Shared marketplace applications, deliverables, reviews and moderation remain separate later work; expand those after the repeatable economy has been playtested.
 
 ## Up NEPA! — campaign production track
 

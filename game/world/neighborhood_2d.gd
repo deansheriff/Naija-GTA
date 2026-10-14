@@ -268,6 +268,7 @@ func neighbor_hit(point: Vector2) -> String:
 	return ""
 
 func set_context(state: Dictionary) -> void:
+	if scenery != null and people != null: scenery.furnish_home(people, state.get("inventory", {}).get("equipped", []))
 	favor_state = state.favor
 	park_familiar = state.neighbors.park > 0
 	park_boundary = state.neighbors.park_choice == "space"

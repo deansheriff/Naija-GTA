@@ -28,6 +28,8 @@ if ($LASTEXITCODE -ne 0) { throw 'NPC routine/relationship checks failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Owner settings/client checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/layout_test.gd
 if ($LASTEXITCODE -ne 0) { throw 'Scene layout check failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/career_test.gd
+if ($LASTEXITCODE -ne 0) { throw 'Career and home inventory checks failed.' }
 if ($Target -eq 'test') { exit 0 }
 if ($Target -in @('web','all')) {
     $webPath = Join-Path $projectRoot 'build\web\play'

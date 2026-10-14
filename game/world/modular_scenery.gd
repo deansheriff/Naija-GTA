@@ -16,6 +16,54 @@ var detailed_motion := true
 var animate := true
 var district: RefCounted
 var parked_bus: Node2D
+var home_decor: Array[Node2D] = []
+var home_decor_signature := "unset"
+
+func furnish_home(sorted_world: Node2D, equipped: Array) -> void:
+	if district == null or district.seed_value != 0: return
+	var signature := str(equipped)
+	if signature == home_decor_signature: return
+	home_decor_signature = signature
+	for node in home_decor:
+		node.get_parent().remove_child(node)
+		node.queue_free()
+	home_decor.clear()
+	# Desk accessories share its solid footprint; the flat mat has no collision.
+	# Each child sorts at its own ground depth, so people and roofs still occlude it.
+	if "rug" in equipped:
+		var mat := Node2D.new()
+		mat.name = "rug"
+		mat.position = Vector2(1220, 399)
+		sorted_world.add_child(mat)
+		home_decor.append(mat)
+		_box(mat, Rect2(-30, 0, 60, 18), Color("a75b40"))
+		for y in [2, 8, 14]:
+			_box(mat, Rect2(-28, y, 56, 2), Color("e0bc77"))
+		for x in [-20, 0, 20]:
+			_shape(mat, [Vector2(x, 2), Vector2(x + 6, 8), Vector2(x, 14), Vector2(x - 6, 8)], Color("456e60"))
+	if "plant" in equipped:
+		var plant := Node2D.new()
+		plant.name = "plant"
+		plant.position = Vector2(1090, 378)
+		sorted_world.add_child(plant)
+		home_decor.append(plant)
+		_shape(plant, [Vector2(-9, -66), Vector2(9, -66), Vector2(6, -51), Vector2(-6, -51)], Color("b46b43"))
+		_box(plant, Rect2(-1, -88, 2, 24), Color("476d42"))
+		for offset in [Vector2(-7, -80), Vector2(6, -86), Vector2(1, -94)]:
+			_ellipse(plant, Vector2(8, 5), Color("57864b")).position = offset
+		for part in plant.get_children(): part.position.y -= 25
+	if "radio" in equipped:
+		var radio := Node2D.new()
+		radio.name = "radio"
+		radio.position = Vector2(1144, 378)
+		sorted_world.add_child(radio)
+		home_decor.append(radio)
+		_box(radio, Rect2(-16, -76, 32, 24), Color("684738"))
+		_box(radio, Rect2(-12, -72, 15, 16), Color("d2bd8b"))
+		for y in [-69, -65, -61]: _box(radio, Rect2(-10, y, 11, 1), Color("705c43"))
+		_ellipse(radio, Vector2(3, 3), Color("ddc896")).position = Vector2(10, -62)
+		_box(radio, Rect2(8, -95, 1, 19), Color("9baba2"))
+		for part in radio.get_children(): part.position.y -= 25
 
 func build(sorted_world: Node2D, sprite_bounds: Dictionary, generated_layout: RefCounted = null) -> void:
 	district = generated_layout if generated_layout != null else Layout.new()
@@ -112,7 +160,7 @@ func _furniture(parent: Node2D, item: Dictionary) -> void:
 	_shape(node, [Vector2(-width / 2, -height), Vector2(-width / 2 + 8, -height - 17), Vector2(width / 2 + 8, -height - 17), Vector2(width / 2, -height)], Color("c99b60"))
 	if item.kind == "bench":
 		_box(node, Rect2(-width / 2, -height - 24, width, 10), Color("b48a51"))
-	else:
+	elif item.id != "home_desk":
 		for x in [-26, 8]:
 			_box(node, Rect2(x, -height - 28, 22, 12), Color("667c75"))
 			_ellipse(node, Vector2(12, 3), Color("c6cec0")).position = Vector2(x + 11, -height - 27)

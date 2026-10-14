@@ -1,0 +1,79 @@
+import assert from 'node:assert/strict';
+import type {FastifyInstance} from 'fastify';
+import type {Intent} from '../src/rules.js';
+
+// Shared HTTP contract: SQLite locally, embedded PostgreSQL locally, PostgreSQL 17 in CI.
+export async function careerContract(app: FastifyInstance, advance: (ms: number) => void) {
+  const guest = (await app.inject({method: 'POST', url: '/api/v1/guests', payload: {}})).json();
+  const headers = {authorization: `Bearer ${guest.token}`};
+  let revision = 0, serial = 0;
+  const raw = (body: object, key = `career-command-${++serial}`, rev = revision) => app.inject({method: 'POST', url: '/api/v1/intents', headers: {...headers, 'idempotency-key': key}, payload: {revision: rev, ...body}});
+  const send = async (body: Omit<Intent, 'revision'>) => {
+    const result = await raw(body); assert.equal(result.statusCode, 200, result.body); revision++;
+    return result.json().character.state;
+  };
+  assert.equal((await raw({kind: 'begin', action: 'fan'})).statusCode, 422);
+  assert.equal((await raw({kind: 'buy', item: 'plant', price: 0})).statusCode, 400);
+  assert.equal((await raw({kind: 'buy', item: 'coin_printer'})).statusCode, 400);
+  assert.equal((await raw({kind: 'furnish', item: 'plant', choice: 'place'})).statusCode, 422);
+  await send({kind: 'begin', action: 'learn'}); advance(8000); await send({kind: 'sync'});
+  await send({kind: 'begin', action: 'gig'}); advance(10000);
+  let state = await send({kind: 'sync'});
+  assert.equal(state.coins, 330); assert.equal(state.repair, 2);
+  const before = state.energy;
+  const accepted = await Promise.all(['career-accept-race-a','career-accept-race-b'].map(key => raw({kind: 'begin', action: 'fan'}, key)));
+  assert.deepEqual(accepted.map(r => r.statusCode).sort(), [200, 409]); revision++;
+  state = accepted.find(r => r.statusCode === 200)!.json().character.state;
+  assert.equal(state.energy, before - 18, 'needs charged once when accepting');
+  assert.equal(state.coins, 330, 'no advance payment');
+  assert.equal((await raw({kind: 'begin', action: 'fan'})).statusCode, 422, 'only one active job');
+  advance(19999); state = await send({kind: 'sync'}); assert.equal(state.coins, 330);
+  advance(1);
+  const receiptRevision = revision;
+  const paid = await Promise.all([raw({kind: 'sync'}, 'career-fan-payment-1'), raw({kind: 'sync'}, 'career-fan-payment-1')]);
+  assert.deepEqual(paid.map(r => r.statusCode), [200, 200]); assert.deepEqual(paid[0].json(), paid[1].json()); revision++;
+  state = paid[0].json().character.state;
+  assert.equal(state.coins, 375); assert.equal(state.career.completed, 1);
+  assert.equal(state.career.readyAt - paid[0].json().serverTime, 45000);
+  assert.equal((await raw({kind: 'begin', action: 'fan'})).json().error, 'career_cooldown');
+  assert.equal((await raw({kind: 'begin', action: 'inverter'})).json().error, 'career_locked');
+  await send({kind: 'begin', action: 'rest'}); advance(8000); await send({kind: 'sync'});
+  advance(37000);
+  for (let i = 0; i < 2; i++) {
+    await send({kind: 'begin', action: 'fan'}); advance(67000);
+    state = await send({kind: 'sync'});
+    assert.equal(state.active, null, 'offline catch-up finishes one job, never chains work');
+  }
+  assert.equal(state.career.completed, 3); assert.equal(state.repair, 5);
+  await send({kind: 'begin', action: 'inverter'}); advance(30000);
+  state = await send({kind: 'sync'}); assert.equal(state.coins, 540); assert.equal(state.career.completed, 4);
+  advance(45000);
+  assert.equal((await raw({kind: 'begin', action: 'fan'})).json().error, 'career_needs', 'low food/energy prevents another paid job');
+  assert.equal((await raw({kind: 'sync'}, 'career-fan-payment-1', receiptRevision)).json().character.state.coins, 375, 'old receipt is exact and does not repay');
+  assert.equal((await raw({kind: 'buy', item: 'plant'}, 'career-fan-payment-1', receiptRevision)).statusCode, 409);
+  for (const item of ['plant', 'rug', 'radio']) state = await send({kind: 'buy', item});
+  assert.equal(state.coins, 210); assert.deepEqual(state.inventory.owned, ['plant','rug','radio']);
+  assert.equal((await raw({kind: 'buy', item: 'plant'})).json().error, 'already_owned');
+  assert.equal((await raw({kind: 'furnish', item: 'plant', choice: 'sell'})).statusCode, 422);
+  state = await send({kind: 'furnish', item: 'plant', choice: 'store'});
+  assert.deepEqual(state.inventory.equipped, ['rug','radio']); assert.equal(state.coins, 210);
+  state = await send({kind: 'furnish', item: 'plant', choice: 'place'});
+  assert.equal(new Set(state.inventory.equipped).size, 3);
+  const recovered = (await app.inject({method: 'POST', url: '/api/v1/sessions', payload: {recoveryCode: guest.recoveryCode}})).json();
+  assert.deepEqual(recovered.character.state.inventory, state.inventory);
+  assert.equal(recovered.character.state.career.completed, 4); assert.equal(recovered.character.state.gig_done, true);
+  const poor = (await app.inject({method: 'POST', url: '/api/v1/guests', payload: {}})).json();
+  const buy = (item: string, rev: number) => app.inject({method: 'POST', url: '/api/v1/intents', headers: {authorization: `Bearer ${poor.token}`, 'idempotency-key': `poor-purchase-${item}`}, payload: {revision: rev, kind: 'buy', item}});
+  assert.equal((await buy('radio', 0)).json().character.state.coins, 60);
+  assert.equal((await buy('rug', 1)).json().error, 'insufficient_coins');
+  assert.equal((await buy('plant', 1)).json().character.state.coins, 0);
+  const plate = (revision: number, kind = 'begin') => app.inject({method: 'POST', url: '/api/v1/intents', headers: {authorization: `Bearer ${poor.token}`, 'idempotency-key': `community-plate-${revision}-${kind}`}, payload: {revision, kind, ...(kind === 'begin' ? {action: 'communitymeal'} : {})}});
+  assert.equal((await plate(2)).json().error, 'meal_reserved', 'low wallet alone does not grant free food');
+  advance(1200000); assert.equal((await plate(2, 'sync')).statusCode, 200);
+  advance(1200000); assert.equal((await plate(3, 'sync')).statusCode, 200);
+  assert.equal((await plate(4)).statusCode, 200); advance(12000);
+  const fed = (await plate(5, 'sync')).json().character.state;
+  assert.equal(fed.coins, 0); assert.ok(fed.food >= 20);
+  assert.equal((await plate(6)).json().error, 'meal_reserved', 'cannot repeatedly claim after recovery');
+  return guest.character.id as string;
+}

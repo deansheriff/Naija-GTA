@@ -95,6 +95,7 @@ func _notification(what: int) -> void:
 
 func _process(delta: float) -> void:
 	if cloud.enabled():
+		sim.data.career.cooldown = maxf(0, sim.data.career.cooldown - delta)
 		if not sim.data.active.is_empty():
 			sim.data.active.remaining = maxf(0, sim.data.active.remaining - delta)
 	elif sim.tick(delta):
@@ -437,7 +438,7 @@ func _refresh() -> void:
 	var hours := int(sim.data.minutes / 60)
 	clock_label.text = "DAY %s · %02d:%02d" % [sim.data.day, hours, int(sim.data.minutes) % 60]
 	var goal: Dictionary = sim.goal()
-	mission_step.text = "NEIGHBOR FAVOR" if goal.step == 6 else "FIRST STEPS  ·  %s / 4" % mini(4, goal.step)
+	mission_step.text = "REPAIR CAREER" if goal.step == 7 else ("NEIGHBOR FAVOR" if goal.step == 6 else "FIRST STEPS  ·  %s / 4" % mini(4, goal.step))
 	mission_title.text = goal.title
 	mission_body.text = goal.body
 	mission_button.text = "Explore the square" if goal.step == 5 else "Take me there"
@@ -448,6 +449,10 @@ func _refresh() -> void:
 		activity_label.text = "%s · %ss" % [Simulation.ACTIONS[sim.data.active.code].name, ceili(sim.data.active.remaining)]
 		activity_bar.value = 100 * (1 - sim.data.active.remaining / sim.data.active.total)
 	brand_subtitle.text = WorldPlan.profile(district_id).name + " · Your neighborhood"
+	for label in get_tree().get_nodes_in_group("career_status"):
+		label.text = "%s jobs completed · Repair %s\n%s" % [sim.data.career.completed, sim.data.repair, "Next customer in %ss" % ceili(sim.data.career.cooldown) if sim.data.career.cooldown > 0 else "Customers ready · eat and rest between jobs"]
+	for button in get_tree().get_nodes_in_group("career_job"):
+		button.disabled = not sim.data.active.is_empty() or not sim.repair_problem(button.get_meta("job")).is_empty()
 	if journey_view != null:
 		var trip = journey_view.model
 		journey_label.text = WorldPlan.profile(trip.origin).name + " to " + WorldPlan.profile(trip.destination).name
@@ -562,6 +567,10 @@ func _open_place(place: String) -> void:
 		_neighbor_venue("amaka")
 		modal_body.add_child(_button("Eat jollof · 25 SC · 6 sec", _start.bind("eat")))
 		modal_body.add_child(_label("+35 food · SC means fictional StreetCoins", 14, MUTED))
+		var community := _button("Community plate · free · +25 food · 12 sec", _start.bind("communitymeal"))
+		community.disabled = sim.data.coins >= 25 or sim.data.food >= 20
+		modal_body.add_child(community)
+		modal_body.add_child(_label("A plate is reserved for neighbors below 20 food with fewer than 25 SC. Rest at home is always free.", 14, MUTED))
 	elif place == "repair":
 		_dialog("Yemi's workshop", "Fix something small. Build a skill that lasts.")
 		modal_body.add_child(_label("REPAIR SKILL · LEVEL %s" % sim.data.repair, 15, GOLD))
@@ -571,6 +580,7 @@ func _open_place(place: String) -> void:
 		gig.disabled = sim.data.repair < 1 or sim.data.gig_done
 		modal_body.add_child(gig)
 		modal_body.add_child(_label("Completed — Yemi's radio works again." if sim.data.gig_done else "Unlocks after one practice. Costs 12 energy; takes 10 seconds.", 15, MUTED))
+		_career_board()
 	elif place == "home":
 		_dialog("Your little corner", "No matter how loud the street gets, this place is yours.")
 		modal_body.add_child(_button("Rest · +35 energy · 8 sec", _start.bind("rest"), true))
@@ -583,6 +593,8 @@ func _open_place(place: String) -> void:
 			var button := _button(color.capitalize(), _decorate.bind(color))
 			button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			colors.add_child(button)
+		modal_body.add_child(_button("Home catalogue & inventory", _open_home_inventory, true))
+		modal_body.add_child(_button("Step inside to see your furnishings", _view_home))
 	elif place == "square":
 		_dialog("The community square", "Benches, football arguments, and everybody's afternoon gist. The park crew hangs out beside the noticeboard.")
 		modal_body.add_child(_button("Talk with the park crew", _travel.bind("park"), true))
@@ -591,6 +603,53 @@ func _open_place(place: String) -> void:
 		_open_park()
 	elif place == "bus":
 		_open_routes()
+
+func _career_board() -> void:
+	modal_body.add_child(HSeparator.new())
+	modal_body.add_child(_label("REPEATABLE REPAIR WORK", 16, GOLD))
+	var status := _label("", 16, CREAM)
+	status.add_to_group("career_status")
+	modal_body.add_child(status)
+	modal_body.add_child(_label("Finish the starter radio first. Each paid job adds 1 Repair and 1 completed job. There is a 45-second shared cooldown after completion. Needs are spent when you accept; payment arrives when the work finishes.", 15, MUTED))
+	for code in Simulation.REPAIR_JOBS:
+		var job: Dictionary = Simulation.REPAIR_JOBS[code]
+		var action: Dictionary = Simulation.ACTIONS[code]
+		modal_body.add_child(_label("%s · %s sec · +%s SC\nRepair %s · %s career jobs · costs %s energy / %s food\nStart with at least %s energy and 20 food." % [action.name, int(action.seconds), action.coins, job.skill, job.completed, job.energy, job.food, job.energy + 5], 16))
+		var button := _button("Accept · " + action.name, _start.bind(code), true)
+		button.set_meta("job", code)
+		button.add_to_group("career_job")
+		modal_body.add_child(button)
+	modal_body.add_child(_button("Rest at home", _travel.bind("home")))
+	modal_body.add_child(_button("Eat at Amaka's · 25 SC", _travel.bind("food")))
+	_refresh()
+
+func _open_home_inventory(message: String = "") -> void:
+	_dialog("Home catalogue & inventory", "Buy once with fictional StreetCoins. New items are placed automatically. Place or store owned items for free. These decorations have no stat bonuses.")
+	if not message.is_empty(): modal_body.add_child(_label(message, 16, GOLD))
+	modal_body.add_child(_label("YOUR BALANCE · %s SC" % sim.data.coins, 17, GOLD))
+	for item in Simulation.HOME_ITEMS:
+		var entry: Dictionary = Simulation.HOME_ITEMS[item]
+		var owned: bool = item in sim.data.inventory.owned
+		var placed: bool = item in sim.data.inventory.equipped
+		modal_body.add_child(_label(entry.name + " · " + ("Placed" if placed else "In storage") if owned else entry.name + " · %s SC" % entry.price, 22))
+		modal_body.add_child(_label(entry.detail, 16, MUTED))
+		var button := _button(("Store" if placed else "Place in home") if owned else "Buy & place · %s SC" % entry.price, _home_action.bind("furnish" if owned else "buy", item, "store" if placed else "place"), not owned)
+		button.disabled = not owned and sim.data.coins < entry.price
+		modal_body.add_child(button)
+	modal_body.add_child(_button("Step inside to see your furnishings", _view_home, true))
+
+func _home_action(kind: String, item: String, choice: String) -> void:
+	var result: Dictionary = await cloud.submit(kind, {"item": item, "choice": choice}) if cloud.enabled() else sim.home_intent(kind, item, choice)
+	if result.ok:
+		world.set_context(sim.data)
+		_save()
+	_open_home_inventory(result.message)
+	_toast(result.message)
+
+func _view_home() -> void:
+	_close_modal()
+	if world.hero.position.distance_to(world.places.home.position) > 4:
+		_walk_to(world.places.home.position, "street")
 
 func _open_routes() -> void:
 	_dialog("Danfo routes · " + WorldPlan.profile(district_id).name, "Choose a stop. Your character walks to the boarding point before the ride. Rides are free in this prototype.")
@@ -827,6 +886,9 @@ func _dialog(title: String, body: String) -> void:
 	modal_body.add_child(_label(body, 18, MUTED))
 	modal_body.add_child(HSeparator.new())
 	_layout_modal()
+	# Wrapped labels report a large minimum before their first layout pass.
+	# Settle again so a long catalogue cannot leave the panel below the screen.
+	call_deferred("_settle_layout")
 	close.grab_focus()
 
 func _layout_modal() -> void:
@@ -879,6 +941,7 @@ func _open_profile() -> void:
 	modal_body.add_child(bio)
 	modal_body.add_child(_label("Repair: %s   ·   Digital: %s   ·   Connection: %s" % [sim.data.repair, sim.data.digital, sim.data.social], 18))
 	modal_body.add_child(_label("Experience: " + ("Completed Yemi's radio repair." if sim.data.gig_done else "Your first gig is still ahead."), 16, MUTED))
+	modal_body.add_child(_label("Repair career: %s completed jobs · %s home items owned" % [sim.data.career.completed, sim.data.inventory.owned.size()], 16, GOLD))
 	modal_body.add_child(_label("NEIGHBORS & FAVORS", 14, GOLD))
 	for who in ["amaka", "yemi", "park"]:
 		modal_body.add_child(_label(who.capitalize() + ": " + StreetDialogue.relationship(sim.data.neighbors[who]), 16, MUTED))
@@ -903,6 +966,11 @@ func _open_market() -> void:
 	modal_body.add_child(_label("Yemi's radio needs a second life", 24))
 	modal_body.add_child(_label("Learn Repair 1, then finish the task at Yemi's workshop. Payment: 90 SC. No real money or professional qualification implied.", 17, MUTED))
 	modal_body.add_child(_button("Completed" if sim.data.gig_done else "Visit the repair shop", _travel.bind("repair"), not sim.data.gig_done))
+	modal_body.add_child(HSeparator.new())
+	modal_body.add_child(_label("REPAIR CAREER · %s JOBS COMPLETED" % sim.data.career.completed, 15, GOLD))
+	modal_body.add_child(_label("Standing fans: 45 SC. Inverters: 75 SC after three career jobs and Repair 4. Rest, eat, and build a home with your earnings.", 17, MUTED))
+	modal_body.add_child(_button("Visit the repair job board", _travel.bind("repair"), true))
+	modal_body.add_child(_button("Visit your home & inventory", _travel.bind("home")))
 	modal_body.add_child(HSeparator.new())
 	modal_body.add_child(_button("Post a local gig draft · 100 SC fee", _open_post))
 	for post in sim.data.posts:
