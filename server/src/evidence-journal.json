@@ -48,6 +48,35 @@
       "kind": "Private account to corroborate",
       "source": "Nneka's agreed quiet-side conversation",
       "scope": "Nneka describes protecting the receipt folder, boarding the bus, leaving the bag while helping Bisi, returning and leaving a message. Compare independent records; public use follows the saved boundary and later exact review. No name, image or voice permission is granted."
+    },
+    {
+      "id": "diary",
+      "mission": "A25",
+      "title": "Receipts and promises diary",
+      "kind": "Witnessed document copy",
+      "source": "Recorded property custodian and witnessed folder inspection",
+      "scope": "The agreed copy retains page order, CAT-18 and repeated promises about PB-1. The original remains under recorded custody; later return does not erase the permitted copy."
+    },
+    {
+      "id": "note_discrepancy",
+      "mission": "A25",
+      "title": "PB-1 issue-label discrepancy",
+      "kind": "Witnessed prop comparison",
+      "source": "Diary promise line and recorded PB-1 inventory band",
+      "scope": "The diary calls PB-1 current issue while its fictional story-prop band says RETIRED ISSUE. It has no StreetCoin, payment or redemption value."
+    },
+    {
+      "id": "witness_consent",
+      "mission": "A25",
+      "title": "NE-1 exact-text permission record",
+      "kind": "Scoped permission receipt",
+      "source": "Nneka's exact redacted-text review",
+      "scope": "This receipt records approval of the exact NE-1 redacted words only. Public use still needs the same approved wording and current permission; no name, image, voice or extra quote is covered. Withdrawal must be respected.",
+      "requiresChoice": {
+        "id": "A25-public_review",
+        "value": "approve_ne1"
+      },
+      "requiresWitnessReview": true
     }
   ],
   "notes": [
@@ -91,5 +120,10 @@
     "private_only": "Private notes only. Public work uses anonymised service records; no identifying quote, image, name or voice.",
     "redacted_review": "Redacted text may be prepared for later exact review. No public use before that review, no name/image/voice, and later withdrawal must be respected.",
     "unknown": "No public permission is recorded. Keep the account private and use anonymised records."
+  },
+  "reviewScopes": {
+    "private_records": "Public testimony was not approved. Keep the account private; use anonymised service records. The diary and main route remain available.",
+    "approve_ne1": "NE-1 redacted written text only, using the same approved wording and current permission. No name/image/voice or extra quote. Editing requires review again; later withdrawal must be respected.",
+    "unknown": "No valid current exact-text approval is recorded. Keep the account private and use anonymised service records."
   }
 }

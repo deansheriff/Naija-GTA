@@ -36,7 +36,11 @@ test('journal restores only eligible records and never erases a prior admission 
 test('meeting/journal canonical sources, evidence requirements and owner-review coverage',()=>{
   assert.deepEqual(JSON.parse(readFileSync(new URL('../../game/story/family-meeting.json',import.meta.url),'utf8')),missions.A14);
   assert.deepEqual(JSON.parse(readFileSync(new URL('../../game/story/evidence-journal.json',import.meta.url),'utf8')),journalData);
-  for(const entry of journalData.entries){assert.ok(missions[entry.mission].evidence.includes(entry.id));const unit=contentUnits.find(u=>u.id==='journal-'+entry.id)!;assert.ok(unit.text.includes(entry.scope));assert.ok(unit.text.includes(entry.source));}
+  for(const entry of journalData.entries){
+    if(entry.requiresChoice){assert.equal(entry.requiresWitnessReview,true);assert.ok(missions[entry.mission].stages.some(stage=>stage.effect==='witness_review'&&stage.choices.some(choice=>choice.correct&&choice.id===entry.requiresChoice!.value)));}
+    else assert.ok(missions[entry.mission].evidence.includes(entry.id));
+    const unit=contentUnits.find(u=>u.id==='journal-'+entry.id)!;assert.ok(unit.text.includes(entry.scope));assert.ok(unit.text.includes(entry.source));
+  }
   for(const note of journalData.notes)assert.ok(contentUnits.find(u=>u.id==='journal-'+note.id)!.text.includes(note.scope));
   for(const text of Object.values(journalData.states))assert.ok(contentUnits.find(u=>u.id==='journal-meeting-status')!.text.includes(text));
   for(const stage of missions.A14.stages){assert.ok(stage.summary.length&&stage.choices.some(c=>c.correct));assert.ok(contentUnits.some(u=>u.id==='A14-'+stage.id));for(const id of stage.requiresEvidence??[])assert.ok(journalData.entries.some(e=>e.id===id));}

@@ -4,6 +4,7 @@ import street from './street-review.json' with {type: 'json'};
 import {journalData} from './evidence-journal.js';
 import {portfolioData} from './portfolio-task.js';
 import {chaseDrivingData} from './driving-task.js';
+import {receiptData} from './receipt-task.js';
 
 export type ContentUnit = {id: string; context: string; text: string; choices: string[]; channel: 'campaign' | 'street'; hash: string};
 export type ReviewRecord = {id: number; unit_id: string; content_hash: string; status: 'approved' | 'changes_requested' | 'pending'; notes: string; actor: string; created_at: number};
@@ -16,7 +17,9 @@ const units = [
   {id:'journal-meeting-status',context:'Up NEPA! / Evidence journal / Meeting decisions',text:Object.values(journalData.states).join('\n\n'),choices:[] as string[],channel:'campaign' as const},
   {id:'portfolio-board',context:'Up NEPA! / Japa Interview / '+portfolioData.title,text:portfolioData.instructions+'\n\n'+portfolioData.questions.map(q=>q.title+'\n'+q.options.map(o=>o.label).join('\n')).join('\n\n')+'\n\n'+Object.values(portfolioData.messages).join('\n\n')+'\n\n'+Object.values(portfolioData.routes).join('\n'),choices:portfolioData.actions.map(a=>a.label),channel:'campaign' as const},
   {id:'chase-driving',context:'Up NEPA! / Danfo Chase / Marked route stops',text:chaseDrivingData.instructions+'\n\n'+Object.values(chaseDrivingData.messages).join('\n\n'),choices:[chaseDrivingData.waitLabel],channel:'campaign' as const},
-  {id:'journal-account-permission',context:'Up NEPA! / Evidence journal / Account permission',text:Object.values(journalData.accountScopes).join('\n\n'),choices:[],channel:'campaign' as const}
+  {id:'journal-account-permission',context:'Up NEPA! / Evidence journal / Account permission',text:Object.values(journalData.accountScopes).join('\n\n'),choices:[],channel:'campaign' as const},
+  {id:'receipt-board',context:'Up NEPA! / Small Small Receipts / '+receiptData.title,text:receiptData.instructions+'\n\n'+receiptData.questions.map(q=>q.title+'\n'+q.options.map(o=>o.label).join('\n')).join('\n\n')+'\n\n'+Object.values(receiptData.messages).join('\n\n')+'\n\n'+receiptData.witnessText+'\n'+receiptData.witnessScope,choices:receiptData.actions.map(a=>a.label),channel:'campaign' as const},
+  {id:'journal-witness-review',context:'Up NEPA! / Evidence journal / Current witness-text review',text:Object.values(journalData.reviewScopes).join('\n\n'),choices:[],channel:'campaign' as const}
 ];
 export const contentUnits: ContentUnit[] = units.map(unit => ({...unit, hash: hash(JSON.stringify(unit))}));
 export function reviewQueue(records: ReviewRecord[]) {

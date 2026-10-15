@@ -8,6 +8,7 @@ const MeetingView = preload("res://world/meeting_view.gd")
 const GeneratorView = preload("res://world/generator_view.gd")
 const InterviewView = preload("res://world/interview_view.gd")
 const BirthdayView = preload("res://world/birthday_view.gd")
+const Receipt = preload("res://core/receipt_task.gd")
 const Portfolio = preload("res://core/portfolio_task.gd")
 const Drive = preload("res://core/driving_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
@@ -15,7 +16,7 @@ signal requested(kind: String, stage: int, choice: String)
 signal exit_requested
 const NAMES = {"tunde": "Tunde · Baba God Dey", "ngozi": "Ngozi · Aunty Boss", "kc": "KC · Content is loading"}
 const BIOS = {"tunde": "A danfo driver dreaming of a fleet. His shortcuts need witnesses.", "ngozi": "Canteen queen and savings-circle organiser. Every grand speech still needs an invoice.", "kc": "A content creator learning the difference between attention and trust."}
-const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18", "original_clip": "Full private wedding source", "service_slip": "Service slip SR-18", "nneka_account": "Nneka's attributed account"}
+const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18", "original_clip": "Full private wedding source", "service_slip": "Service slip SR-18", "nneka_account": "Nneka's attributed account", "diary": "Receipts and promises diary", "note_discrepancy": "PB-1 issue discrepancy", "witness_consent": "NE-1 scoped permission"}
 var content: VBoxContainer
 var feedback: Label
 var feedback_text := "Choose below. There is no timer or penalty for a retry."
@@ -46,6 +47,7 @@ var connection_notice: Label
 var portfolio_view: Control
 var portfolio_status: Label
 var portfolio_feedback: Label
+var receipt_feedback: Label
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -125,11 +127,13 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 	structural.erase("drive")
 	structural.erase("phone")
 	structural.erase("portfolio")
+	structural.erase("receipt")
 	# At a safe stop, replace the driving controls with the route decision.
 	# Moving snapshots continue to update the existing view in place.
 	structural["drive_ready"] = campaign.get("drive") is Dictionary and campaign.drive.ready
 	structural["phone_ready"] = campaign.get("phone") is Dictionary and campaign.phone.ready
 	structural["portfolio_ready"] = campaign.get("portfolio") is Dictionary and campaign.portfolio.ready
+	structural["receipt_ready"] = campaign.get("receipt") is Dictionary and campaign.receipt.ready
 	var next_fingerprint := JSON.stringify(structural)
 	if campaign.get("drive") is Dictionary and snapshot.get("drive") is Dictionary and campaign.drive.misses > snapshot.drive.misses:
 		driving_enabled = false
@@ -137,11 +141,12 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 	snapshot = campaign.duplicate(true)
 	if next_fingerprint == fingerprint:
 		for node in controls:
-			if is_instance_valid(node): node.disabled = busy and node.get_meta("remote", true)
+			if is_instance_valid(node): node.disabled = (busy and node.get_meta("remote", true)) or node.get_meta("unavailable_choice", false)
 		_update_drive()
 		_update_feedback()
 		_update_phone()
 		_update_portfolio()
+		_update_receipt()
 		if restore_focus:
 			if is_instance_valid(focus_before_wait) and focus_before_wait.is_visible_in_tree() and not focus_before_wait.is_queued_for_deletion() and not (focus_before_wait is BaseButton and focus_before_wait.disabled): focus_before_wait.grab_focus()
 			else:
@@ -174,6 +179,7 @@ func build() -> void:
 	portfolio_view = null
 	portfolio_status = null
 	portfolio_feedback = null
+	receipt_feedback = null
 	feedback = null
 	connection_notice.hide()
 	journal_button.text = "Return to scene" if show_journal else "Evidence journal"
@@ -188,7 +194,7 @@ func build() -> void:
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission in ["A11", "A23"] or (c.mission == "A21" and task.get("kind") == "drive")
-	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission == "A24" else Stage.new()
+	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission in ["A24", "A25"] else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
 	if road_scene:
@@ -207,9 +213,12 @@ func build() -> void:
 	elif c.mission == "A13":
 		phone_view = stage
 		stage.update_state(c.phone, task)
-	elif c.mission in ["A14", "A21", "A24"]:
+	elif c.mission in ["A14", "A21", "A24", "A25"]:
 		stage.lead = c.lead
 		stage.scene_id = task.get("scene", "meeting")
+		if c.mission == "A25":
+			stage.heading = "SMALL SMALL RECEIPTS · SOURCE DESK"
+			stage.update_receipt(c.get("receipt", {}))
 	elif c.mission == "A22":
 		portfolio_view = stage
 		stage.scene_id = task.get("scene", "desk")
@@ -239,7 +248,7 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Small Small Receipts is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Fuel Queue Standoff is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
@@ -255,6 +264,7 @@ func build() -> void:
 		feedback = label(feedback_text, 16, Color("d4ed85"))
 		content.add_child(feedback)
 		if task.get("kind") == "portfolio": _portfolio_controls()
+		if task.get("kind") == "receipt": _receipt_controls()
 		if c.paused:
 			content.add_child(button("Resume this checkpoint", func(): requested.emit("campaign_resume", -1, "")))
 		else:
@@ -264,14 +274,57 @@ func build() -> void:
 				choice_button.set_meta("drive_required", task.get("kind") == "drive")
 				choice_button.set_meta("frame_required", task.get("kind") == "frame")
 				choice_button.set_meta("portfolio_required", task.get("kind") == "portfolio")
+				choice_button.set_meta("receipt_required", task.get("kind") == "receipt")
+				if option.has("requiresChoice") and c.choices.get(option.requiresChoice.id) != option.requiresChoice.value: choice_button.set_meta("unavailable_choice", true)
 				content.add_child(choice_button)
 	for node in controls:
-		if is_instance_valid(node): node.disabled = busy and node.get_meta("remote", true)
+		if is_instance_valid(node): node.disabled = (busy and node.get_meta("remote", true)) or node.get_meta("unavailable_choice", false)
 	if not busy: back_button.grab_focus()
 	_update_drive()
 	_update_feedback()
 	_update_phone()
 	_update_portfolio()
+	_update_receipt()
+
+func _receipt_controls() -> void:
+	var data := Receipt.catalogue()
+	content.add_child(label(data.title, 22, Color("edc06d")))
+	content.add_child(label(data.instructions, 16, Color("a6b9ad")))
+	if not snapshot.receipt.ready:
+		for q in data.questions:
+			content.add_child(label(q.title, 19))
+			for option in q.options:
+				var node := button(option.label, _receipt_input.bind(q.id + ":" + option.id))
+				node.set_meta("receipt_input", q.id + ":" + option.id)
+				node.set_meta("base_label", option.label)
+				node.add_to_group("campaign_receipt")
+				content.add_child(node)
+	receipt_feedback = label("", 17, Color("d4ed85"))
+	content.add_child(receipt_feedback)
+	if not snapshot.receipt.ready:
+		for action in data.actions:
+			var node := button(action.label, _receipt_input.bind(str(action.id)))
+			node.set_meta("receipt_input", action.id)
+			node.add_to_group("campaign_receipt")
+			content.add_child(node)
+
+func _receipt_input(input: String) -> void:
+	if busy or show_journal: return
+	requested.emit("campaign_compare", int(snapshot.stage), input)
+
+func _update_receipt() -> void:
+	if not snapshot.get("receipt") is Dictionary: return
+	var task: Dictionary = snapshot.receipt
+	if is_instance_valid(stage_view) and stage_view.has_method("update_receipt"): stage_view.update_receipt(task)
+	if is_instance_valid(receipt_feedback): receipt_feedback.text = str(task.hint) + "\nChecks: " + str(task.attempts)
+	for node in get_tree().get_nodes_in_group("campaign_receipt"):
+		node.disabled = busy or task.ready
+		var input: String = node.get_meta("receipt_input")
+		if ":" in input:
+			var parts := input.split(":")
+			node.text = ("Selected · " if task.answers.get(parts[0]) == parts[1] else "") + str(node.get_meta("base_label"))
+	for node in controls:
+		if is_instance_valid(node) and node.get_meta("receipt_required", false): node.disabled = busy or not task.ready
 
 func _portfolio_controls() -> void:
 	var data := Portfolio.catalogue()
@@ -335,6 +388,7 @@ func _build_journal() -> void:
 	var catalogue := Journal.catalogue()
 	for entry in catalogue.entries:
 		if not entry.mission in snapshot.completed: continue
+		if entry.get("requiresWitnessReview", false) and not Receipt.has_witness_consent(snapshot): continue
 		var saved: bool = entry.id in snapshot.evidence
 		_record_card({"title": entry.title + (" · saved" if saved else " · not recorded here"), "lines": [entry.kind, "Source: " + entry.source, entry.scope]})
 	for entry in catalogue.notes:
@@ -342,6 +396,9 @@ func _build_journal() -> void:
 			_record_card({"title": entry.title, "lines": [entry.kind, "Source: " + entry.source, entry.scope]})
 	if "A24" in snapshot.completed:
 		_record_card({"title": "Nneka's permission boundary", "lines": [catalogue.accountScopes.get(snapshot.choices.get("A24-consent", ""), catalogue.accountScopes.unknown)]})
+	if "A25" in snapshot.completed:
+		var scope: String = "approve_ne1" if Receipt.has_witness_consent(snapshot) else "private_records" if snapshot.choices.get("A25-public_review") == "private_records" else "unknown"
+		_record_card({"title": "Current witness-text review", "lines": [catalogue.reviewScopes[scope]]})
 	var status := Journal.status(snapshot)
 	_record_card({"title": "Meeting decisions", "lines": [status.disclosure, status.custody, status.pact]})
 	content.add_child(label("Restore earned records rechecks sources from completed chapters. It does not grant an unearned clue, mastery or StreetCoins.", 16, Color("a6b9ad")))
@@ -351,7 +408,7 @@ func _build_journal() -> void:
 	feedback = label(feedback_text, 16, Color("d4ed85"))
 	content.add_child(feedback)
 	for node in controls:
-		if is_instance_valid(node): node.disabled = busy and node.get_meta("remote", true)
+		if is_instance_valid(node): node.disabled = (busy and node.get_meta("remote", true)) or node.get_meta("unavailable_choice", false)
 	_update_feedback()
 
 func _phone_controls(task: Dictionary) -> void:

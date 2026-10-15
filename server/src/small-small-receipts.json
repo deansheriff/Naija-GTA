@@ -1,0 +1,375 @@
+{
+  "version": 1,
+  "id": "A25",
+  "title": "Small Small Receipts",
+  "mastery": {
+    "ngozi": 3
+  },
+  "evidence": [
+    "diary",
+    "note_discrepancy"
+  ],
+  "summary": "Compare three willing sources or their permitted records, inspect the folder with its property custodian, reconcile three claims and retain the diary without requiring public witness permission.",
+  "stages": [
+    {
+      "id": "plan",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "A route with reference numbers",
+      "text": "Ngozi plans three source checks: the service custodian, Nneka's permitted account or service-record alternative, and Sikiru's retained slip. Nobody needs to agree to public use for the investigation to continue.\nNgozi: Small small receipts. One source at a time.\nTunde: Can the Chief's full title fit?\nNgozi: It needs another invoice line.",
+      "summary": "Compare three sources without requiring a public interview or changing bag custody.",
+      "choices": [
+        {
+          "id": "sources",
+          "label": "Use the three source checks and their permitted records",
+          "correct": true
+        },
+        {
+          "id": "rumours",
+          "label": "Skip the records and collect stronger rumours",
+          "correct": false,
+          "hint": "Compare named sources and records. A stronger rumour is still a rumour."
+        }
+      ]
+    },
+    {
+      "id": "custodian",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "The custodian keeps the book",
+      "text": "The service custodian agrees to clarify the permitted excerpt. CAT-18 concerns unpaid catering work; the blue-folder reference identifies where its receipt copies were filed. The index does not name the bag's owner or place every event on a clock. Keep unrelated guest information out of the notes.",
+      "summary": "First source: the willing custodian clarifies the index's limited reference links.",
+      "records": [
+        {
+          "title": "Source one · custodian's permitted clarification",
+          "lines": [
+            "CAT-18: catering work and outstanding account",
+            "Blue folder: receipt-copy filing reference",
+            "No statement of bag ownership",
+            "Ledger remains at the service desk"
+          ]
+        }
+      ],
+      "choices": [
+        {
+          "id": "limited_links",
+          "label": "Keep the reference links and their limits",
+          "correct": true
+        },
+        {
+          "id": "owns_bag",
+          "label": "Treat the folder reference as proof of bag ownership",
+          "correct": false,
+          "hint": "A filing reference does not establish property ownership."
+        }
+      ]
+    },
+    {
+      "id": "nneka_route",
+      "lead": "ngozi",
+      "scene": "quiet",
+      "title": "Another interview is optional",
+      "previousChoice": "A24-consent",
+      "responses": {
+        "private_only": {
+          "text": "Nneka: Keep the earlier conversation private. I am not doing another recorded interview.\nNgozi: We can compare the agreed private notes and anonymised service records.",
+          "summary": "Respect Nneka's private-only boundary and use the service-record alternative."
+        },
+        "redacted_review": {
+          "text": "Nneka: I can review the proposed redacted text later. I still do not agree to a recorded interview.\nNgozi: The written review and the source comparison are separate.",
+          "summary": "Preparation of redacted text remains available, without requiring a recorded interview."
+        }
+      },
+      "text": "The source check can use the permitted private notes plus anonymised records. A refusal to record never removes the diary route or mastery.",
+      "summary": "Second source: use Nneka's permitted account and record alternative without demanding a recording.",
+      "choices": [
+        {
+          "id": "records_alternative",
+          "label": "Respect the refusal and use the permitted source notes/records",
+          "correct": true
+        },
+        {
+          "id": "pressure",
+          "label": "Pressure Nneka to record for a better reward",
+          "correct": false,
+          "hint": "The record alternative progresses equally. No reward requires a witness to surrender a boundary."
+        }
+      ]
+    },
+    {
+      "id": "sikiru",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "A time for one particular request",
+      "text": "Sikiru agrees to compare his retained SR-18 copy. Its 21:14 mark belongs to the assistance request for Bisi at the caterers' room. He does not claim he watched every step at the bus.\nNgozi: A useful time. Let us not give it extra jobs.",
+      "summary": "Third source: Sikiru confirms the request time and limits of his service record.",
+      "records": [
+        {
+          "title": "Source three · SR-18 comparison",
+          "lines": [
+            "Reference: SR-18",
+            "21:14: assistance requested for Bisi",
+            "Location: caterers' room",
+            "Sikiru retains his source copy",
+            "Not a timestamp for every bag/bus event"
+          ]
+        }
+      ],
+      "choices": [
+        {
+          "id": "request_time",
+          "label": "Keep 21:14 with the assistance request",
+          "correct": true
+        },
+        {
+          "id": "everything_time",
+          "label": "Time the entire bag journey at 21:14",
+          "correct": false,
+          "hint": "The timestamp belongs to the assistance request, not every event."
+        }
+      ]
+    },
+    {
+      "id": "custody",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "Open the inventory before the bag",
+      "previousChoice": "A14-custody",
+      "responses": {
+        "ngozi_record": {
+          "text": "Ngozi brings the bag under her existing inventory record for a witnessed folder inspection. The custody entry remains attached.",
+          "summary": "Inspect through Ngozi's recorded custody with a witness."
+        },
+        "joint_record": {
+          "text": "The recorded joint custodian brings the bag for a witnessed folder inspection. Both people retain the custody entry.",
+          "summary": "Inspect through the existing joint custody record."
+        }
+      },
+      "text": "Compare the intact exterior record, permitted folder lead, invoice, service slip and original. Record what is inspected and copied. An inspection is not a new claim of ownership.",
+      "summary": "Use the existing property custodian and earned sources for a witnessed inventory inspection.",
+      "requiresEvidence": [
+        "bag_record",
+        "catering_invoice",
+        "service_slip",
+        "original_clip",
+        "nneka_account"
+      ],
+      "choices": [
+        {
+          "id": "witnessed_inventory",
+          "label": "Inspect the folder with the recorded custodian and witness",
+          "correct": true
+        },
+        {
+          "id": "secret_open",
+          "label": "Open it privately and replace the custody record",
+          "correct": false,
+          "hint": "Keep the recorded custody and witnessed inventory. Restore missing earned sources through the journal."
+        }
+      ]
+    },
+    {
+      "id": "diary",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "Receipts and promises",
+      "text": "Inside the blue folder is a diary-style register of catering receipts and promised project allocations. CAT-18's work reference matches. Several promises cite the same fictional prop bundle as if it were available separately. Keep the pages in order, copy only the relevant lines with the custodian's agreement, and leave the original in recorded custody.\nNgozi: The diary has remembered what the speeches forgot.",
+      "summary": "Preserve the source-labelled diary copy, matching work references and repeated promises without moving the original from custody.",
+      "records": [
+        {
+          "title": "Witnessed diary excerpt · source-labelled copy",
+          "lines": [
+            "Cover: Receipts and promises",
+            "CAT-18: catering work still outstanding",
+            "Multiple project promises refer to prop bundle PB-1",
+            "Copy made with recorded custodian and witness",
+            "Original remains under the same custody record"
+          ]
+        }
+      ],
+      "choices": [
+        {
+          "id": "preserve_order",
+          "label": "Keep the agreed copy in page order with its source line",
+          "correct": true
+        },
+        {
+          "id": "rewrite",
+          "label": "Rewrite the diary to make the argument simpler",
+          "correct": false,
+          "hint": "Preserve the original wording/order and source. Explanation belongs beside the copy, not over it."
+        }
+      ]
+    },
+    {
+      "id": "props",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "Read the label before the promise",
+      "text": "The bundle is a fictional story prop, not spendable game currency. Its inventory band reads RETIRED ISSUE. The diary's promise line describes it as current issue. Record the mismatch without treating the apparent amount as usable money.\nTunde: So the promises have upgraded faster than the paper.\nNgozi: Write that beside the source, not on it.",
+      "summary": "Compare RETIRED ISSUE on prop PB-1 with the diary's current-issue claim. This is a story discrepancy, not real currency guidance.",
+      "records": [
+        {
+          "title": "PB-1 · witnessed prop comparison",
+          "lines": [
+            "Inventory band: RETIRED ISSUE · STORY PROPS",
+            "Diary promise line: current-issue bundle PB-1",
+            "Mismatch: issue label and claim disagree",
+            "No StreetCoins, payment or redemption value"
+          ]
+        }
+      ],
+      "choices": [
+        {
+          "id": "label_mismatch",
+          "label": "Record the issue-label mismatch without spending the props",
+          "correct": true
+        },
+        {
+          "id": "spend",
+          "label": "Convert the apparent amount into StreetCoins",
+          "correct": false,
+          "hint": "These are fictional story props. Record the discrepancy; no currency conversion or payout exists."
+        }
+      ]
+    },
+    {
+      "id": "board",
+      "lead": "ngozi",
+      "scene": "desk",
+      "kind": "receipt",
+      "title": "Three sources. Three precise claims.",
+      "text": "Match the request time, account status and prop issue to what their sources actually establish. Your selections and correction attempts are saved. Guided matching is free and earns the same diary route.",
+      "summary": "Complete the saved three-claim comparison; guidance still requires checking the answers.",
+      "choices": [
+        {
+          "id": "checked",
+          "label": "Keep the checked comparison with the source copies",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "sequence",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "A sequence with room for uncertainty",
+      "text": "The attributed account explains Nneka's intended handover and return. The original supports a helping action; SR-18 supports the request time; the bus record supports the recorded seat location. Together they support a clearer sequence. Do not pretend any one source independently proves everything. The diary and prop mismatch are separate findings.",
+      "summary": "Keep the corroborated parts, attributed details and separate diary/prop findings distinct.",
+      "choices": [
+        {
+          "id": "source_limits",
+          "label": "Retain the sequence with each source's limits",
+          "correct": true
+        },
+        {
+          "id": "one_proof",
+          "label": "Say one document alone proves every allegation",
+          "correct": false,
+          "hint": "The evidence works through comparison, with the limits of each source retained."
+        }
+      ]
+    },
+    {
+      "id": "public_review",
+      "lead": "ngozi",
+      "scene": "quiet",
+      "effect": "witness_review",
+      "title": "Review the exact proposed words",
+      "previousChoice": "A24-consent",
+      "responses": {
+        "private_only": {
+          "text": "Nneka's earlier boundary is private-only. The public-text approval control is unavailable. Continue with anonymised service records instead.",
+          "summary": "Private-only permission is retained; use the anonymised-record route."
+        },
+        "redacted_review": {
+          "text": "Nneka reads the exact proposed NE-1 text below. She can approve only those redacted words or keep the account private. No name, picture, voice or expanded quote is covered.",
+          "summary": "Review the exact redacted NE-1 text or keep the account private; both progress."
+        }
+      },
+      "text": "The scope is NE-1 redacted written text only. No identifying media or extra quotation. Later withdrawal must be respected; editing the text requires another review.",
+      "summary": "Save exact-text approval only if prior redacted review was allowed, or preserve privacy and use records.",
+      "records": [
+        {
+          "title": "NE-1 · exact proposed redacted text",
+          "lines": [
+            "An adult catering worker says she left the bag beneath a bus seat while helping a colleague, then returned to find the bus gone. A private original shows a helping action; a separate service record logs a 21:14 assistance request. These support parts of her account and do not independently establish every moment or ownership.",
+            "NE-1 · redacted written account only. No name, image, voice, contact details or extra quotation. Later withdrawal must be respected. Any edited text needs another review."
+          ]
+        }
+      ],
+      "choices": [
+        {
+          "id": "private_records",
+          "label": "Keep the account private and use anonymised service records",
+          "correct": true
+        },
+        {
+          "id": "approve_ne1",
+          "label": "Nneka approves only the displayed NE-1 redacted text",
+          "correct": true,
+          "requiresChoice": {
+            "id": "A24-consent",
+            "value": "redacted_review"
+          }
+        }
+      ]
+    },
+    {
+      "id": "boundary",
+      "lead": "ngozi",
+      "scene": "quiet",
+      "previousChoice": "A25-public_review",
+      "responses": {
+        "private_records": {
+          "text": "Nneka: Keep my account private.\nNgozi: The public dossier can use anonymised service records. Your investigation copy stays private.",
+          "summary": "No public testimony is granted; use anonymised service records."
+        },
+        "approve_ne1": {
+          "text": "Nneka: Those exact redacted words only. I can withdraw.\nNgozi: We kept those exact words and your limits. A different text needs a different review.",
+          "summary": "The exact redacted text and scope are saved, with later withdrawal respected."
+        }
+      },
+      "title": "A boundary is part of the record",
+      "text": "Neither choice removes the diary, discrepancy, main route or mastery. Later publication checks the current permission and exact wording again.",
+      "summary": "Retain the saved permission result without making public testimony a progression requirement.",
+      "choices": [
+        {
+          "id": "respect",
+          "label": "Keep the saved result and the equal record alternative",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "preserve",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "Copies are not custody transfers",
+      "text": "The original diary stays with the recorded property custodian. Preserve the agreed source-labelled copy and prop discrepancy for evidence review. An accountable bag return later will not erase these retained records.\nNgozi: We can return property without returning to ignorance.",
+      "summary": "Keep agreed copies and the mismatch while preserving original property custody.",
+      "choices": [
+        {
+          "id": "retain_copies",
+          "label": "Retain the agreed copies and unchanged custody record",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "lead": "ngozi",
+      "scene": "desk",
+      "title": "Small papers, larger consequences",
+      "text": "Small Small Receipts complete. Ngozi gains three mastery once. The diary copy and issue discrepancy join the journal. Exact redacted witness approval is retained only if it was permitted and granted; the anonymised-record route remains equally valid. No StreetCoins are awarded.\n\nFuel Queue Standoff follows.",
+      "summary": "Save the diary, discrepancy and actual permission result; three Ngozi mastery once without currency.",
+      "choices": [
+        {
+          "id": "next",
+          "label": "Save the source comparison and records",
+          "correct": true
+        }
+      ]
+    }
+  ]
+}

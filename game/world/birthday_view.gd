@@ -3,6 +3,11 @@ extends Control
 const HEROES = preload("res://assets/campaign-heroes.png")
 var scene_id := "invitation"
 var lead := "ngozi"
+var heading := ""
+var receipt: Dictionary = {}
+func update_receipt(value: Dictionary) -> void:
+	receipt = value.duplicate(true)
+	queue_redraw()
 func _ready() -> void:
 	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -38,8 +43,10 @@ func _draw() -> void:
 	else:
 		draw_rect(Rect2(w * 0.44, h * 0.43, w * 0.14, h * 0.13), Color("e7dbb7"))
 		for i in range(3): draw_line(Vector2(w * 0.46, h * (0.46 + i * 0.025)), Vector2(w * 0.56, h * (0.46 + i * 0.025)), Color("73816a"), 1)
+	if not receipt.is_empty():
+		for i in range(3): draw_circle(Vector2(w * (0.47 + i * 0.04), h * 0.52), 3, Color("78935b") if receipt.answers.has(["time", "account", "issue"][i]) else Color("b8b08d"))
 	draw_rect(Rect2(6, 4, minf(w - 12, 430), 24), Color("eee3c5"))
-	draw_string(ThemeDB.fallback_font, Vector2(12, 20), "ASO-EBI · " + ("QUIET SERVICE CORNER" if scene_id == "quiet" else "INVITED CATERING GUESTS"), HORIZONTAL_ALIGNMENT_LEFT, w - 24, 12, Color("25483a"))
+	draw_string(ThemeDB.fallback_font, Vector2(12, 20), heading if not heading.is_empty() else "ASO-EBI · " + ("QUIET SERVICE CORNER" if scene_id == "quiet" else "INVITED CATERING GUESTS"), HORIZONTAL_ALIGNMENT_LEFT, w - 24, 12, Color("25483a"))
 func _tray() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("d8d7bd")

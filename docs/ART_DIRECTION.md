@@ -130,3 +130,7 @@ The elevated side road view reuses original traffic, neighborhood-walk, building
 ## Aso-Ebi Infiltration - 0.21
 
 `game/world/birthday_view.gd` reuses the original Ngozi/KC poses at a code-native invitation desk, catering table and quiet service corner. Static bunting, the sage triangle, covered tray and open reference book are drawn geometry. Written marker/shape labels and source cards establish the task without colour or audio dependence. No new raster or external reference is included. This is posed staging, not a claim of complete serving/walking/interview animation; Nneka and the birthday supporting cast still need their own final character art.
+
+## Small Small Receipts - 0.22
+
+The existing code-native desk/quiet-corner staging and original Ngozi/KC poses now carry a distinct source-desk heading and three selected-claim dots. Readable record cards show the source index, diary copy, fictional prop band and exact proposed redacted text. No new raster, actual banknote scan, personal footage or outside reference is used. This remains posed document/comparison staging; the final supporting-cast art and deeper inspection/character animation remain separate requirements.

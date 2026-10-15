@@ -55,7 +55,7 @@ export function createApp(store: GameStore, options: {staticRoot?: string; mode?
       schema: {
         headers: {type: 'object', required: ['idempotency-key'], properties: {'idempotency-key': {type: 'string', minLength: 16, maxLength: 80, pattern: '^[A-Za-z0-9_-]+$'}}},
         body: {type: 'object', additionalProperties: false, required: ['revision', 'kind'], properties: {
-          revision: {type: 'integer', minimum: 0, maximum: 2147483647}, kind: {enum: ['sync', 'greet', 'begin', 'decorate', 'profile', 'post', 'cancel', 'poll', 'neighbor', 'buy', 'furnish', 'errand', 'repair_move', 'campaign_start', 'campaign_choose', 'campaign_pause', 'campaign_resume', 'campaign_switch', 'campaign_continue', 'campaign_drive', 'campaign_phone', 'campaign_review', 'campaign_portfolio']},
+          revision: {type: 'integer', minimum: 0, maximum: 2147483647}, kind: {enum: ['sync', 'greet', 'begin', 'decorate', 'profile', 'post', 'cancel', 'poll', 'neighbor', 'buy', 'furnish', 'errand', 'repair_move', 'campaign_start', 'campaign_choose', 'campaign_pause', 'campaign_resume', 'campaign_switch', 'campaign_continue', 'campaign_drive', 'campaign_phone', 'campaign_review', 'campaign_portfolio', 'campaign_compare']},
           stage: {type: 'integer', minimum: 0, maximum: 10000},
           tile: {type: 'integer', minimum: 0, maximum: 5},
           action: {enum: ['learn', 'gig', 'eat', 'communitymeal', 'rest', 'wash', 'study', 'fan', 'inverter', 'lantern']}, item: {enum: ['rug', 'plant', 'radio']}, wall: {enum: ['sage', 'clay', 'ocean']},

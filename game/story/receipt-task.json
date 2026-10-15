@@ -1,0 +1,13 @@
+{
+  "title":"Three claims, three source checks",
+  "instructions":"Select one interpretation for each source, then check the comparison. A correction costs nothing and retains your selections. Guided matching still needs a check.",
+  "questions":[
+    {"id":"time","title":"What does 21:14 time?","options":[{"id":"request","label":"SR-18's assistance request for Bisi","correct":true},{"id":"whole_sequence","label":"Every event in the bag's journey","correct":false}]},
+    {"id":"account","title":"How is Nneka's account supported?","options":[{"id":"limited","label":"Attributed account with limited independent support","correct":true},{"id":"everything","label":"Every detail independently proven by the camera","correct":false}]},
+    {"id":"issue","title":"Which issue label is actually on the story props?","options":[{"id":"retired","label":"RETIRED ISSUE · conflicts with the current-issue claim","correct":true},{"id":"current","label":"CURRENT ISSUE · no discrepancy","correct":false}]}
+  ],
+  "actions":[{"id":"check","label":"Check the three comparisons"},{"id":"assist","label":"Guided source matching · free"}],
+  "messages":{"selected":"Selection kept. Check all three comparisons when ready.","guided":"The source labels are matched. Read them, then check the comparison.","correction":"One or more claims overreach their source. Keep 21:14 with the assistance request, distinguish an account from full proof, and read the prop issue label. Change selections or use guided matching, then check again.","ready":"Comparison checked. Preserve the source limits, diary and prop discrepancy together."},
+  "witnessText":"An adult catering worker says she left the bag beneath a bus seat while helping a colleague, then returned to find the bus gone. A private original shows a helping action; a separate service record logs a 21:14 assistance request. These support parts of her account and do not independently establish every moment or ownership.",
+  "witnessScope":"NE-1 · redacted written account only. No name, image, voice, contact details or extra quotation. Later withdrawal must be respected. Any edited text needs another review."
+}
