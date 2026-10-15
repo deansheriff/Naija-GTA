@@ -119,3 +119,7 @@ Campaign JSON version 6 adds A21 while preserving earlier checkpoint/phone/meeti
 ## Client compatibility (0.18.1)
 
 `GET /api/v1/world` adds public `capabilities`: API version, current campaign version, authored mission IDs and supported campaign commands. It retains the same public settings and no-store policy. Updated clients gate story writes until matching metadata arrives; this does not replace authoritative command validation. Kept story requests retain their key/body/revision through a mismatch, and a rollback's schema rejection triggers a support recheck before a pending story action is cleared. Reconnect after deploying matching static/API/native versions. Schema and campaign version stay unchanged in this patch.
+
+## Japa Interview (0.19)
+
+Campaign version 7 adds A22 and nullable portfolio state. Prior versions upgrade additively, preserving phone/road/meeting choices; SQL remains migration 3. `campaign_portfolio` validates the expected stage and listed answer/review/recovery input. Selected answers, review count, readiness and first/practice/callback route share the ordinary atomic revision/receipt transaction. Both portfolio pieces and opportunity replies complete with the same two KC mastery once, no currency and no new wedding source. The journal adds a separate completed-chapter opportunity note. Canonical task messages/options and all response variants join the 153-unit review queue. Deploy matching clients/server to advertise the new story command.

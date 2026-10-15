@@ -6,6 +6,8 @@ const CanteenView = preload("res://world/canteen_view.gd")
 const PhoneView = preload("res://world/phone_view.gd")
 const MeetingView = preload("res://world/meeting_view.gd")
 const GeneratorView = preload("res://world/generator_view.gd")
+const InterviewView = preload("res://world/interview_view.gd")
+const Portfolio = preload("res://core/portfolio_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
 signal requested(kind: String, stage: int, choice: String)
 signal exit_requested
@@ -37,6 +39,9 @@ var journal_button: Button
 var show_journal := false
 var wait_reason := "Saving or refreshing your cloud checkpoint…"
 var connection_notice: Label
+var portfolio_view: Control
+var portfolio_status: Label
+var portfolio_feedback: Label
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -115,10 +120,12 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 	var structural := campaign.duplicate(true)
 	structural.erase("drive")
 	structural.erase("phone")
+	structural.erase("portfolio")
 	# At a safe stop, replace the driving controls with the route decision.
 	# Moving snapshots continue to update the existing view in place.
 	structural["drive_ready"] = campaign.get("drive") is Dictionary and campaign.drive.ready
 	structural["phone_ready"] = campaign.get("phone") is Dictionary and campaign.phone.ready
+	structural["portfolio_ready"] = campaign.get("portfolio") is Dictionary and campaign.portfolio.ready
 	var next_fingerprint := JSON.stringify(structural)
 	if campaign.get("drive") is Dictionary and snapshot.get("drive") is Dictionary and campaign.drive.misses > snapshot.drive.misses:
 		driving_enabled = false
@@ -127,12 +134,19 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 	if next_fingerprint == fingerprint:
 		for node in controls:
 			if is_instance_valid(node): node.disabled = busy and node.get_meta("remote", true)
-		if restore_focus:
-			if is_instance_valid(focus_before_wait) and focus_before_wait.is_visible_in_tree() and not focus_before_wait.is_queued_for_deletion(): focus_before_wait.grab_focus()
-			else: back_button.grab_focus()
 		_update_drive()
 		_update_feedback()
 		_update_phone()
+		_update_portfolio()
+		if restore_focus:
+			if is_instance_valid(focus_before_wait) and focus_before_wait.is_visible_in_tree() and not focus_before_wait.is_queued_for_deletion() and not (focus_before_wait is BaseButton and focus_before_wait.disabled): focus_before_wait.grab_focus()
+			else:
+				var fallback: Control = back_button
+				for node in get_tree().get_nodes_in_group("campaign_portfolio"):
+					if node.get_meta("portfolio_input") in ["practice", "callback"] and not node.disabled:
+						fallback = node
+						break
+				fallback.grab_focus()
 		return
 	fingerprint = next_fingerprint
 	show_summary = false
@@ -152,6 +166,9 @@ func build() -> void:
 	stage_view = null
 	phone_view = null
 	phone_status = null
+	portfolio_view = null
+	portfolio_status = null
+	portfolio_feedback = null
 	feedback = null
 	connection_notice.hide()
 	journal_button.text = "Return to scene" if show_journal else "Evidence journal"
@@ -166,7 +183,7 @@ func build() -> void:
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission == "A11" or (c.mission == "A21" and task.get("kind") == "drive")
-	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else Stage.new()
+	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
 	if road_scene:
@@ -181,6 +198,10 @@ func build() -> void:
 	elif c.mission in ["A14", "A21"]:
 		stage.lead = c.lead
 		stage.scene_id = task.get("scene", "meeting")
+	elif c.mission == "A22":
+		portfolio_view = stage
+		stage.scene_id = task.get("scene", "desk")
+		stage.update_state(c.portfolio)
 	else:
 		stage.lead = c.lead
 		if c.status == "playing": stage.scene_id = task.scene
@@ -206,13 +227,14 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Japa Interview is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Danfo Chase is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
 		content.add_child(label(NAMES[c.lead], 16, Color("d4ed85")))
 		var scene_text: String = task.summary if show_summary else task.text
 		var response: Dictionary = task.get("responses", {}).get(c.choices.get(task.get("previousChoice", ""), ""), {})
+		if task.get("portfolioResponse", false) and c.portfolio is Dictionary: response = task.get("responses", {}).get(c.portfolio.route, {})
 		if not response.is_empty(): scene_text = str(response.summary if show_summary else response.text) + "\n\n" + scene_text.strip_edges()
 		content.add_child(label(scene_text))
 		for record in task.get("records", []): _record_card(record)
@@ -220,6 +242,7 @@ func build() -> void:
 		feedback_text = "Choose below. There is no timer or penalty for a retry."
 		feedback = label(feedback_text, 16, Color("d4ed85"))
 		content.add_child(feedback)
+		if task.get("kind") == "portfolio": _portfolio_controls()
 		if c.paused:
 			content.add_child(button("Resume this checkpoint", func(): requested.emit("campaign_resume", -1, "")))
 		else:
@@ -228,6 +251,7 @@ func build() -> void:
 				choice_button.add_to_group("campaign_choice")
 				choice_button.set_meta("drive_required", task.get("kind") == "drive")
 				choice_button.set_meta("frame_required", task.get("kind") == "frame")
+				choice_button.set_meta("portfolio_required", task.get("kind") == "portfolio")
 				content.add_child(choice_button)
 	for node in controls:
 		if is_instance_valid(node): node.disabled = busy and node.get_meta("remote", true)
@@ -235,6 +259,57 @@ func build() -> void:
 	_update_drive()
 	_update_feedback()
 	_update_phone()
+	_update_portfolio()
+
+func _portfolio_controls() -> void:
+	var data := Portfolio.catalogue()
+	content.add_child(label(data.title, 22, Color("edc06d")))
+	content.add_child(label(data.instructions, 16, Color("a6b9ad")))
+	portfolio_status = label("", 17, Color("d4ed85"))
+	content.add_child(portfolio_status)
+	if snapshot.portfolio.ready:
+		portfolio_feedback = label("", 17, Color("d4ed85"))
+		content.add_child(portfolio_feedback)
+		return
+	for q in data.questions:
+		content.add_child(label(q.title, 19))
+		for option in q.options:
+			var input: String = q.id + ":" + option.id
+			var node := button(option.label, _portfolio_input.bind(input))
+			node.set_meta("portfolio_input", input)
+			node.set_meta("base_label", option.label)
+			node.add_to_group("campaign_portfolio")
+			content.add_child(node)
+	portfolio_feedback = label("", 17, Color("d4ed85"))
+	content.add_child(portfolio_feedback)
+	for action in data.actions:
+		var node := button(action.label, _portfolio_input.bind(str(action.id)))
+		node.set_meta("portfolio_input", action.id)
+		node.add_to_group("campaign_portfolio")
+		content.add_child(node)
+
+func _portfolio_input(input: String) -> void:
+	if busy or show_journal: return
+	requested.emit("campaign_portfolio", int(snapshot.stage), input)
+
+func _update_portfolio() -> void:
+	if not snapshot.get("portfolio") is Dictionary: return
+	var p: Dictionary = snapshot.portfolio
+	if is_instance_valid(portfolio_view): portfolio_view.update_state(p)
+	if is_instance_valid(portfolio_status): portfolio_status.text = str(Portfolio.catalogue().routes[p.route]) + " · reviews: " + str(p.attempts)
+	if is_instance_valid(portfolio_feedback):
+		portfolio_feedback.text = str(p.hint)
+		portfolio_feedback.visible = not str(p.hint).is_empty()
+	for node in get_tree().get_nodes_in_group("campaign_portfolio"):
+		var input: String = node.get_meta("portfolio_input")
+		var recovery: bool = input in ["practice", "callback"]
+		node.disabled = busy or p.ready or (not p.needsRecovery if recovery else p.needsRecovery)
+		if ":" in input:
+			var parts := input.split(":")
+			var selected: bool = p.answers.get(parts[0]) == parts[1]
+			node.text = ("Selected · " if selected else "") + str(node.get_meta("base_label"))
+	for node in controls:
+		if is_instance_valid(node) and node.get_meta("portfolio_required", false): node.disabled = busy or not p.ready
 
 func _toggle_journal() -> void:
 	driving_enabled = false

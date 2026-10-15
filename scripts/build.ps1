@@ -11,6 +11,8 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/ngozi-intro.json') -D
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/kc-intro.json') -Destination (Join-Path $gamePath 'story/kc-intro.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/family-meeting.json') -Destination (Join-Path $gamePath 'story/family-meeting.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/generator-wars.json') -Destination (Join-Path $gamePath 'story/generator-wars.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/japa-interview.json') -Destination (Join-Path $gamePath 'story/japa-interview.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/portfolio-task.json') -Destination (Join-Path $gamePath 'story/portfolio-task.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/evidence-journal.json') -Destination (Join-Path $gamePath 'story/evidence-journal.json') -Force
 & $enginePath --headless --path $gamePath --editor --import --quit
 if ($LASTEXITCODE -ne 0) { throw 'Godot import failed.' }
@@ -58,6 +60,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Family Meeting/journal/offline-navigation chec
 if ($LASTEXITCODE -ne 0) { throw 'Generator route/site/schedule checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/cloud_protocol_test.gd -- --test
 if ($LASTEXITCODE -ne 0) { throw 'Cloud story-version compatibility checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/interview_campaign_test.gd -- --test
+if ($LASTEXITCODE -ne 0) { throw 'Japa Interview/portfolio/recovery checks failed.' }
 if ($Target -eq 'test') { exit 0 }
 if ($Target -in @('web','all')) {
     $webPath = Join-Path $projectRoot 'build\web\play'

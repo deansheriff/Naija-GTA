@@ -48,7 +48,7 @@ export async function generatorContract(app:FastifyInstance,advance:(ms:number)=
     assert.equal(state.campaign.status,'hub');assert.deepEqual(state.campaign.mastery,{tunde:6,ngozi:6,kc:4});assert.equal(state.coins,240);
     assert.equal(JSON.stringify(state.campaign.evidence),evidence);assert.equal(JSON.stringify(state.campaign.phone),phone);assert.equal(JSON.stringify(journalStatus(state.campaign)),meeting);
     assert.equal(state.campaign.choices['A21-placement'],'yard_c');assert.equal(state.campaign.choices['A21-hours'],hours);assert.equal(state.campaign.choices['A14-pact'],pact);
-    assert.equal((await raw({kind:'campaign_choose',stage:12,choice:'next'})).statusCode,422);assert.equal((await raw({kind:'campaign_continue'})).statusCode,422);
+    assert.equal((await raw({kind:'campaign_choose',stage:12,choice:'next'})).statusCode,422);
     state=await send({kind:'campaign_review'});assert.deepEqual(state.campaign.mastery,{tunde:6,ngozi:6,kc:4});
     ids.push(guest.character.id);
   }

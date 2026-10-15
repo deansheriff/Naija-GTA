@@ -1,20 +1,22 @@
 extends RefCounted
-const VERSION = 6
+const VERSION = 7
 const STORY_PATH = "res://story/prologue.json"
 const TUNDE_PATH = "res://story/tunde-intro.json"
 const NGOZI_PATH = "res://story/ngozi-intro.json"
 const KC_PATH = "res://story/kc-intro.json"
 const MEETING_PATH = "res://story/family-meeting.json"
 const GENERATOR_PATH = "res://story/generator-wars.json"
+const INTERVIEW_PATH = "res://story/japa-interview.json"
 const LEADS = ["tunde", "ngozi", "kc"]
-const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21"]
+const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22"]
 const Drive = preload("res://core/driving_task.gd")
 const Phone = preload("res://core/phone_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
+const Portfolio = preload("res://core/portfolio_task.gd")
 
 static func story(id: String = "P00") -> Dictionary:
 	if not id in ORDER: return {}
-	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH}[id]
+	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH}[id]
 	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if id == "P00":
 		content.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
@@ -22,7 +24,7 @@ static func story(id: String = "P00") -> Dictionary:
 	return content
 
 static func fresh() -> Dictionary:
-	return {"version": VERSION, "mission": "P00", "status": "unstarted", "stage": 0, "lead": "tunde", "completed": [], "mastery": {"tunde": 0, "ngozi": 0, "kc": 0}, "evidence": [], "paused": true, "choices": {}, "drive": null, "phone": null}
+	return {"version": VERSION, "mission": "P00", "status": "unstarted", "stage": 0, "lead": "tunde", "completed": [], "mastery": {"tunde": 0, "ngozi": 0, "kc": 0}, "evidence": [], "paused": true, "choices": {}, "drive": null, "phone": null, "portfolio": null}
 
 static func normalize(value: Variant) -> Dictionary:
 	if not value is Dictionary: return fresh()
@@ -34,13 +36,16 @@ static func normalize(value: Variant) -> Dictionary:
 		value.choices = {}
 		value.drive = null
 		value.phone = null
+		value.portfolio = null
 	elif value.get("version") in [2, 3]:
 		value = value.duplicate(true)
 		value.version = VERSION
 		value.phone = null
-	elif value.get("version") in [4, 5]:
+		value.portfolio = null
+	elif value.get("version") in [4, 5, 6]:
 		value = value.duplicate(true)
 		value.version = VERSION
+		value.portfolio = null
 	if value.get("version") != VERSION or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()
 	if not value.get("mission") in ORDER: return value.duplicate(true)
 	var content := story(value.mission)
@@ -78,6 +83,9 @@ static func normalize(value: Variant) -> Dictionary:
 	var phone := Phone.normalize(value.get("phone"))
 	if not phone.is_empty(): result.phone = phone
 	elif result.mission == "A13": result.phone = Phone.fresh()
+	var portfolio := Portfolio.normalize(value.get("portfolio"))
+	if not portfolio.is_empty(): result.portfolio = portfolio
+	elif result.mission == "A22": result.portfolio = Portfolio.fresh()
 	return result
 
 static func active(c: Dictionary) -> bool:
@@ -90,6 +98,7 @@ static func _stage(c: Dictionary, now: int) -> void:
 	if c.mission == "A13":
 		if not c.phone is Dictionary: c.phone = Phone.fresh()
 		if task.get("kind") == "frame": Phone.reset_frame(c.phone)
+	if c.mission == "A22" and not c.portfolio is Dictionary: c.portfolio = Portfolio.fresh()
 
 static func command(c: Dictionary, kind: String, stage: int = -1, choice: String = "", now: int = -1) -> Dictionary:
 	if now < 0: now = Time.get_ticks_msec()
@@ -127,6 +136,10 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 	if c.status != "playing" or c.paused or stage != c.stage: return fail
 	var content := story(c.mission)
 	var task: Dictionary = content.stages[c.stage]
+	if kind == "campaign_portfolio":
+		if task.get("kind") != "portfolio" or not c.portfolio is Dictionary or not choice in Portfolio.inputs(): return {"ok": false, "message": "Use one of the portfolio controls shown for this checkpoint."}
+		Portfolio.advance(c.portfolio, choice)
+		return {"ok": true, "message": "Portfolio checkpoint saved."}
 	if kind == "campaign_phone":
 		if task.get("kind") != "frame" or not c.phone is Dictionary or not choice in Phone.INPUTS: return {"ok": false, "message": "Use the illustrated phone controls shown for this checkpoint."}
 		Phone.advance(c.phone, choice, int(task.recordCost))
@@ -138,6 +151,7 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 	if kind != "campaign_choose": return fail
 	if task.get("kind") == "drive" and not c.drive.get("ready", false): return {"ok": false, "message": "Reach the lower-lane safe bay and stop first. Guided approach is available."}
 	if task.get("kind") == "frame" and not c.phone.get("ready", false): return {"ok": false, "message": "Save the full centred wide frame first. Guided full frame is available at the same battery cost."}
+	if task.get("kind") == "portfolio" and not c.portfolio.get("ready", false): return {"ok": false, "message": "Check the three portfolio answers first. Free practice, callback and guided answers are available."}
 	for option in task.choices:
 		if option.id != choice: continue
 		if not option.correct: return {"ok": false, "message": option.get("hint", "Try the labelled objective again.")}

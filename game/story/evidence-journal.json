@@ -7,7 +7,8 @@
     {"id":"original_clip","mission":"A13","title":"Full private wedding source","kind":"Private full-context copy","source":"KC's Four Percent source review","scope":"The copy retains the helping action missing from the crop. Keep it private unless later use has the required consent."}
   ],
   "notes":[
-    {"id":"nneka_message","mission":"A12","title":"Nneka's initial message","kind":"Account to compare","source":"Message received during Ajo Day","scope":"Nneka said she left the bag while helping Bisi. This initial account needs comparison with timing, locations and later testimony; it is not the later corroborated account."}
+    {"id":"nneka_message","mission":"A12","title":"Nneka's initial message","kind":"Account to compare","source":"Message received during Ajo Day","scope":"Nneka said she left the bag while helping Bisi. This initial account needs comparison with timing, locations and later testimony; it is not the later corroborated account."},
+    {"id":"open_window","mission":"A22","title":"Open Window follow-up","kind":"Creative opportunity","source":"KC's Japa Interview","scope":"The checked portfolio earned a follow-up option. First presentation, practice and callback preserve the same opportunity. KC's later decision about leaving remains open; this note is not wedding evidence."}
   ],
   "states":{
     "disclosure_admitted":"KC explained that the earlier crop omitted the helping action.",

@@ -118,3 +118,7 @@ The existing original `campaign-heroes.png` Ngozi pose is drawn behind a shaded 
 ## Generator Wars - 0.18
 
 `game/world/generator_view.gd` reuses the original Tunde/Ngozi poses in a code-native community yard. Loan equipment, canteen doorway/window, open yard and three labelled site proposals are painted geometry; no new raster or external reference is used. Chapter/junction labels extend the existing bounded road view. This is posed staging and a readable planning task, without engine-operation animation or an audio-only rattle clue.
+
+## Japa Interview - 0.19
+
+`game/world/interview_view.gd` reuses the original KC pose in a code-native desk/window/laptop scene. Three on-screen dots indicate selected answers; readable controls and review feedback establish correctness. No new raster, external footage, live camera or call integration is used. This is posed staging with a responsive task display; directional cast animation remains separate production work.

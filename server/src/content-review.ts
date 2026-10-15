@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {missions} from './campaign.js';
 import street from './street-review.json' with {type: 'json'};
 import {journalData} from './evidence-journal.js';
+import {portfolioData} from './portfolio-task.js';
 
 export type ContentUnit = {id: string; context: string; text: string; choices: string[]; channel: 'campaign' | 'street'; hash: string};
 export type ReviewRecord = {id: number; unit_id: string; content_hash: string; status: 'approved' | 'changes_requested' | 'pending'; notes: string; actor: string; created_at: number};
@@ -11,7 +12,8 @@ const units = [
   ...Object.values(missions).flatMap(mission => mission.stages.map(stage => ({id: mission.id + '-' + stage.id, context: `Up NEPA! / ${mission.title} / ${stage.lead} / ${stage.title}`, text: stage.text + '\n\nScene summary:\n' + stage.summary + (stage.records ? '\n\nTable records:\n' + stage.records.map(record => record.title + '\n' + record.lines.join('\n')).join('\n\n') : '') + (stage.subjects ? '\n\nFrame subjects:\n' + stage.subjects.join('\n') : '') + (stage.responses ? '\n\nRoute variations:\n' + Object.entries(stage.responses).flatMap(([id,response])=>response?[id+'\n'+response.text+'\nSummary: '+response.summary]:[]).join('\n\n') : ''), choices: stage.choices.map(choice => choice.label + (choice.hint ? '\nRetry hint: ' + choice.hint : '')), channel: 'campaign' as const}))),
   ...street.units.map(unit => ({...unit, channel: 'street' as const})),
   ...[...journalData.entries,...journalData.notes].map(entry=>({id:'journal-'+entry.id,context:'Up NEPA! / Evidence journal / '+entry.title,text:entry.kind+'\nSource: '+entry.source+'\n'+entry.scope,choices:[] as string[],channel:'campaign' as const})),
-  {id:'journal-meeting-status',context:'Up NEPA! / Evidence journal / Meeting decisions',text:Object.values(journalData.states).join('\n\n'),choices:[] as string[],channel:'campaign' as const}
+  {id:'journal-meeting-status',context:'Up NEPA! / Evidence journal / Meeting decisions',text:Object.values(journalData.states).join('\n\n'),choices:[] as string[],channel:'campaign' as const},
+  {id:'portfolio-board',context:'Up NEPA! / Japa Interview / '+portfolioData.title,text:portfolioData.instructions+'\n\n'+portfolioData.questions.map(q=>q.title+'\n'+q.options.map(o=>o.label).join('\n')).join('\n\n')+'\n\n'+Object.values(portfolioData.messages).join('\n\n')+'\n\n'+Object.values(portfolioData.routes).join('\n'),choices:portfolioData.actions.map(a=>a.label),channel:'campaign' as const}
 ];
 export const contentUnits: ContentUnit[] = units.map(unit => ({...unit, hash: hash(JSON.stringify(unit))}));
 export function reviewQueue(records: ReviewRecord[]) {

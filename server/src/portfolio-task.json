@@ -1,0 +1,21 @@
+{
+  "title":"Portfolio answer board",
+  "instructions":"Compare the three questions with your source notes. Select one answer per question, then review the answers. A correction offers free practice or a later callback. Guided answers have the same outcome. Reading and retries use no story battery.",
+  "questions":[
+    {"id":"role","title":"1 · What did you contribute?","options":[{"id":"team","label":"I filmed and edited; the wedding crew did their own work","correct":true},{"id":"everything","label":"I organised and delivered the entire wedding myself","correct":false}]},
+    {"id":"source","title":"2 · Which source can you compare?","options":[{"id":"original","label":"The retained private original, with its editing history","correct":true},{"id":"crop","label":"Only the attention-grabbing crop; discard the original","correct":false}]},
+    {"id":"context","title":"3 · What can the frame establish?","options":[{"id":"limits","label":"What is visible; off-frame events still need checking","correct":true},{"id":"whole_story","label":"Every event and motive, including those outside the frame","correct":false}]}
+  ],
+  "actions":[{"id":"present","label":"Review these three answers"},{"id":"assist","label":"Use guided answers, then review"},{"id":"practice","label":"Take a free practice round"},{"id":"callback","label":"Arrange the later callback"}],
+  "messages":{
+    "selected":"Answer saved. Compare all three with the source notes before reviewing.",
+    "correction":"The presentation needs a correction. Keep the source notes and choose free practice or a later callback; the opportunity stays open.",
+    "recover_first":"Choose free practice or the later callback before revising the presentation.",
+    "practice":"Practice round ready. Your selections are kept so you can compare and correct them.",
+    "callback":"The later callback is arranged. Review and correct the same saved questions; no waiting timer or battery cost.",
+    "no_recovery":"You can compare the questions now. Practice and callback become available if the presentation needs a correction.",
+    "guided":"Guided answers selected. Read the three answers, then review them.",
+    "ready":"The three answers are consistent. Continue to the interview below."
+  },
+  "routes":{"first":"First presentation","practice":"Practice round","callback":"Later callback"}
+}

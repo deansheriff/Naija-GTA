@@ -4,7 +4,7 @@ signal changed
 signal notice(message: String)
 const PATH = "user://cloud-connection-v1.json"
 const Campaign = preload("res://core/campaign.gd")
-const CAMPAIGN_COMMANDS = ["campaign_start", "campaign_choose", "campaign_pause", "campaign_resume", "campaign_switch", "campaign_continue", "campaign_drive", "campaign_phone", "campaign_review"]
+const CAMPAIGN_COMMANDS = ["campaign_start", "campaign_choose", "campaign_pause", "campaign_resume", "campaign_switch", "campaign_continue", "campaign_drive", "campaign_phone", "campaign_review", "campaign_portfolio"]
 const UPDATE_MESSAGE = "Story mode needs a matching game/server update. Your save and pending choice are kept. Update the game or ask the server owner to update, then reconnect in Cloud save."
 var sim
 var base_url := ""

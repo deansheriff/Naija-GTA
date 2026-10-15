@@ -24,6 +24,7 @@ The approved story bible/brief remain the creative source. The new authorisation
 - [ ] Act 2: Generator Wars, Japa Interview, Danfo Chase, Aso-Ebi Infiltration, the revised receipt/witness collection mission, Fuel Queue Standoff and Viral. Carry evidence/relationship consequences forward.
   - [x] 0.18 Generator Wars: recorded loan/return, three stopped junction legs, labelled outdoor-site board, both shared-session orders and saved community staging agreement. A visible sandbox installation/community-grid simulation remains later work.
   - [x] 0.18.1 Story-version compatibility and pending-choice protection across old/mismatched server deployments.
+  - [x] 0.19 Japa Interview: saved three-question portfolio, equivalent first/practice/callback routes, permitted excerpt/practice piece, honest credits and retained follow-up opportunity.
 - [ ] Act 3: fictional council-contest simulation, power-restoration exposure finale and all four attainable, tested endings.
 - [ ] Side activities, onboarding, keyboard/touch/accessibility, audio/visual consistency, content completeness and no unrecoverable progression locks.
 - [ ] Release hardening: regression/branch coverage, load/soak tests, deployment recovery, backup retention, operational health/alerts, credentials/recovery and privacy/abuse controls appropriate to the shipped features.

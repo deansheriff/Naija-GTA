@@ -62,7 +62,7 @@ func _initialize() -> void:
 			check(c.status == "hub" and c.mastery == {"tunde": 6, "ngozi": 6, "kc": 4}, "Tunde and Ngozi receive two mastery once")
 			check(c.evidence == evidence and c.phone == phone and Journal.status(c) == decisions, "Generator agreement preserves wedding records, phone and meeting decisions")
 			check(c.choices["A21-hours"] == hours and c.choices["A21-placement"] == "yard_c" and c.choices["A14-pact"] == pact, "Both schedules and prior pacts remain saved")
-			check(not Campaign.command(c, "campaign_choose", 12, "next", now).ok and not Campaign.command(c, "campaign_continue", -1, "", now).ok, "Completion cannot award twice or skip into unbuilt content")
+			check(not Campaign.command(c, "campaign_choose", 12, "next", now).ok, "Completion cannot award twice")
 	call_deferred("scene_checks")
 func scene_checks() -> void:
 	var scene = load("res://main.tscn").instantiate()

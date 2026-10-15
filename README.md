@@ -1,6 +1,6 @@
 # Naija Street Life
 
-0.18.1 includes **Generator Wars** after Family Meeting: a recorded community loan, three bus junctions, labelled site planning and two shared-session orders. Campaign version 6 preserves older checkpoints; the evidence journal pauses driving input while open. Server compatibility checks preserve story checkpoints and pending choices when an older deployment needs updating. See [Generator Wars](docs/MILESTONE_17.md) and [compatibility](docs/MILESTONE_18.md) for verification and remaining release gates.
+0.19 adds **Japa Interview** after Generator Wars: a saved three-question portfolio, free practice/callback recovery, two valid portfolio pieces and an Open Window follow-up opportunity. Previous road/phone/meeting state stays intact. See [milestone 19](docs/MILESTONE_19.md).
 
 An original illustrated Nigerian life-game prototype for browsers and native Android, with self-hosted authoritative saves. Godot 4.6.3/GDScript client, TypeScript/Fastify API and PostgreSQL deployment.
 
