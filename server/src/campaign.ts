@@ -2,23 +2,26 @@ import story from './prologue.json' with {type:'json'};
 import tunde from './tunde-intro.json' with {type:'json'};
 import ngozi from './ngozi-intro.json' with {type:'json'};
 import kc from './kc-intro.json' with {type:'json'};
+import meeting from './family-meeting.json' with {type:'json'};
+import {journalAvailable,restoreEarnedRecords} from './evidence-journal.js';
 import {freshPhone,resetFrame,advancePhone,phoneInputs,type PhoneState} from './phone-task.js';
 import {freshDrive,advanceDrive,driveInputs,type DrivingState} from './driving-task.js';
 export const prologue=story;
 export const leads=['tunde','ngozi','kc'] as const;
 export type Lead=typeof leads[number];
 export type StoryChoice={id:string;label:string;correct:boolean;hint?:string};
-export type StoryStage={id:string;lead:string;scene:string;title:string;text:string;summary:string;kind?:string;target?:number;recordCost?:number;subjects?:string[];effect?:string;previousChoice?:string;responses?:Record<string,{text:string;summary:string}>;records?:{title:string;lines:string[]}[];choices:StoryChoice[]};
+export type StoryStage={id:string;lead:string;scene:string;title:string;text:string;summary:string;kind?:string;target?:number;recordCost?:number;subjects?:string[];requiresEvidence?:string[];effect?:string;previousChoice?:string;responses?:Partial<Record<string,{text:string;summary:string}>>;records?:{title:string;lines:string[]}[];choices:StoryChoice[]};
 export type Mission={id:string;title:string;summary:string;stages:StoryStage[];mastery:Partial<Record<Lead,number>>;evidence:string[]};
-export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde,A12:ngozi,A13:kc};
-export const missionOrder=['P00','A11','A12','A13'];
-export const CAMPAIGN_VERSION=4;
+export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde,A12:ngozi,A13:kc,A14:meeting};
+export const missionOrder=['P00','A11','A12','A13','A14'];
+export const CAMPAIGN_VERSION=5;
 export type Campaign={version:number;mission:string;status:'unstarted'|'playing'|'hub';stage:number;lead:Lead;completed:string[];mastery:Record<Lead,number>;evidence:string[];paused:boolean;choices:Record<string,string>;drive:DrivingState|null;phone:PhoneState|null};
 export class CampaignError extends Error {}
 export function freshCampaign():Campaign{return {version:CAMPAIGN_VERSION,mission:'P00',status:'unstarted',stage:0,lead:'tunde',completed:[],mastery:{tunde:0,ngozi:0,kc:0},evidence:[],paused:true,choices:{},drive:null,phone:null};}
 export function upgradeCampaign(value:Campaign):Campaign {
   if(value.version===1)return {...freshCampaign(),...value,version:CAMPAIGN_VERSION,mission:'P00',choices:{},drive:null,phone:null};
   if(value.version===2||value.version===3)return {...value,version:CAMPAIGN_VERSION,phone:null};
+  if(value.version===4)return {...value,version:CAMPAIGN_VERSION};
   return value;
 }
 export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:string,now=Date.now()):void {
@@ -31,6 +34,10 @@ export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:
   }
   if(c.status==='unstarted')throw new CampaignError('Start the wedding introduction first.');
   if(command==='campaign_pause'||command==='campaign_resume'){c.paused=command==='campaign_pause';if(c.drive)c.drive.lastAt=now;return;}
+  if(command==='campaign_review'){
+    if(!journalAvailable(c))throw new CampaignError('The evidence journal opens at Family Meeting.');
+    restoreEarnedRecords(c);return;
+  }
   if(command==='campaign_switch'){
     if(c.status!=='hub')throw new CampaignError('This mission has a staged perspective. Finish or pause this task first.');
     if(!leads.includes(choice as Lead))throw new CampaignError('Choose Tunde, Ngozi or KC.');
@@ -58,6 +65,7 @@ export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:
   const selected=task.choices.find(option=>option.id===choice);
   if(!selected)throw new CampaignError('Choose one of the options shown for this task.');
   if(!selected.correct)throw new CampaignError(selected.hint??'Try the labelled objective again.');
+  if(task.requiresEvidence?.some(id=>!c.evidence.includes(id)))throw new CampaignError('A source record is missing. Open the evidence journal and choose Restore earned records.');
   if(task.effect==='charge_phone'&&c.phone)c.phone.battery=4;
   c.choices[c.mission+'-'+task.id]=choice!;c.stage++;
   if(c.stage===mission.stages.length){

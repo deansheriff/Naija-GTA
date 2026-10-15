@@ -15,11 +15,12 @@ The approved story bible/brief remain the creative source. The new authorisation
 - [x] Campaign production specification: complete mission list, protagonist progression, Prologue/Act 1 scripts, dialogue banks and integration/checkpoint rules, in the supplied deliverable order. Drafted; real cultural/native-speaker review remains a release gate.
 - [x] 0.12 campaign foundation/wedding introduction: distinct posed protagonist art, Family Meeting, text-first scenes/summaries and 14 server checkpoints separate from sandbox. Richer task animation, directional movement and chapter replay remain subsequent work.
 - [x] 0.13 admin dialogue/cultural-review queue with exact-content status, notes and append-only history/audit, as requested by the owner. Actual admin review completion and full-content coverage remain release gates.
-- [ ] Act 1: Baba God Dey, Ajo Day, Four Percent and the Family Meeting convergence, with playable driving/conversation, negotiation and filming tasks.
+- [x] Act 1 main checkpoint route: Baba God Dey, Ajo Day, Four Percent and Family Meeting, with playable driving, record comparison and framing. Further direction/motion and richer staging remain separate release work.
   - [x] 0.14 Baba God Dey: three bounded interactive bus legs, validated safe stops, accessible guided alternative, passenger/fare dialogue and saved bag evidence.
   - [x] 0.15 Ajo Day: eleven record/negotiation checkpoints, canteen staging, patient/firm terms, private follow-up and saved catering invoice; version-2 road saves preserved.
   - [x] 0.16 Four Percent: manual/guided framing, action-only battery costs/free recovery, three charging responses, disclosure choice and private original evidence; earlier saves preserved.
-  - [ ] The Act 1 convergence; full directional protagonist art and deeper mission staging.
+  - [x] 0.17 Family Meeting: ensemble checkpoints, evidence journal/earned-source recovery, custody/pacts/disclosure and cached offline navigation.
+  - [ ] Full directional protagonist/cast art, deeper mission staging and animation validation.
 - [ ] Act 2: Generator Wars, Japa Interview, Danfo Chase, Aso-Ebi Infiltration, the revised receipt/witness collection mission, Fuel Queue Standoff and Viral. Carry evidence/relationship consequences forward.
 - [ ] Act 3: fictional council-contest simulation, power-restoration exposure finale and all four attainable, tested endings.
 - [ ] Side activities, onboarding, keyboard/touch/accessibility, audio/visual consistency, content completeness and no unrecoverable progression locks.

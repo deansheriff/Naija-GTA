@@ -1,6 +1,6 @@
 # Up NEPA! — systems and checkpoint integration
 
-Fifth narrative deliverable, after mission list, progression, Prologue/Act 1 scripts and dialogue bank. This specifies the full target; shipped subsets must be identified separately. JSON campaign version 1 is additive to the existing character save, which remains version 1. Existing sandbox fields and SQL migration 2 stay intact.
+Fifth narrative deliverable, after mission list, progression, Prologue/Act 1 scripts and dialogue bank. This specifies the full target; shipped subsets must be identified separately. Through 0.17, the campaign uses JSON version 5, root character version 1 and SQL migration 3, with earlier wedding/road/record/phone progress retained. The wedding and Act 1 main checkpoint route are implemented; full animation, later acts, side activities, replay and release validation still follow.
 
 ## Authority and saves
 

@@ -4,6 +4,8 @@ const Stage = preload("res://world/campaign_stage.gd")
 const RoadView = preload("res://world/driving_view.gd")
 const CanteenView = preload("res://world/canteen_view.gd")
 const PhoneView = preload("res://world/phone_view.gd")
+const MeetingView = preload("res://world/meeting_view.gd")
+const Journal = preload("res://core/evidence_journal.gd")
 signal requested(kind: String, stage: int, choice: String)
 signal exit_requested
 const NAMES = {"tunde": "Tunde · Baba God Dey", "ngozi": "Ngozi · Aunty Boss", "kc": "KC · Content is loading"}
@@ -30,6 +32,9 @@ var drive_error := ""
 var stage_view: Control
 var phone_view: Control
 var phone_status: Label
+var journal_button: Button
+var show_journal := false
+var wait_reason := "Saving or refreshing your cloud checkpoint…"
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -50,10 +55,14 @@ func _ready() -> void:
 	root.add_child(label("A campaign told through three lives", 14, Color("a6b9ad")))
 	var nav := HBoxContainer.new()
 	root.add_child(nav)
-	var back := button("Pause · return to the street", func(): exit_requested.emit())
+	var back := button("Return to the street", func(): exit_requested.emit(), false)
 	back_button = back
 	back.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	nav.add_child(back)
+	journal_button = button("Evidence journal", func(): show_journal = not show_journal; build(), false)
+	journal_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	journal_button.visible = false
+	nav.add_child(journal_button)
 	back.grab_focus()
 	scroll = ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -80,21 +89,24 @@ func label(text: String, font_size: int = 18, color: Color = Color("f4efdb")) ->
 	node.add_theme_color_override("font_color", color)
 	return node
 
-func button(text: String, action: Callable) -> Button:
+func button(text: String, action: Callable, remote: bool = true) -> Button:
 	var node := Button.new()
 	node.text = text
 	node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	node.custom_minimum_size.y = 56
 	node.pressed.connect(action)
+	node.set_meta("remote", remote)
 	controls.append(node)
 	return node
 
-func display(campaign: Dictionary, waiting: bool = false) -> void:
+func display(campaign: Dictionary, waiting: bool = false, reason: String = "Saving or refreshing your cloud checkpoint…") -> void:
 	var restore_focus := busy and not waiting
 	if waiting and not busy:
 		var focused := get_viewport().gui_get_focus_owner()
 		if focused != null and is_ancestor_of(focused): focus_before_wait = focused
 	busy = waiting
+	wait_reason = reason
+	journal_button.visible = Journal.available(campaign) and campaign.get("version") == Campaign.VERSION
 	var structural := campaign.duplicate(true)
 	structural.erase("drive")
 	structural.erase("phone")
@@ -109,7 +121,7 @@ func display(campaign: Dictionary, waiting: bool = false) -> void:
 	snapshot = campaign.duplicate(true)
 	if next_fingerprint == fingerprint:
 		for node in controls:
-			if is_instance_valid(node): node.disabled = busy
+			if is_instance_valid(node): node.disabled = busy and node.get_meta("remote", true)
 		if restore_focus:
 			if is_instance_valid(focus_before_wait) and focus_before_wait.is_visible_in_tree() and not focus_before_wait.is_queued_for_deletion(): focus_before_wait.grab_focus()
 			else: back_button.grab_focus()
@@ -135,14 +147,19 @@ func build() -> void:
 	stage_view = null
 	phone_view = null
 	phone_status = null
+	feedback = null
+	journal_button.text = "Return to scene" if show_journal else "Evidence journal"
 	var c := snapshot
 	if c.get("version") != Campaign.VERSION or not c.get("mission") in Campaign.ORDER:
 		content.add_child(label("This campaign needs a newer game client. Its saved progress has been preserved."))
 		return
+	if show_journal and Journal.available(c):
+		_build_journal()
+		return
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission == "A11"
-	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else Stage.new()
+	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
 	if road_scene:
@@ -153,6 +170,9 @@ func build() -> void:
 	elif c.mission == "A13":
 		phone_view = stage
 		stage.update_state(c.phone, task)
+	elif c.mission == "A14":
+		stage.lead = c.lead
+		stage.scene_id = task.get("scene", "meeting")
 	else:
 		stage.lead = c.lead
 		if c.status == "playing": stage.scene_id = task.scene
@@ -178,7 +198,7 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label("Act 1 · " + ("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "The Family Meeting convergence is next in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Generator Wars is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
@@ -188,7 +208,7 @@ func build() -> void:
 		if not response.is_empty(): scene_text = str(response.summary if show_summary else response.text) + "\n\n" + scene_text.strip_edges()
 		content.add_child(label(scene_text))
 		for record in task.get("records", []): _record_card(record)
-		content.add_child(button("Full scene" if show_summary else "Read summary", func(): show_summary = not show_summary; build()))
+		content.add_child(button("Full scene" if show_summary else "Read summary", func(): show_summary = not show_summary; build(), false))
 		feedback_text = "Choose below. There is no timer or penalty for a retry."
 		feedback = label(feedback_text, 16, Color("d4ed85"))
 		content.add_child(feedback)
@@ -202,11 +222,33 @@ func build() -> void:
 				choice_button.set_meta("frame_required", task.get("kind") == "frame")
 				content.add_child(choice_button)
 	for node in controls:
-		if is_instance_valid(node): node.disabled = busy
+		if is_instance_valid(node): node.disabled = busy and node.get_meta("remote", true)
 	if not busy: back_button.grab_focus()
 	_update_drive()
 	_update_feedback()
 	_update_phone()
+
+func _build_journal() -> void:
+	content.add_child(label("Evidence journal", 30, Color("edc06d")))
+	content.add_child(label("Compare what each source supports. A saved record is not proof of every part of the story. Cached records remain readable while offline.", 17, Color("a6b9ad")))
+	var catalogue := Journal.catalogue()
+	for entry in catalogue.entries:
+		var saved: bool = entry.id in snapshot.evidence
+		_record_card({"title": entry.title + (" · saved" if saved else " · not recorded here"), "lines": [entry.kind, "Source: " + entry.source, entry.scope]})
+	for entry in catalogue.notes:
+		if entry.mission in snapshot.completed:
+			_record_card({"title": entry.title, "lines": [entry.kind, "Source: " + entry.source, entry.scope]})
+	var status := Journal.status(snapshot)
+	_record_card({"title": "Meeting decisions", "lines": [status.disclosure, status.custody, status.pact]})
+	content.add_child(label("Restore earned records rechecks sources from completed chapters. It does not grant an unearned clue, mastery or StreetCoins.", 16, Color("a6b9ad")))
+	content.add_child(button("Restore earned records", func(): requested.emit("campaign_review", -1, "")))
+	content.add_child(button("Return to scene", func(): show_journal = false; build(), false))
+	feedback_text = "Your last confirmed sources and decisions are shown here."
+	feedback = label(feedback_text, 16, Color("d4ed85"))
+	content.add_child(feedback)
+	for node in controls:
+		if is_instance_valid(node): node.disabled = busy and node.get_meta("remote", true)
+	_update_feedback()
 
 func _phone_controls(task: Dictionary) -> void:
 	phone_status = label("Story phone", 17, Color("d4ed85"))
@@ -348,4 +390,4 @@ func message(text: String) -> void:
 	_update_feedback()
 
 func _update_feedback() -> void:
-	if is_instance_valid(feedback): feedback.text = "Saving or refreshing your cloud checkpoint…" if busy else feedback_text
+	if is_instance_valid(feedback): feedback.text = wait_reason if busy else feedback_text

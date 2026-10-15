@@ -54,7 +54,7 @@ export async function kcContract(app:FastifyInstance,advance:(ms:number)=>void){
     }
     assert.equal(state.campaign.status,'hub');assert.deepEqual(state.campaign.mastery,{tunde:3,ngozi:3,kc:3});assert.deepEqual(state.campaign.evidence,['wedding_clip','bag_record','catering_invoice','original_clip']);
     assert.equal(state.campaign.choices['A13-route'],route);assert.equal(state.campaign.choices['A13-disclose'],disclosure);assert.equal(state.coins,240);
-    assert.equal((await raw({kind:'campaign_continue'})).statusCode,422);assert.equal((await raw({kind:'campaign_choose',stage:10,choice:'next'})).statusCode,422);
+    assert.equal((await raw({kind:'campaign_choose',stage:10,choice:'next'})).statusCode,422);
     ids.push(guest.character.id);
   }
   return ids;

@@ -110,3 +110,7 @@ The existing original `campaign-heroes.png` Ngozi pose is drawn behind a shaded 
 ## Four Percent story camera - 0.16
 
 `game/world/phone_view.gd` reuses the original KC region of `campaign-heroes.png`. Room/charging props, framing guides, numbered subject pictograms and source/crop reconstruction panels are code-native geometry. No new raster, external footage, device camera feed or upload is bundled. This is a static illustrated composition task with posed protagonist staging, not an animation or a claim that the game contains recorded video. Subject/status text outside the view preserves the objective on small screens and Low graphics.
+
+## Family Meeting - 0.17
+
+`game/world/meeting_view.gd` assembles the three existing original protagonist poses at the canteen table. Awning, quiet-side backdrop, table, bag/document/phone props and the current speaker underline are code-native geometry. No new raster or external reference is included. This remains posed staging; directional protagonist and supporting-cast movement is a separate production requirement. Generator noise is described in readable text and never carries an audio-only clue.

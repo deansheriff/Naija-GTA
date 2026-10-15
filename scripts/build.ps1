@@ -9,6 +9,8 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/prologue.json') -Dest
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/tunde-intro.json') -Destination (Join-Path $gamePath 'story/tunde-intro.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/ngozi-intro.json') -Destination (Join-Path $gamePath 'story/ngozi-intro.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/kc-intro.json') -Destination (Join-Path $gamePath 'story/kc-intro.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/family-meeting.json') -Destination (Join-Path $gamePath 'story/family-meeting.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/evidence-journal.json') -Destination (Join-Path $gamePath 'story/evidence-journal.json') -Force
 & $enginePath --headless --path $gamePath --editor --import --quit
 if ($LASTEXITCODE -ne 0) { throw 'Godot import failed.' }
 & $enginePath --headless --path $gamePath --script res://main.gd --check-only
@@ -49,6 +51,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Tunde driving/checkpoint checks failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Ngozi record/checkpoint checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/kc_campaign_test.gd -- --test
 if ($LASTEXITCODE -ne 0) { throw 'KC camera/battery/checkpoint checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/meeting_campaign_test.gd -- --test
+if ($LASTEXITCODE -ne 0) { throw 'Family Meeting/journal/offline-navigation checks failed.' }
 if ($Target -eq 'test') { exit 0 }
 if ($Target -in @('web','all')) {
     $webPath = Join-Path $projectRoot 'build\web\play'

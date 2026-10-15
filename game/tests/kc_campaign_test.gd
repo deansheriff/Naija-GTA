@@ -61,7 +61,7 @@ func _initialize() -> void:
 			c = Campaign.normalize(JSON.parse_string(JSON.stringify(c)))
 		check(c.status == "hub" and c.mastery == {"tunde": 3, "ngozi": 3, "kc": 3} and c.evidence == ["wedding_clip", "bag_record", "catering_invoice", "original_clip"], "Original source and KC mastery awarded once")
 		check(c.choices["A13-route"] == route and c.choices["A13-disclose"] == ("defer" if route == "bank" else "admit"), "Charging route and disclosure remain explicit choices")
-		check(not Campaign.command(c, "campaign_continue").ok and not Campaign.command(c, "campaign_choose", 10, "next").ok, "Unbuilt convergence and duplicate rewards blocked")
+		check(not Campaign.command(c, "campaign_choose", 10, "next").ok, "Duplicate source rewards blocked")
 	call_deferred("scene_checks")
 func scene_checks() -> void:
 	var scene = load("res://main.tscn").instantiate()

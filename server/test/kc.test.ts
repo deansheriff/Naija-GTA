@@ -38,7 +38,7 @@ test('KC canonical source, route/subject review coverage and version-3 schedule 
   assert.deepEqual(JSON.parse(readFileSync(new URL('../../game/story/kc-intro.json',import.meta.url),'utf8')),missions.A13);
   for(const stage of missions.A13.stages){const unit=contentUnits.find(u=>u.id==='A13-'+stage.id)!;assert.ok(unit);assert.equal(stage.lead,'kc');assert.ok(stage.summary.length&&stage.choices.some(c=>c.correct));
     for(const subject of stage.subjects??[])assert.ok(unit.text.includes(subject));
-    for(const response of Object.values(stage.responses??{})){assert.ok(unit.text.includes(response.text));assert.ok(unit.text.includes(response.summary));}
+    for(const response of Object.values(stage.responses??{})){assert.ok(response);assert.ok(unit.text.includes(response.text));assert.ok(unit.text.includes(response.summary));}
     if(stage.kind==='frame')assert.equal(stage.recordCost,1);
   }
   const old={...freshCampaign(),version:3,mission:'A12',stage:5,choices:{'A12-sola_terms':'firm'}};delete (old as any).phone;

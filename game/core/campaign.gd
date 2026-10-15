@@ -1,17 +1,19 @@
 extends RefCounted
-const VERSION = 4
+const VERSION = 5
 const STORY_PATH = "res://story/prologue.json"
 const TUNDE_PATH = "res://story/tunde-intro.json"
 const NGOZI_PATH = "res://story/ngozi-intro.json"
 const KC_PATH = "res://story/kc-intro.json"
+const MEETING_PATH = "res://story/family-meeting.json"
 const LEADS = ["tunde", "ngozi", "kc"]
-const ORDER = ["P00", "A11", "A12", "A13"]
+const ORDER = ["P00", "A11", "A12", "A13", "A14"]
 const Drive = preload("res://core/driving_task.gd")
 const Phone = preload("res://core/phone_task.gd")
+const Journal = preload("res://core/evidence_journal.gd")
 
 static func story(id: String = "P00") -> Dictionary:
 	if not id in ORDER: return {}
-	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH}[id]
+	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH}[id]
 	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if id == "P00":
 		content.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
@@ -35,6 +37,9 @@ static func normalize(value: Variant) -> Dictionary:
 		value = value.duplicate(true)
 		value.version = VERSION
 		value.phone = null
+	elif value.get("version") == 4:
+		value = value.duplicate(true)
+		value.version = VERSION
 	if value.get("version") != VERSION or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()
 	if not value.get("mission") in ORDER: return value.duplicate(true)
 	var content := story(value.mission)
@@ -56,6 +61,10 @@ static func normalize(value: Variant) -> Dictionary:
 			for who in LEADS: result.mastery[who] = mini(100, result.mastery[who] + finished.mastery.get(who, 0))
 			for fact in finished.evidence:
 				if not fact in result.evidence: result.evidence.append(fact)
+	# An explicit snapshot list is authoritative. Missing legacy fields may be
+	# reconstructed, but a missing stored record must remain visible for recovery.
+	if value.get("evidence") is Array:
+		result.evidence = result.evidence.filter(func(fact): return fact in value.evidence)
 	if value.get("choices") is Dictionary:
 		for id in result.completed + [result.mission]:
 			for task in story(id).stages:
@@ -96,6 +105,10 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 		c.paused = kind == "campaign_pause"
 		if c.drive is Dictionary: c.drive.lastAt = now
 		return {"ok": true, "message": "Campaign checkpoint saved."}
+	if kind == "campaign_review":
+		if not Journal.available(c): return {"ok": false, "message": "The evidence journal opens at Family Meeting."}
+		Journal.restore_earned(c)
+		return {"ok": true, "message": "Earned records rechecked. No extra mastery or StreetCoins."}
 	if kind == "campaign_switch":
 		if c.status != "hub": return {"ok": false, "message": "This mission has a staged perspective. Finish or pause this task first."}
 		if not choice in LEADS: return fail
@@ -127,6 +140,8 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 	for option in task.choices:
 		if option.id != choice: continue
 		if not option.correct: return {"ok": false, "message": option.get("hint", "Try the labelled objective again.")}
+		for fact in task.get("requiresEvidence", []):
+			if not fact in c.evidence: return {"ok": false, "message": "A source record is missing. Open the evidence journal and choose Restore earned records."}
 		if task.get("effect") == "charge_phone" and c.phone is Dictionary: c.phone.battery = 4
 		c.choices[c.mission + "-" + task.id] = choice
 		c.stage += 1

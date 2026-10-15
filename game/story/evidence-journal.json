@@ -1,0 +1,23 @@
+{
+  "version":1,
+  "entries":[
+    {"id":"wedding_clip","mission":"P00","title":"Original wedding recording","kind":"Recording","source":"KC at Owambe, Owambe","scope":"The retained wedding source provides scene context. It does not establish every off-frame event."},
+    {"id":"bag_record","mission":"A11","title":"Bag and seat-location record","kind":"Recorded observation","source":"Tunde's morning route","scope":"A bag was recorded beneath the bus seat with its exterior tag intact. Location does not settle ownership."},
+    {"id":"catering_invoice","mission":"A12","title":"Catering invoice CAT-18","kind":"Document copy","source":"Ngozi and the catering team's record","scope":"The unaltered copy records wedding catering work and an outstanding balance. It does not prove the whole bag sequence."},
+    {"id":"original_clip","mission":"A13","title":"Full private wedding source","kind":"Private full-context copy","source":"KC's Four Percent source review","scope":"The copy retains the helping action missing from the crop. Keep it private unless later use has the required consent."}
+  ],
+  "notes":[
+    {"id":"nneka_message","mission":"A12","title":"Nneka's initial message","kind":"Account to compare","source":"Message received during Ajo Day","scope":"Nneka said she left the bag while helping Bisi. This initial account needs comparison with timing, locations and later testimony; it is not the later corroborated account."}
+  ],
+  "states":{
+    "disclosure_admitted":"KC explained that the earlier crop omitted the helping action.",
+    "disclosure_open":"The crop conversation is unresolved; a later follow-up remains available.",
+    "disclosure_none":"No disclosure decision is recorded yet.",
+    "custody_ngozi_record":"Temporary custody: Ngozi holds the intact bag with the source list.",
+    "custody_joint_record":"Temporary custody: a joint witnessed record is in place.",
+    "custody_none":"Temporary custody has not been recorded at the meeting yet.",
+    "pact_protect":"Pact: protect people and verify privately first; public use still requires consent.",
+    "pact_public_case":"Pact: build a verified public case with consent; no main mission or evidence is removed.",
+    "pact_none":"The group's investigation pact has not been chosen yet."
+  }
+}
