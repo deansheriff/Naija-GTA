@@ -6,6 +6,7 @@ import meeting from './family-meeting.json' with {type:'json'};
 import generator from './generator-wars.json' with {type:'json'};
 import interview from './japa-interview.json' with {type:'json'};
 import chase from './danfo-chase.json' with {type:'json'};
+import infiltration from './aso-ebi-infiltration.json' with {type:'json'};
 import {freshPortfolio,advancePortfolio,portfolioInputs,type PortfolioState} from './portfolio-task.js';
 import {journalAvailable,restoreEarnedRecords} from './evidence-journal.js';
 import {freshPhone,resetFrame,advancePhone,phoneInputs,type PhoneState} from './phone-task.js';
@@ -16,9 +17,9 @@ export type Lead=typeof leads[number];
 export type StoryChoice={id:string;label:string;correct:boolean;hint?:string};
 export type StoryStage={id:string;lead:string;scene:string;title:string;text:string;summary:string;kind?:string;target?:number;driveGate?:DriveGate;recordCost?:number;subjects?:string[];requiresEvidence?:string[];effect?:string;previousChoice?:string;portfolioResponse?:boolean;responses?:Partial<Record<string,{text:string;summary:string}>>;records?:{title:string;lines:string[]}[];choices:StoryChoice[]};
 export type Mission={id:string;title:string;summary:string;stages:StoryStage[];mastery:Partial<Record<Lead,number>>;evidence:string[]};
-export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde,A12:ngozi,A13:kc,A14:meeting,A21:generator,A22:interview,A23:chase};
-export const missionOrder=['P00','A11','A12','A13','A14','A21','A22','A23'];
-export const CAMPAIGN_VERSION=8;
+export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde,A12:ngozi,A13:kc,A14:meeting,A21:generator,A22:interview,A23:chase,A24:infiltration};
+export const missionOrder=['P00','A11','A12','A13','A14','A21','A22','A23','A24'];
+export const CAMPAIGN_VERSION=9;
 export type Campaign={version:number;mission:string;status:'unstarted'|'playing'|'hub';stage:number;lead:Lead;completed:string[];mastery:Record<Lead,number>;evidence:string[];paused:boolean;choices:Record<string,string>;drive:DrivingState|null;phone:PhoneState|null;portfolio:PortfolioState|null};
 export class CampaignError extends Error {}
 export function freshCampaign():Campaign{return {version:CAMPAIGN_VERSION,mission:'P00',status:'unstarted',stage:0,lead:'tunde',completed:[],mastery:{tunde:0,ngozi:0,kc:0},evidence:[],paused:true,choices:{},drive:null,phone:null,portfolio:null};}
@@ -26,7 +27,7 @@ export function upgradeCampaign(value:Campaign):Campaign {
   if(value.version===1)return {...freshCampaign(),...value,version:CAMPAIGN_VERSION,mission:'P00',choices:{},drive:null,phone:null};
   if(value.version===2||value.version===3)return {...value,version:CAMPAIGN_VERSION,phone:null,portfolio:null};
   if(value.version===4||value.version===5||value.version===6)return {...value,version:CAMPAIGN_VERSION,portfolio:null};
-  if(value.version===7)return {...value,version:CAMPAIGN_VERSION};
+  if(value.version===7||value.version===8)return {...value,version:CAMPAIGN_VERSION};
   return value;
 }
 export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:string,now=Date.now()):void {

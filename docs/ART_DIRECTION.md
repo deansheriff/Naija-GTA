@@ -126,3 +126,7 @@ The existing original `campaign-heroes.png` Ngozi pose is drawn behind a shaded 
 ## Danfo Chase - 0.20
 
 The elevated side road view reuses original traffic, neighborhood-walk, building and tree atlases. Code-native marked waiting bays/crossings and a following car add route context; pedestrians traverse the crossing and recycle after leaving the scene instead of turning around. Queued cars leave after explicit clearance. Existing alpha bounds ground every stamp. No new raster or external reference is used. Optional ambience respects Ambient animation; essential route/bay cues remain visible. Explicit waiting advances this untimed staged encounter; it is not a general physical collision/traffic simulation. Full directional hero/cast animation remains separate production work.
+
+## Aso-Ebi Infiltration - 0.21
+
+`game/world/birthday_view.gd` reuses the original Ngozi/KC poses at a code-native invitation desk, catering table and quiet service corner. Static bunting, the sage triangle, covered tray and open reference book are drawn geometry. Written marker/shape labels and source cards establish the task without colour or audio dependence. No new raster or external reference is included. This is posed staging, not a claim of complete serving/walking/interview animation; Nneka and the birthday supporting cast still need their own final character art.

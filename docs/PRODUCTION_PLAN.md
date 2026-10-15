@@ -26,6 +26,7 @@ The approved story bible/brief remain the creative source. The new authorisation
   - [x] 0.18.1 Story-version compatibility and pending-choice protection across old/mismatched server deployments.
   - [x] 0.19 Japa Interview: saved three-question portfolio, equivalent first/practice/callback routes, permitted excerpt/practice piece, honest credits and retained follow-up opportunity.
   - [x] 0.20 Danfo Chase: three required crossing/queue stops, explicit wait even with guidance, both recoverable detours/copy options, service timestamp/source and once-only Tunde mastery; earlier portfolio/phone/family choices preserved.
+  - [x] 0.21 Aso-Ebi Infiltration: labelled invitation, truthful family-table answers, catering help, supervised reference index, Nneka's attributed private account and either permission boundary; diary inspection/public witness review remain later work.
 - [ ] Act 3: fictional council-contest simulation, power-restoration exposure finale and all four attainable, tested endings.
 - [ ] Side activities, onboarding, keyboard/touch/accessibility, audio/visual consistency, content completeness and no unrecoverable progression locks.
 - [ ] Release hardening: regression/branch coverage, load/soak tests, deployment recovery, backup retention, operational health/alerts, credentials/recovery and privacy/abuse controls appropriate to the shipped features.

@@ -15,6 +15,7 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/japa-interview.json')
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/portfolio-task.json') -Destination (Join-Path $gamePath 'story/portfolio-task.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/danfo-chase.json') -Destination (Join-Path $gamePath 'story/danfo-chase.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/chase-driving.json') -Destination (Join-Path $gamePath 'story/chase-driving.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/aso-ebi-infiltration.json') -Destination (Join-Path $gamePath 'story/aso-ebi-infiltration.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/evidence-journal.json') -Destination (Join-Path $gamePath 'story/evidence-journal.json') -Force
 & $enginePath --headless --path $gamePath --editor --import --quit
 if ($LASTEXITCODE -ne 0) { throw 'Godot import failed.' }
@@ -66,6 +67,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Cloud story-version compatibility checks faile
 if ($LASTEXITCODE -ne 0) { throw 'Japa Interview/portfolio/recovery checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/chase_campaign_test.gd -- --test
 if ($LASTEXITCODE -ne 0) { throw 'Danfo Chase/crossing/queue/source checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/infiltration_campaign_test.gd -- --test
+if ($LASTEXITCODE -ne 0) { throw 'Aso-Ebi/invitation/permission/source checks failed.' }
 if ($Target -eq 'test') { exit 0 }
 if ($Target -in @('web','all')) {
     $webPath = Join-Path $projectRoot 'build\web\play'

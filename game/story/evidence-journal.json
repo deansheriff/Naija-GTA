@@ -1,25 +1,95 @@
 {
-  "version":1,
-  "entries":[
-    {"id":"wedding_clip","mission":"P00","title":"Original wedding recording","kind":"Recording","source":"KC at Owambe, Owambe","scope":"The retained wedding source provides scene context. It does not establish every off-frame event."},
-    {"id":"bag_record","mission":"A11","title":"Bag and seat-location record","kind":"Recorded observation","source":"Tunde's morning route","scope":"A bag was recorded beneath the bus seat with its exterior tag intact. Location does not settle ownership."},
-    {"id":"catering_invoice","mission":"A12","title":"Catering invoice CAT-18","kind":"Document copy","source":"Ngozi and the catering team's record","scope":"The unaltered copy records wedding catering work and an outstanding balance. It does not prove the whole bag sequence."},
-    {"id":"original_clip","mission":"A13","title":"Full private wedding source","kind":"Private full-context copy","source":"KC's Four Percent source review","scope":"The copy retains the helping action missing from the crop. Keep it private unless later use has the required consent."},
-    {"id":"service_slip","mission":"A23","title":"Service slip SR-18","kind":"Time-stamped service record","source":"Sikiru's retained service-desk copy","scope":"The wedding record logs a 21:14 assistance request for Bisi at the caterers' room. Keep its timestamp and source for comparison; it does not alone establish the full bag sequence or ownership."}
+  "version": 1,
+  "entries": [
+    {
+      "id": "wedding_clip",
+      "mission": "P00",
+      "title": "Original wedding recording",
+      "kind": "Recording",
+      "source": "KC at Owambe, Owambe",
+      "scope": "The retained wedding source provides scene context. It does not establish every off-frame event."
+    },
+    {
+      "id": "bag_record",
+      "mission": "A11",
+      "title": "Bag and seat-location record",
+      "kind": "Recorded observation",
+      "source": "Tunde's morning route",
+      "scope": "A bag was recorded beneath the bus seat with its exterior tag intact. Location does not settle ownership."
+    },
+    {
+      "id": "catering_invoice",
+      "mission": "A12",
+      "title": "Catering invoice CAT-18",
+      "kind": "Document copy",
+      "source": "Ngozi and the catering team's record",
+      "scope": "The unaltered copy records wedding catering work and an outstanding balance. It does not prove the whole bag sequence."
+    },
+    {
+      "id": "original_clip",
+      "mission": "A13",
+      "title": "Full private wedding source",
+      "kind": "Private full-context copy",
+      "source": "KC's Four Percent source review",
+      "scope": "The copy retains the helping action missing from the crop. Keep it private unless later use has the required consent."
+    },
+    {
+      "id": "service_slip",
+      "mission": "A23",
+      "title": "Service slip SR-18",
+      "kind": "Time-stamped service record",
+      "source": "Sikiru's retained service-desk copy",
+      "scope": "The wedding record logs a 21:14 assistance request for Bisi at the caterers' room. Keep its timestamp and source for comparison; it does not alone establish the full bag sequence or ownership."
+    },
+    {
+      "id": "nneka_account",
+      "mission": "A24",
+      "title": "Nneka's attributed account",
+      "kind": "Private account to corroborate",
+      "source": "Nneka's agreed quiet-side conversation",
+      "scope": "Nneka describes protecting the receipt folder, boarding the bus, leaving the bag while helping Bisi, returning and leaving a message. Compare independent records; public use follows the saved boundary and later exact review. No name, image or voice permission is granted."
+    }
   ],
-  "notes":[
-    {"id":"nneka_message","mission":"A12","title":"Nneka's initial message","kind":"Account to compare","source":"Message received during Ajo Day","scope":"Nneka said she left the bag while helping Bisi. This initial account needs comparison with timing, locations and later testimony; it is not the later corroborated account."},
-    {"id":"open_window","mission":"A22","title":"Open Window follow-up","kind":"Creative opportunity","source":"KC's Japa Interview","scope":"The checked portfolio earned a follow-up option. First presentation, practice and callback preserve the same opportunity. KC's later decision about leaving remains open; this note is not wedding evidence."}
+  "notes": [
+    {
+      "id": "nneka_message",
+      "mission": "A12",
+      "title": "Nneka's initial message",
+      "kind": "Account to compare",
+      "source": "Message received during Ajo Day",
+      "scope": "Nneka said she left the bag while helping Bisi. This initial account needs comparison with timing, locations and later testimony; it is not the later corroborated account."
+    },
+    {
+      "id": "open_window",
+      "mission": "A22",
+      "title": "Open Window follow-up",
+      "kind": "Creative opportunity",
+      "source": "KC's Japa Interview",
+      "scope": "The checked portfolio earned a follow-up option. First presentation, practice and callback preserve the same opportunity. KC's later decision about leaving remains open; this note is not wedding evidence."
+    },
+    {
+      "id": "diary_lead",
+      "mission": "A24",
+      "title": "Blue folder reference",
+      "kind": "Investigation lead",
+      "source": "Permitted birthday service-index inspection",
+      "scope": "CAT-18 links to a blue folder labelled Receipts and promises. The usher confirms this invited visit, not the wedding bag sequence. Inspect the folder later with the recorded property custodian; this lead is not the recovered diary."
+    }
   ],
-  "states":{
-    "disclosure_admitted":"KC explained that the earlier crop omitted the helping action.",
-    "disclosure_open":"The crop conversation is unresolved; a later follow-up remains available.",
-    "disclosure_none":"No disclosure decision is recorded yet.",
-    "custody_ngozi_record":"Temporary custody: Ngozi holds the intact bag with the source list.",
-    "custody_joint_record":"Temporary custody: a joint witnessed record is in place.",
-    "custody_none":"Temporary custody has not been recorded at the meeting yet.",
-    "pact_protect":"Pact: protect people and verify privately first; public use still requires consent.",
-    "pact_public_case":"Pact: build a verified public case with consent; no main mission or evidence is removed.",
-    "pact_none":"The group's investigation pact has not been chosen yet."
+  "states": {
+    "disclosure_admitted": "KC explained that the earlier crop omitted the helping action.",
+    "disclosure_open": "The crop conversation is unresolved; a later follow-up remains available.",
+    "disclosure_none": "No disclosure decision is recorded yet.",
+    "custody_ngozi_record": "Temporary custody: Ngozi holds the intact bag with the source list.",
+    "custody_joint_record": "Temporary custody: a joint witnessed record is in place.",
+    "custody_none": "Temporary custody has not been recorded at the meeting yet.",
+    "pact_protect": "Pact: protect people and verify privately first; public use still requires consent.",
+    "pact_public_case": "Pact: build a verified public case with consent; no main mission or evidence is removed.",
+    "pact_none": "The group's investigation pact has not been chosen yet."
+  },
+  "accountScopes": {
+    "private_only": "Private notes only. Public work uses anonymised service records; no identifying quote, image, name or voice.",
+    "redacted_review": "Redacted text may be prepared for later exact review. No public use before that review, no name/image/voice, and later withdrawal must be respected.",
+    "unknown": "No public permission is recorded. Keep the account private and use anonymised records."
   }
 }

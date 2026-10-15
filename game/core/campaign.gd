@@ -1,5 +1,5 @@
 extends RefCounted
-const VERSION = 8
+const VERSION = 9
 const STORY_PATH = "res://story/prologue.json"
 const TUNDE_PATH = "res://story/tunde-intro.json"
 const NGOZI_PATH = "res://story/ngozi-intro.json"
@@ -8,8 +8,9 @@ const MEETING_PATH = "res://story/family-meeting.json"
 const GENERATOR_PATH = "res://story/generator-wars.json"
 const INTERVIEW_PATH = "res://story/japa-interview.json"
 const CHASE_PATH = "res://story/danfo-chase.json"
+const INFILTRATION_PATH = "res://story/aso-ebi-infiltration.json"
 const LEADS = ["tunde", "ngozi", "kc"]
-const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22", "A23"]
+const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22", "A23", "A24"]
 const Drive = preload("res://core/driving_task.gd")
 const Phone = preload("res://core/phone_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
@@ -17,7 +18,7 @@ const Portfolio = preload("res://core/portfolio_task.gd")
 
 static func story(id: String = "P00") -> Dictionary:
 	if not id in ORDER: return {}
-	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH, "A23": CHASE_PATH}[id]
+	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH, "A23": CHASE_PATH, "A24": INFILTRATION_PATH}[id]
 	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if id == "P00":
 		content.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
@@ -47,7 +48,7 @@ static func normalize(value: Variant) -> Dictionary:
 		value = value.duplicate(true)
 		value.version = VERSION
 		value.portfolio = null
-	elif value.get("version") == 7:
+	elif value.get("version") in [7, 8]:
 		value = value.duplicate(true)
 		value.version = VERSION
 	if value.get("version") != VERSION or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()

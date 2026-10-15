@@ -7,6 +7,7 @@ const PhoneView = preload("res://world/phone_view.gd")
 const MeetingView = preload("res://world/meeting_view.gd")
 const GeneratorView = preload("res://world/generator_view.gd")
 const InterviewView = preload("res://world/interview_view.gd")
+const BirthdayView = preload("res://world/birthday_view.gd")
 const Portfolio = preload("res://core/portfolio_task.gd")
 const Drive = preload("res://core/driving_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
@@ -14,7 +15,7 @@ signal requested(kind: String, stage: int, choice: String)
 signal exit_requested
 const NAMES = {"tunde": "Tunde · Baba God Dey", "ngozi": "Ngozi · Aunty Boss", "kc": "KC · Content is loading"}
 const BIOS = {"tunde": "A danfo driver dreaming of a fleet. His shortcuts need witnesses.", "ngozi": "Canteen queen and savings-circle organiser. Every grand speech still needs an invoice.", "kc": "A content creator learning the difference between attention and trust."}
-const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18", "original_clip": "Full private wedding source", "service_slip": "Service slip SR-18"}
+const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18", "original_clip": "Full private wedding source", "service_slip": "Service slip SR-18", "nneka_account": "Nneka's attributed account"}
 var content: VBoxContainer
 var feedback: Label
 var feedback_text := "Choose below. There is no timer or penalty for a retry."
@@ -187,7 +188,7 @@ func build() -> void:
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission in ["A11", "A23"] or (c.mission == "A21" and task.get("kind") == "drive")
-	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else Stage.new()
+	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission == "A24" else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
 	if road_scene:
@@ -206,7 +207,7 @@ func build() -> void:
 	elif c.mission == "A13":
 		phone_view = stage
 		stage.update_state(c.phone, task)
-	elif c.mission in ["A14", "A21"]:
+	elif c.mission in ["A14", "A21", "A24"]:
 		stage.lead = c.lead
 		stage.scene_id = task.get("scene", "meeting")
 	elif c.mission == "A22":
@@ -238,7 +239,7 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Aso-Ebi Infiltration is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Small Small Receipts is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
@@ -339,6 +340,8 @@ func _build_journal() -> void:
 	for entry in catalogue.notes:
 		if entry.mission in snapshot.completed:
 			_record_card({"title": entry.title, "lines": [entry.kind, "Source: " + entry.source, entry.scope]})
+	if "A24" in snapshot.completed:
+		_record_card({"title": "Nneka's permission boundary", "lines": [catalogue.accountScopes.get(snapshot.choices.get("A24-consent", ""), catalogue.accountScopes.unknown)]})
 	var status := Journal.status(snapshot)
 	_record_card({"title": "Meeting decisions", "lines": [status.disclosure, status.custody, status.pact]})
 	content.add_child(label("Restore earned records rechecks sources from completed chapters. It does not grant an unearned clue, mastery or StreetCoins.", 16, Color("a6b9ad")))
