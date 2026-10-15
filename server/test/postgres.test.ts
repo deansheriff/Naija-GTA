@@ -13,6 +13,7 @@ import {campaignContract} from './campaign-contract.js';
 import {contentReviewContract} from './content-review-contract.js';
 import {tundeContract} from './tunde-contract.js';
 import {ngoziContract} from './ngozi-contract.js';
+import {kcContract} from './kc-contract.js';
 import {operationsContract,fixtureOwner} from './operations-contract.js';
 
 // Embedded PostgreSQL validates real SQL locally. CI uses a multi-connection PostgreSQL service.
@@ -119,6 +120,8 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[tundeId])).rows[0].total),1);
     const ngoziIds=await ngoziContract(app,ms=>{now+=ms;});
     for(const id of ngoziIds)assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[id])).rows[0].total),1);
+    const kcIds=await kcContract(app,ms=>{now+=ms;});
+    for(const id of kcIds)assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[id])).rows[0].total),1);
     await assert.rejects(pool.query("UPDATE content_reviews SET notes='changed'"),/append-only/);
     await assert.rejects(pool.query("UPDATE owner_audit SET reason='changed'"),/append-only/);
     const counts=await Promise.all(Array.from({length:12},()=>store.ops.consumeRate('a'.repeat(64),now+60000)));

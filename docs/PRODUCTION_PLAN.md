@@ -18,7 +18,8 @@ The approved story bible/brief remain the creative source. The new authorisation
 - [ ] Act 1: Baba God Dey, Ajo Day, Four Percent and the Family Meeting convergence, with playable driving/conversation, negotiation and filming tasks.
   - [x] 0.14 Baba God Dey: three bounded interactive bus legs, validated safe stops, accessible guided alternative, passenger/fare dialogue and saved bag evidence.
   - [x] 0.15 Ajo Day: eleven record/negotiation checkpoints, canteen staging, patient/firm terms, private follow-up and saved catering invoice; version-2 road saves preserved.
-  - [ ] Four Percent and the Act 1 convergence; full directional protagonist art and deeper mission staging.
+  - [x] 0.16 Four Percent: manual/guided framing, action-only battery costs/free recovery, three charging responses, disclosure choice and private original evidence; earlier saves preserved.
+  - [ ] The Act 1 convergence; full directional protagonist art and deeper mission staging.
 - [ ] Act 2: Generator Wars, Japa Interview, Danfo Chase, Aso-Ebi Infiltration, the revised receipt/witness collection mission, Fuel Queue Standoff and Viral. Carry evidence/relationship consequences forward.
 - [ ] Act 3: fictional council-contest simulation, power-restoration exposure finale and all four attainable, tested endings.
 - [ ] Side activities, onboarding, keyboard/touch/accessibility, audio/visual consistency, content completeness and no unrecoverable progression locks.

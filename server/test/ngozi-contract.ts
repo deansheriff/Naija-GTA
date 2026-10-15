@@ -46,7 +46,7 @@ export async function ngoziContract(app:FastifyInstance,advance:(ms:number)=>voi
     assert.deepEqual(state.campaign.mastery,{tunde:3,ngozi:3,kc:1});assert.deepEqual(state.campaign.evidence,['wedding_clip','bag_record','catering_invoice']);
     assert.equal(state.campaign.choices['A12-sola_terms'],approach);assert.equal(state.campaign.choices['A12-sola_receipt'],'agreed');assert.equal(state.campaign.choices['A12-appointment'],'private');
     assert.deepEqual({coins:state.coins,food:state.food,energy:state.energy,comfort:state.comfort},balances);
-    assert.equal((await raw({kind:'campaign_continue'})).statusCode,422);assert.equal((await raw({kind:'campaign_choose',stage:10,choice:'next'})).statusCode,422);
+    assert.equal((await raw({kind:'campaign_choose',stage:10,choice:'next'})).statusCode,422);
     ids.push(guest.character.id);
   }
   return ids;

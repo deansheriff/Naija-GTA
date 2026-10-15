@@ -106,3 +106,7 @@ The installed rechargeable lantern, mounting post, handle and soft evening pools
 ## Ajo Day canteen — 0.15
 
 The existing original `campaign-heroes.png` Ngozi pose is drawn behind a shaded counter in `game/world/canteen_view.gd`. The awning, walls, covered dishes, fictional terminal and document tray are code-native painted geometry; there is no new raster, generated source or third-party reference. This is posed staging, without a claimed walking/serving animation. All record contents are readable UI cards and included in the owner review hash. No actual payment branding or provider integration is bundled.
+
+## Four Percent story camera - 0.16
+
+`game/world/phone_view.gd` reuses the original KC region of `campaign-heroes.png`. Room/charging props, framing guides, numbered subject pictograms and source/crop reconstruction panels are code-native geometry. No new raster, external footage, device camera feed or upload is bundled. This is a static illustrated composition task with posed protagonist staging, not an animation or a claim that the game contains recorded video. Subject/status text outside the view preserves the objective on small screens and Low graphics.

@@ -3,11 +3,12 @@ const Campaign = preload("res://core/campaign.gd")
 const Stage = preload("res://world/campaign_stage.gd")
 const RoadView = preload("res://world/driving_view.gd")
 const CanteenView = preload("res://world/canteen_view.gd")
+const PhoneView = preload("res://world/phone_view.gd")
 signal requested(kind: String, stage: int, choice: String)
 signal exit_requested
 const NAMES = {"tunde": "Tunde · Baba God Dey", "ngozi": "Ngozi · Aunty Boss", "kc": "KC · Content is loading"}
 const BIOS = {"tunde": "A danfo driver dreaming of a fleet. His shortcuts need witnesses.", "ngozi": "Canteen queen and savings-circle organiser. Every grand speech still needs an invoice.", "kc": "A content creator learning the difference between attention and trust."}
-const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18"}
+const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18", "original_clip": "Full private wedding source"}
 var content: VBoxContainer
 var feedback: Label
 var feedback_text := "Choose below. There is no timer or penalty for a retry."
@@ -27,6 +28,8 @@ var drive_timer := 0.0
 var driving_enabled := false
 var drive_error := ""
 var stage_view: Control
+var phone_view: Control
+var phone_status: Label
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -94,9 +97,11 @@ func display(campaign: Dictionary, waiting: bool = false) -> void:
 	busy = waiting
 	var structural := campaign.duplicate(true)
 	structural.erase("drive")
+	structural.erase("phone")
 	# At a safe stop, replace the driving controls with the route decision.
 	# Moving snapshots continue to update the existing view in place.
 	structural["drive_ready"] = campaign.get("drive") is Dictionary and campaign.drive.ready
+	structural["phone_ready"] = campaign.get("phone") is Dictionary and campaign.phone.ready
 	var next_fingerprint := JSON.stringify(structural)
 	if campaign.get("drive") is Dictionary and snapshot.get("drive") is Dictionary and campaign.drive.misses > snapshot.drive.misses:
 		driving_enabled = false
@@ -110,6 +115,7 @@ func display(campaign: Dictionary, waiting: bool = false) -> void:
 			else: back_button.grab_focus()
 		_update_drive()
 		_update_feedback()
+		_update_phone()
 		return
 	fingerprint = next_fingerprint
 	show_summary = false
@@ -127,6 +133,8 @@ func build() -> void:
 	road_view = null
 	drive_status = null
 	stage_view = null
+	phone_view = null
+	phone_status = null
 	var c := snapshot
 	if c.get("version") != Campaign.VERSION or not c.get("mission") in Campaign.ORDER:
 		content.add_child(label("This campaign needs a newer game client. Its saved progress has been preserved."))
@@ -134,7 +142,7 @@ func build() -> void:
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission == "A11"
-	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else Stage.new()
+	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
 	if road_scene:
@@ -142,11 +150,15 @@ func build() -> void:
 		stage.update_state(c.drive if c.drive is Dictionary else {"distance": 0.0, "speed": 0.0, "lane": 1, "ready": false, "misses": 0}, float(task.get("target", 350)))
 	elif c.mission == "A12":
 		stage.scene_id = task.get("scene", "canteen")
+	elif c.mission == "A13":
+		phone_view = stage
+		stage.update_state(c.phone, task)
 	else:
 		stage.lead = c.lead
 		if c.status == "playing": stage.scene_id = task.scene
 	content.add_child(stage)
 	if task.get("kind") == "drive": _drive_controls()
+	if c.mission == "A13": _phone_controls(task)
 	if c.status == "unstarted":
 		content.add_child(label("Owambe, Owambe", 30, Color("edc06d")))
 		content.add_child(label("A wedding loses power. A bag disappears. Three people discover that their next move belongs to the same story."))
@@ -162,16 +174,19 @@ func build() -> void:
 		var next_index: int = Campaign.ORDER.find(c.mission) + 1
 		if next_index < Campaign.ORDER.size():
 			var next_story := Campaign.story(Campaign.ORDER[next_index])
-			var next_lead: String = next_story.stages[0].lead.capitalize()
+			var next_lead: String = {"tunde": "Tunde", "ngozi": "Ngozi", "kc": "KC"}[next_story.stages[0].lead]
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label("Act 1 · " + ("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Four Percent is the next mission in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label("Act 1 · " + ("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "The Family Meeting convergence is next in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
 		content.add_child(label(NAMES[c.lead], 16, Color("d4ed85")))
-		content.add_child(label(task.summary if show_summary else task.text))
+		var scene_text: String = task.summary if show_summary else task.text
+		var response: Dictionary = task.get("responses", {}).get(c.choices.get(task.get("previousChoice", ""), ""), {})
+		if not response.is_empty(): scene_text = str(response.summary if show_summary else response.text) + "\n\n" + scene_text.strip_edges()
+		content.add_child(label(scene_text))
 		for record in task.get("records", []): _record_card(record)
 		content.add_child(button("Full scene" if show_summary else "Read summary", func(): show_summary = not show_summary; build()))
 		feedback_text = "Choose below. There is no timer or penalty for a retry."
@@ -184,12 +199,57 @@ func build() -> void:
 				var choice_button := button(option.label, func(): requested.emit("campaign_choose", int(c.stage), str(option.id)))
 				choice_button.add_to_group("campaign_choice")
 				choice_button.set_meta("drive_required", task.get("kind") == "drive")
+				choice_button.set_meta("frame_required", task.get("kind") == "frame")
 				content.add_child(choice_button)
 	for node in controls:
 		if is_instance_valid(node): node.disabled = busy
 	if not busy: back_button.grab_focus()
 	_update_drive()
 	_update_feedback()
+	_update_phone()
+
+func _phone_controls(task: Dictionary) -> void:
+	phone_status = label("Story phone", 17, Color("d4ed85"))
+	content.add_child(phone_status)
+	if task.get("kind") != "frame": return
+	if snapshot.phone.ready:
+		return
+	content.add_child(label("Include all three labelled subjects in one centred wide frame. Left/Right pans, Up selects Wide, Down selects Detail. R saves a take; G assists; C borrows charge when empty. Reading and panning cost nothing.", 14, Color("a6b9ad")))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	content.add_child(grid)
+	for entry in [["Pan left", "left"], ["Pan right", "right"], ["Wide", "wide"], ["Detail", "detail"], ["Save take · %s%%" % int(task.recordCost), "record"], ["Guided full frame · %s%%" % int(task.recordCost), "assist"], ["Borrow enough charge · free", "charge"]]:
+		var node := button(entry[0], _phone_input.bind(str(entry[1])))
+		node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		node.add_theme_font_size_override("font_size", 15)
+		node.add_to_group("campaign_phone")
+		node.set_meta("phone_input", entry[1])
+		grid.add_child(node)
+
+func _phone_input(input: String) -> void:
+	if busy: return
+	requested.emit("campaign_phone", int(snapshot.stage), input)
+
+func _update_phone() -> void:
+	if not snapshot.get("phone") is Dictionary: return
+	if snapshot.get("version") != Campaign.VERSION or not snapshot.get("mission") in Campaign.ORDER: return
+	var p: Dictionary = snapshot.phone
+	var task: Dictionary = Campaign.story(snapshot.mission).stages[snapshot.stage] if snapshot.status == "playing" else {}
+	if is_instance_valid(phone_view): phone_view.update_state(p, task)
+	if is_instance_valid(phone_status):
+		phone_status.text = "Story battery: %s%% · takes: %s · no drain while reading" % [p.battery, p.takes]
+		if task.get("kind") == "frame":
+			var labels := PackedStringArray()
+			for i in range(task.subjects.size()): labels.append(str(i + 1) + " " + task.subjects[i])
+			phone_status.text += "\nInclude: " + " · ".join(labels)
+			var visible_labels := PackedStringArray()
+			for i in PhoneView.included(p): visible_labels.append(str(i + 1))
+			phone_status.text += "\nIn frame: " + ", ".join(visible_labels) + " · " + ("Wide" if p.zoom == 1 else "Detail") + "\n" + p.hint
+	for node in controls:
+		if is_instance_valid(node) and node.get_meta("frame_required", false): node.disabled = busy or not p.ready
+	for node in get_tree().get_nodes_in_group("campaign_phone"):
+		var input: String = node.get_meta("phone_input")
+		node.disabled = busy or p.ready or (input in ["record", "assist"] and p.battery == 0) or (input == "charge" and p.battery > 0)
 
 func _record_card(record: Dictionary) -> void:
 	var panel := PanelContainer.new()
@@ -248,6 +308,16 @@ func _process(delta: float) -> void:
 		requested.emit("campaign_drive", int(snapshot.stage), drive_mode)
 
 func _input(event: InputEvent) -> void:
+	if Campaign.active(snapshot) and snapshot.get("mission") == "A13" and snapshot.get("status") == "playing" and Campaign.story("A13").stages[snapshot.stage].get("kind") == "frame":
+		if busy or snapshot.phone.ready: return
+		if event is InputEventKey and event.pressed and not event.echo:
+			var command: String = {KEY_LEFT: "left", KEY_RIGHT: "right", KEY_UP: "wide", KEY_DOWN: "detail", KEY_R: "record", KEY_G: "assist", KEY_C: "charge"}.get(event.keycode, "")
+			if command in ["record", "assist"] and snapshot.phone.battery == 0: return
+			if command == "charge" and snapshot.phone.battery > 0: return
+			if not command.is_empty():
+				_phone_input(command)
+				get_viewport().set_input_as_handled()
+		return
 	if not Campaign.active(snapshot) or not snapshot.get("drive") is Dictionary or busy: return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var input: String = {KEY_RIGHT: "accelerate", KEY_D: "accelerate", KEY_LEFT: "brake", KEY_A: "brake", KEY_UP: "upper", KEY_DOWN: "lower"}.get(event.keycode, "")

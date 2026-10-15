@@ -103,3 +103,7 @@ A11 awards +2 Tunde mastery and bag evidence once, without StreetCoins. Choices 
 ## Ajo Day (0.15)
 
 Campaign version 3 adds A12 from canonical `src/ngozi-intro.json`; prior version-1 wedding and version-2 Tunde/road saves upgrade without replay. Eleven stage/choice intents validate the fictional contribution records, either agreed negotiation approach, private follow-up and invoice preservation. Completion grants campaign mastery/evidence once with no StreetCoins. Record-card headings and lines are hashed in the owner review catalogue (97 current units). SQL remains migration 3. Four Percent and later chapters remain in production.
+
+## Four Percent (0.16)
+
+Campaign version 4 adds A13 and nullable phone state; version-1 wedding, version-2 road and version-3 Ajo progress upgrade without replay. `campaign_phone` submits expected stage plus one known control; authoritative frame/battery/take/recovery state lives in the atomic character receipt transaction. Eleven checkpoints cover two manual/guided composition tasks, three charging responses, source/crop comparison and explicit admit/defer disclosure. Only save attempts cost the displayed one battery point; reading/time closed/panning do not drain it. Empty battery has free recovery and never deletes evidence. Completion grants KC mastery/original-source evidence once without StreetCoins. The current owner queue contains 108 units, including route variations and subject labels. SQL remains migration 3; use the updated browser/native build.

@@ -33,7 +33,7 @@ export type State = {
   inventory: {owned: string[]; equipped: string[]};
   errand: {stage: 'available' | 'collect' | 'repair' | 'ready' | 'installed' | 'complete'; spot: '' | 'board' | 'bench'};
 };
-export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand' | 'repair_move' | 'campaign_start' | 'campaign_choose' | 'campaign_pause' | 'campaign_resume' | 'campaign_switch' | 'campaign_continue' | 'campaign_drive'; action?: Action; stage?: number; tile?: number; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
+export type Intent = {revision: number; kind: 'sync' | 'greet' | 'begin' | 'decorate' | 'profile' | 'post' | 'cancel' | 'poll' | 'neighbor' | 'buy' | 'furnish' | 'errand' | 'repair_move' | 'campaign_start' | 'campaign_choose' | 'campaign_pause' | 'campaign_resume' | 'campaign_switch' | 'campaign_continue' | 'campaign_drive' | 'campaign_phone'; action?: Action; stage?: number; tile?: number; item?: string; wall?: State['wall']; name?: string; bio?: string; title?: string; budget?: number; jobId?: string; choice?: string};
 export class RuleError extends Error {
   constructor(public code: string, message: string, public status = 422) {super(message);}
 }
