@@ -4,6 +4,7 @@ import {ownerRoutes} from './owner.js';
 import staticFiles from '@fastify/static';
 import type {GameStore} from './contract.js';
 import {RuleError, type Intent} from './rules.js';
+import {capabilities} from './capabilities.js';
 export function createApp(store: GameStore, options: {staticRoot?: string; mode?: string; owner?: OwnerConfig; trustedProxies?: string[] | false} = {}) {
   const app = Fastify({trustProxy: options.trustedProxies ?? false, logger: false, bodyLimit: 8192, ajv: {customOptions: {removeAdditional: false, coerceTypes: false}}});
   const startedAt = Date.now();
@@ -34,7 +35,7 @@ export function createApp(store: GameStore, options: {staticRoot?: string; mode?
       }
     });
     await api.register(async panel => ownerRoutes(panel, store, options.owner, () => ({...counts, uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000)})), {prefix: '/owner'});
-    api.get('/v1/world', async () => ({settings: await store.ops.settings()}));
+    api.get('/v1/world', async () => ({settings: await store.ops.settings(),capabilities:capabilities()}));
     api.post<{Body: {revision: number}}>('/v1/save-code', {schema: {body: {type: 'object', additionalProperties: false, required: ['revision'], properties: {revision: {type: 'integer', minimum: 0, maximum: 2147483646}}}}}, async request => {
       const id = await owner(request.headers.authorization);
       return store.rotate(id, request.headers.authorization!.slice(7), request.body.revision);

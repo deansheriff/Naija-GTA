@@ -56,6 +56,8 @@ if ($LASTEXITCODE -ne 0) { throw 'KC camera/battery/checkpoint checks failed.' }
 if ($LASTEXITCODE -ne 0) { throw 'Family Meeting/journal/offline-navigation checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/generator_campaign_test.gd -- --test
 if ($LASTEXITCODE -ne 0) { throw 'Generator route/site/schedule checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/cloud_protocol_test.gd -- --test
+if ($LASTEXITCODE -ne 0) { throw 'Cloud story-version compatibility checks failed.' }
 if ($Target -eq 'test') { exit 0 }
 if ($Target -in @('web','all')) {
     $webPath = Join-Path $projectRoot 'build\web\play'

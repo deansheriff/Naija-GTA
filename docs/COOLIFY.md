@@ -1,5 +1,7 @@
 # Deploy Naija Street Life with Coolify and Cloudflare
 
+The 0.18.1 client checks the server's advertised story support before writing campaign progress. Deploy the repository's matching website/API together, then update the Android build and reconnect its Cloud save. A story update notice preserves checkpoints and pending choices; it is not a reason to recreate the database volume or change its password. The older public 0.8.0 deployment must be updated for newer campaign chapters. See [compatibility verification](MILESTONE_18.md).
+
 The recommended deployment is **Docker Compose**: the root `Dockerfile` builds one browser/API image, and `compose.yaml` adds a private PostgreSQL database with persistent storage. It serves the website, `/play/` and `/api/` on one domain, avoiding cross-origin configuration or credentials embedded in the game.
 
 ## Coolify settings

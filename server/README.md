@@ -115,3 +115,7 @@ Campaign JSON version 5 adds A14 and the earned-source journal. Earlier versions
 ## Generator Wars (0.18)
 
 Campaign JSON version 6 adds A21 while preserving earlier checkpoint/phone/meeting state; SQL remains migration 3. Thirteen stages share Ngozi/Tunde, with three existing `campaign_drive` legs, stopped junction choices, recorded permission/site/session agreements and contextual pact/custody/schedule responses. Completion grants two mastery to each of Tunde/Ngozi once, without currency or a new wedding source. Both shared schedules are valid; incorrect site/route choices retain the checkpoint. The review queue contains 139 units. All writes retain revision/idempotency validation and existing ledger isolation. Use matching updated native/browser clients.
+
+## Client compatibility (0.18.1)
+
+`GET /api/v1/world` adds public `capabilities`: API version, current campaign version, authored mission IDs and supported campaign commands. It retains the same public settings and no-store policy. Updated clients gate story writes until matching metadata arrives; this does not replace authoritative command validation. Kept story requests retain their key/body/revision through a mismatch, and a rollback's schema rejection triggers a support recheck before a pending story action is cleared. Reconnect after deploying matching static/API/native versions. Schema and campaign version stay unchanged in this patch.

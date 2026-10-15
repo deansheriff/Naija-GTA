@@ -4,6 +4,8 @@ signal changed
 signal notice(message: String)
 const PATH = "user://cloud-connection-v1.json"
 const Campaign = preload("res://core/campaign.gd")
+const CAMPAIGN_COMMANDS = ["campaign_start", "campaign_choose", "campaign_pause", "campaign_resume", "campaign_switch", "campaign_continue", "campaign_drive", "campaign_phone", "campaign_review"]
+const UPDATE_MESSAGE = "Story mode needs a matching game/server update. Your save and pending choice are kept. Update the game or ask the server owner to update, then reconnect in Cloud save."
 var sim
 var base_url := ""
 var token := ""
@@ -15,6 +17,23 @@ var connected := false
 var status := "Local play"
 var poll_time := 0.0
 var world_settings: Dictionary = {}
+var server_capabilities: Dictionary = {}
+var capabilities_checked := false
+
+func campaign_unavailable_reason() -> String:
+	return UPDATE_MESSAGE if capabilities_checked else "Story compatibility could not be checked. Reconnect in Cloud save; your checkpoint and pending choice are kept."
+
+func supports_campaign(kind: String = "") -> bool:
+	if not enabled(): return true
+	if server_capabilities.get("api") != 1 or server_capabilities.get("campaignVersion") != Campaign.VERSION: return false
+	var missions: Variant = server_capabilities.get("campaignMissions")
+	var commands: Variant = server_capabilities.get("campaignCommands")
+	if not missions is Array or not commands is Array: return false
+	for id in Campaign.ORDER:
+		if not id in missions: return false
+	for command in CAMPAIGN_COMMANDS:
+		if not command in commands: return false
+	return kind.is_empty() or kind in commands
 
 func enabled() -> bool:
 	return not base_url.is_empty()
@@ -51,7 +70,7 @@ func _process(delta: float) -> void:
 		poll_time = 0
 		if not token.is_empty():
 			if not pending.is_empty():
-				retry_pending()
+				if not str(pending.get("body", {}).get("kind", "")).begins_with("campaign_") or supports_campaign(): retry_pending()
 			elif connected:
 				# Story time is frozen and every chosen action validates its revision.
 				# Avoid disabling dialogue controls for an unnecessary idle refresh.
@@ -111,6 +130,8 @@ func configure(url: String, code: String = "") -> void:
 		notice.emit("Retry your pending action before changing saves.")
 		return
 	base_url = normalized
+	server_capabilities = {}
+	capabilities_checked = false
 	token = ""
 	recovery_code = code.strip_edges()
 	connected = false
@@ -183,6 +204,7 @@ func refresh() -> void:
 	changed.emit()
 
 func submit(kind: String, args: Dictionary = {}) -> Dictionary:
+	if kind.begins_with("campaign_") and not supports_campaign(kind): return {"ok": false, "message": campaign_unavailable_reason()}
 	if busy or not pending.is_empty(): return {"ok": false, "message": "An action is waiting. Let it finish or retry it in Cloud save."}
 	if not connected: return {"ok": false, "message": "Reconnect your cloud save before starting an activity."}
 	var crypto := Crypto.new()
@@ -197,10 +219,23 @@ func submit(kind: String, args: Dictionary = {}) -> Dictionary:
 
 func retry_pending() -> Dictionary:
 	if busy or pending.is_empty(): return {"ok": false, "message": "No action ready for retry."}
+	if str(pending.get("body", {}).get("kind", "")).begins_with("campaign_") and not supports_campaign(str(pending.body.kind)):
+		return {"ok": false, "message": campaign_unavailable_reason()}
 	busy = true
 	changed.emit()
 	if pending.body.kind == "sync": await _load_world_settings()
 	var result := await _request("/v1/intents", HTTPClient.METHOD_POST, pending.body, pending.key)
+	# A rolled-back server may reject a command after the earlier handshake.
+	# Recheck before treating that rejection as a discardable bad action.
+	if result.code == 400 and str(pending.body.kind).begins_with("campaign_"):
+		server_capabilities = {}
+		capabilities_checked = false
+		await _load_world_settings()
+		if not supports_campaign():
+			busy = false
+			status = "Story update needed · action kept"
+			changed.emit()
+			return {"ok": false, "message": campaign_unavailable_reason()}
 	if result.ok:
 		pending = {}
 		_persist()
@@ -222,7 +257,12 @@ func retry_pending() -> Dictionary:
 
 func _load_world_settings() -> void:
 	var response: Dictionary = await _request("/v1/world", HTTPClient.METHOD_GET)
-	if response.ok: world_settings = response.payload.settings
+	if response.ok: _accept_world(response.payload)
+
+func _accept_world(payload: Dictionary) -> void:
+	capabilities_checked = true
+	if payload.get("settings") is Dictionary: world_settings = payload.settings.duplicate(true)
+	server_capabilities = payload.capabilities.duplicate(true) if payload.get("capabilities") is Dictionary else {}
 
 func replace_save_code() -> Dictionary:
 	if busy or not pending.is_empty() or not connected: return {"ok": false, "message": "Connect and finish pending actions before replacing your code."}

@@ -36,6 +36,7 @@ var phone_status: Label
 var journal_button: Button
 var show_journal := false
 var wait_reason := "Saving or refreshing your cloud checkpoint…"
+var connection_notice: Label
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -64,6 +65,9 @@ func _ready() -> void:
 	journal_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	journal_button.visible = false
 	nav.add_child(journal_button)
+	connection_notice = label("", 16, Color("d4ed85"))
+	connection_notice.hide()
+	root.add_child(connection_notice)
 	back.grab_focus()
 	scroll = ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -149,10 +153,12 @@ func build() -> void:
 	phone_view = null
 	phone_status = null
 	feedback = null
+	connection_notice.hide()
 	journal_button.text = "Return to scene" if show_journal else "Evidence journal"
 	var c := snapshot
 	if c.get("version") != Campaign.VERSION or not c.get("mission") in Campaign.ORDER:
 		content.add_child(label("This campaign needs a newer game client. Its saved progress has been preserved."))
+		_update_feedback()
 		return
 	if show_journal and Journal.available(c):
 		_build_journal()
@@ -399,4 +405,7 @@ func message(text: String) -> void:
 	_update_feedback()
 
 func _update_feedback() -> void:
+	if is_instance_valid(connection_notice):
+		connection_notice.visible = busy and not is_instance_valid(feedback)
+		connection_notice.text = wait_reason
 	if is_instance_valid(feedback): feedback.text = wait_reason if busy else feedback_text

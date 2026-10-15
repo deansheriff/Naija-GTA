@@ -70,6 +70,7 @@ var journey_status: Label
 var journey_bar: ProgressBar
 var campaign_view: Control
 var campaign_hidden := false
+var campaign_waiting_for_update := false
 
 func _ready() -> void:
 	get_window().content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
@@ -1265,11 +1266,18 @@ func _cloud_changed() -> void:
 	_refresh()
 	_save()
 	if Campaign.active(sim.data.campaign) and campaign_view == null and not campaign_hidden: _open_campaign()
-	if campaign_view != null: campaign_view.display(sim.data.campaign, cloud.busy or not cloud.connected or not cloud.pending.is_empty(), _campaign_wait_reason())
+	if campaign_view != null and campaign_waiting_for_update and cloud.connected and not cloud.busy and cloud.pending.is_empty() and cloud.supports_campaign():
+		campaign_waiting_for_update = false
+		if sim.data.campaign.get("paused", true) and sim.data.campaign.get("status") != "unstarted": _campaign_command("campaign_resume", -1, "")
+	if campaign_view != null: campaign_view.display(sim.data.campaign, _campaign_waiting(), _campaign_wait_reason())
+
+func _campaign_waiting() -> bool:
+	return cloud.enabled() and (cloud.busy or not cloud.connected or not cloud.pending.is_empty() or not cloud.supports_campaign())
 
 func _campaign_wait_reason() -> String:
 	if not cloud.connected:
 		return "Connecting · your last checkpoint is kept." if cloud.busy else "Offline · cached checkpoint. Reconnect to save; local navigation stays available."
+	if not cloud.supports_campaign(): return cloud.campaign_unavailable_reason()
 	return "Saving or refreshing your cloud checkpoint…"
 
 func _open_campaign() -> void:
@@ -1277,6 +1285,7 @@ func _open_campaign() -> void:
 		_toast("Finish your ride before opening the campaign.")
 		return
 	campaign_hidden = false
+	campaign_waiting_for_update = not cloud.supports_campaign()
 	_close_modal()
 	walking = false
 	walking_route.clear()
@@ -1288,8 +1297,8 @@ func _open_campaign() -> void:
 		campaign_view.requested.connect(_campaign_command)
 		campaign_view.exit_requested.connect(_exit_campaign)
 		_hide_street_hud()
-	campaign_view.display(sim.data.campaign, cloud.enabled() and (cloud.busy or not cloud.connected or not cloud.pending.is_empty()), _campaign_wait_reason())
-	if sim.data.campaign.get("paused", true) and sim.data.campaign.get("status") != "unstarted": _campaign_command("campaign_resume", -1, "")
+	campaign_view.display(sim.data.campaign, _campaign_waiting(), _campaign_wait_reason())
+	if cloud.supports_campaign() and sim.data.campaign.get("paused", true) and sim.data.campaign.get("status") != "unstarted": _campaign_command("campaign_resume", -1, "")
 
 func _campaign_command(kind: String, stage: int, choice: String) -> void:
 	var result: Dictionary
@@ -1305,13 +1314,17 @@ func _campaign_command(kind: String, stage: int, choice: String) -> void:
 	if kind == "campaign_pause" and result.ok:
 		_close_campaign()
 	elif campaign_view != null:
-		campaign_view.display(sim.data.campaign, cloud.enabled() and (cloud.busy or not cloud.connected or not cloud.pending.is_empty()), _campaign_wait_reason())
+		campaign_view.display(sim.data.campaign, _campaign_waiting(), _campaign_wait_reason())
 		campaign_view.message(result.message)
 		if kind == "campaign_drive" and not result.ok: campaign_view.stop_driving(result.message)
 	_refresh()
 
 func _exit_campaign() -> void:
 	campaign_hidden = true
+	if cloud.enabled() and cloud.connected and not cloud.supports_campaign():
+		_close_campaign()
+		_toast(cloud.campaign_unavailable_reason())
+		return
 	if cloud.enabled() and (cloud.busy or not cloud.connected or not cloud.pending.is_empty()):
 		_close_campaign()
 		_toast("Campaign pause is not confirmed. Reconnect, open Story mode, then return to pause it. Pending actions are kept.")
@@ -1321,6 +1334,7 @@ func _exit_campaign() -> void:
 	else: _campaign_command("campaign_pause", -1, "")
 
 func _close_campaign() -> void:
+	campaign_waiting_for_update = false
 	if campaign_view != null:
 		hud.remove_child(campaign_view)
 		campaign_view.queue_free()
