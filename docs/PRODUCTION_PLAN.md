@@ -22,6 +22,7 @@ The approved story bible/brief remain the creative source. The new authorisation
   - [x] 0.17 Family Meeting: ensemble checkpoints, evidence journal/earned-source recovery, custody/pacts/disclosure and cached offline navigation.
   - [ ] Full directional protagonist/cast art, deeper mission staging and animation validation.
 - [ ] Act 2: Generator Wars, Japa Interview, Danfo Chase, Aso-Ebi Infiltration, the revised receipt/witness collection mission, Fuel Queue Standoff and Viral. Carry evidence/relationship consequences forward.
+  - [x] 0.18 Generator Wars: recorded loan/return, three stopped junction legs, labelled outdoor-site board, both shared-session orders and saved community staging agreement. A visible sandbox installation/community-grid simulation remains later work.
 - [ ] Act 3: fictional council-contest simulation, power-restoration exposure finale and all four attainable, tested endings.
 - [ ] Side activities, onboarding, keyboard/touch/accessibility, audio/visual consistency, content completeness and no unrecoverable progression locks.
 - [ ] Release hardening: regression/branch coverage, load/soak tests, deployment recovery, backup retention, operational health/alerts, credentials/recovery and privacy/abuse controls appropriate to the shipped features.

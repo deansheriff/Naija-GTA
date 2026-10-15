@@ -9,6 +9,7 @@ var visual_distance := 0.0
 var visual_lane := 1.0
 var age := 0.0
 var target := 350.0
+var route_label := "BABA GOD DEY · MORNING ROUTE"
 
 func _ready() -> void:
 	clip_contents = true
@@ -63,8 +64,8 @@ func _draw() -> void:
 	var ground := h * (0.69 + visual_lane * 0.2)
 	draw_ellipse(Vector2(bus_x, ground - 1), 58, 5, Color(0.12, 0.22, 0.16, 0.22))
 	_stamp(TRAFFIC, [16, 154, 839, 441], Vector2(bus_x, ground), 145)
-	draw_rect(Rect2(6, 4, 264, 24), Color(0.96, 0.94, 0.85, 0.94))
-	draw_string(ThemeDB.fallback_font, Vector2(12, 20), "BABA GOD DEY · MORNING ROUTE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("193c32"))
+	draw_rect(Rect2(6, 4, minf(w - 12, 430), 24), Color(0.96, 0.94, 0.85, 0.94))
+	draw_string(ThemeDB.fallback_font, Vector2(12, 20), route_label, HORIZONTAL_ALIGNMENT_LEFT, w - 24, 13, Color("193c32"))
 
 func _stamp(sheet: Texture2D, source: Array, bottom: Vector2, width: float) -> void:
 	var height: float = width * float(source[3]) / float(source[2])

@@ -5,6 +5,7 @@ const RoadView = preload("res://world/driving_view.gd")
 const CanteenView = preload("res://world/canteen_view.gd")
 const PhoneView = preload("res://world/phone_view.gd")
 const MeetingView = preload("res://world/meeting_view.gd")
+const GeneratorView = preload("res://world/generator_view.gd")
 const Journal = preload("res://core/evidence_journal.gd")
 signal requested(kind: String, stage: int, choice: String)
 signal exit_requested
@@ -59,7 +60,7 @@ func _ready() -> void:
 	back_button = back
 	back.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	nav.add_child(back)
-	journal_button = button("Evidence journal", func(): show_journal = not show_journal; build(), false)
+	journal_button = button("Evidence journal", _toggle_journal, false)
 	journal_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	journal_button.visible = false
 	nav.add_child(journal_button)
@@ -158,19 +159,20 @@ func build() -> void:
 		return
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
-	var road_scene: bool = c.mission == "A11"
-	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else Stage.new()
+	var road_scene: bool = c.mission == "A11" or (c.mission == "A21" and task.get("kind") == "drive")
+	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
 	if road_scene:
 		road_view = stage
+		if c.mission == "A21": stage.route_label = "GENERATOR WARS · " + str(task.title).to_upper()
 		stage.update_state(c.drive if c.drive is Dictionary else {"distance": 0.0, "speed": 0.0, "lane": 1, "ready": false, "misses": 0}, float(task.get("target", 350)))
 	elif c.mission == "A12":
 		stage.scene_id = task.get("scene", "canteen")
 	elif c.mission == "A13":
 		phone_view = stage
 		stage.update_state(c.phone, task)
-	elif c.mission == "A14":
+	elif c.mission in ["A14", "A21"]:
 		stage.lead = c.lead
 		stage.scene_id = task.get("scene", "meeting")
 	else:
@@ -198,7 +200,7 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Generator Wars is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Japa Interview is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
@@ -227,6 +229,12 @@ func build() -> void:
 	_update_drive()
 	_update_feedback()
 	_update_phone()
+
+func _toggle_journal() -> void:
+	driving_enabled = false
+	drive_mode = "coast"
+	show_journal = not show_journal
+	build()
 
 func _build_journal() -> void:
 	content.add_child(label("Evidence journal", 30, Color("edc06d")))
@@ -329,7 +337,7 @@ func _drive_controls() -> void:
 		grid.add_child(node)
 
 func _drive_input(input: String) -> void:
-	if busy: return
+	if busy or show_journal: return
 	driving_enabled = true
 	drive_error = ""
 	if input in ["upper", "lower"]:
@@ -339,7 +347,7 @@ func _drive_input(input: String) -> void:
 		drive_timer = 0.8
 
 func _process(delta: float) -> void:
-	if not driving_enabled or not Campaign.active(snapshot) or not snapshot.get("drive") is Dictionary: return
+	if show_journal or not driving_enabled or not Campaign.active(snapshot) or not snapshot.get("drive") is Dictionary: return
 	if snapshot.drive.ready: return
 	if drive_mode in ["coast", "brake"] and snapshot.drive.speed == 0:
 		driving_enabled = false
@@ -350,6 +358,7 @@ func _process(delta: float) -> void:
 		requested.emit("campaign_drive", int(snapshot.stage), drive_mode)
 
 func _input(event: InputEvent) -> void:
+	if show_journal: return
 	if Campaign.active(snapshot) and snapshot.get("mission") == "A13" and snapshot.get("status") == "playing" and Campaign.story("A13").stages[snapshot.stage].get("kind") == "frame":
 		if busy or snapshot.phone.ready: return
 		if event is InputEventKey and event.pressed and not event.echo:

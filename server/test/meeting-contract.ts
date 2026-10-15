@@ -58,7 +58,7 @@ export async function meetingContract(app:FastifyInstance,advance:(ms:number)=>v
     assert.equal(status.custody,scenario.custody==='ngozi_record'?journalData.states.custody_ngozi_record:journalData.states.custody_joint_record);
     assert.equal(status.pact,scenario.pact==='protect'?journalData.states.pact_protect:journalData.states.pact_public_case);
     state=await send({kind:'campaign_review'});assert.deepEqual(state.campaign.mastery,{tunde:4,ngozi:4,kc:4});assert.equal(state.campaign.evidence.length,4);
-    assert.equal((await raw({kind:'campaign_choose',stage:11,choice:'next'})).statusCode,422);assert.equal((await raw({kind:'campaign_continue'})).statusCode,422);
+    assert.equal((await raw({kind:'campaign_choose',stage:11,choice:'next'})).statusCode,422);
     for(const lead of ['tunde','ngozi','kc']){state=await send({kind:'campaign_switch',choice:lead});assert.equal(state.campaign.lead,lead);assert.equal(journalAvailable(state.campaign),true);}
     ids.push(guest.character.id);
   }

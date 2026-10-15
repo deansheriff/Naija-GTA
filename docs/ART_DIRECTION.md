@@ -114,3 +114,7 @@ The existing original `campaign-heroes.png` Ngozi pose is drawn behind a shaded 
 ## Family Meeting - 0.17
 
 `game/world/meeting_view.gd` assembles the three existing original protagonist poses at the canteen table. Awning, quiet-side backdrop, table, bag/document/phone props and the current speaker underline are code-native geometry. No new raster or external reference is included. This remains posed staging; directional protagonist and supporting-cast movement is a separate production requirement. Generator noise is described in readable text and never carries an audio-only clue.
+
+## Generator Wars - 0.18
+
+`game/world/generator_view.gd` reuses the original Tunde/Ngozi poses in a code-native community yard. Loan equipment, canteen doorway/window, open yard and three labelled site proposals are painted geometry; no new raster or external reference is used. Chapter/junction labels extend the existing bounded road view. This is posed staging and a readable planning task, without engine-operation animation or an audio-only rattle clue.

@@ -67,7 +67,7 @@ func _initialize() -> void:
 		check(status.disclosure == (labels.disclosure_admitted if scenario.prior == "admit" or scenario.correction == "tell" else labels.disclosure_open), "Disclosure repair preserves any earlier admission")
 		check(status.custody == (labels.custody_ngozi_record if scenario.custody == "ngozi_record" else labels.custody_joint_record), "Custody remains the chosen recorded arrangement")
 		check(status.pact == (labels.pact_protect if scenario.pact == "protect" else labels.pact_public_case), "Both informed pacts remain explicit saved choices")
-		check(not Campaign.command(c, "campaign_choose", 11, "next").ok and not Campaign.command(c, "campaign_continue").ok, "Duplicate rewards and unbuilt next chapter are blocked")
+		check(not Campaign.command(c, "campaign_choose", 11, "next").ok, "Duplicate meeting rewards are blocked")
 		for who in Campaign.LEADS: check(Campaign.command(c, "campaign_switch", -1, who).ok and c.lead == who, "Completed meeting permits all three perspectives")
 	call_deferred("scene_checks")
 func scene_checks() -> void:
