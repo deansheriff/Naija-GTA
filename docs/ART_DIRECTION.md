@@ -122,3 +122,7 @@ The existing original `campaign-heroes.png` Ngozi pose is drawn behind a shaded 
 ## Japa Interview - 0.19
 
 `game/world/interview_view.gd` reuses the original KC pose in a code-native desk/window/laptop scene. Three on-screen dots indicate selected answers; readable controls and review feedback establish correctness. No new raster, external footage, live camera or call integration is used. This is posed staging with a responsive task display; directional cast animation remains separate production work.
+
+## Danfo Chase - 0.20
+
+The elevated side road view reuses original traffic, neighborhood-walk, building and tree atlases. Code-native marked waiting bays/crossings and a following car add route context; pedestrians traverse the crossing and recycle after leaving the scene instead of turning around. Queued cars leave after explicit clearance. Existing alpha bounds ground every stamp. No new raster or external reference is used. Optional ambience respects Ambient animation; essential route/bay cues remain visible. Explicit waiting advances this untimed staged encounter; it is not a general physical collision/traffic simulation. Full directional hero/cast animation remains separate production work.

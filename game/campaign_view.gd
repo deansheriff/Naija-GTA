@@ -8,12 +8,13 @@ const MeetingView = preload("res://world/meeting_view.gd")
 const GeneratorView = preload("res://world/generator_view.gd")
 const InterviewView = preload("res://world/interview_view.gd")
 const Portfolio = preload("res://core/portfolio_task.gd")
+const Drive = preload("res://core/driving_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
 signal requested(kind: String, stage: int, choice: String)
 signal exit_requested
 const NAMES = {"tunde": "Tunde · Baba God Dey", "ngozi": "Ngozi · Aunty Boss", "kc": "KC · Content is loading"}
 const BIOS = {"tunde": "A danfo driver dreaming of a fleet. His shortcuts need witnesses.", "ngozi": "Canteen queen and savings-circle organiser. Every grand speech still needs an invoice.", "kc": "A content creator learning the difference between attention and trust."}
-const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18", "original_clip": "Full private wedding source"}
+const EVIDENCE_NAMES = {"wedding_clip": "Original wedding recording", "bag_record": "Bag and seat-location record", "catering_invoice": "Catering invoice CAT-18", "original_clip": "Full private wedding source", "service_slip": "Service slip SR-18"}
 var content: VBoxContainer
 var feedback: Label
 var feedback_text := "Choose below. There is no timer or penalty for a retry."
@@ -32,6 +33,8 @@ var drive_mode := "coast"
 var drive_timer := 0.0
 var driving_enabled := false
 var drive_error := ""
+var drive_gate: Dictionary = {}
+var ambient_motion := true
 var stage_view: Control
 var phone_view: Control
 var phone_status: Label
@@ -163,6 +166,7 @@ func build() -> void:
 	scroll.scroll_vertical = 0
 	road_view = null
 	drive_status = null
+	drive_gate = {}
 	stage_view = null
 	phone_view = null
 	phone_status = null
@@ -182,13 +186,20 @@ func build() -> void:
 		return
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
-	var road_scene: bool = c.mission == "A11" or (c.mission == "A21" and task.get("kind") == "drive")
+	var road_scene: bool = c.mission in ["A11", "A23"] or (c.mission == "A21" and task.get("kind") == "drive")
 	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
 	if road_scene:
 		road_view = stage
+		stage.ambient_motion = ambient_motion
 		if c.mission == "A21": stage.route_label = "GENERATOR WARS · " + str(task.title).to_upper()
+		if c.mission == "A23":
+			stage.route_label = "DANFO CHASE · " + str(task.get("title", "PUBLIC STOP")).to_upper()
+			stage.chase = c.status == "playing" and task.get("scene") == "bus"
+			stage.gate = task.get("driveGate", {})
+			stage.route_style = 1 if c.choices.get("A23-market_turn") == "cousin_detour" else 2 if c.choices.get("A23-gap_turn") == "loop_rejoin" else 0
+			drive_gate = task.get("driveGate", {})
 		stage.update_state(c.drive if c.drive is Dictionary else {"distance": 0.0, "speed": 0.0, "lane": 1, "ready": false, "misses": 0}, float(task.get("target", 350)))
 	elif c.mission == "A12":
 		stage.scene_id = task.get("scene", "canteen")
@@ -227,7 +238,7 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Danfo Chase is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Aso-Ebi Infiltration is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
@@ -322,6 +333,7 @@ func _build_journal() -> void:
 	content.add_child(label("Compare what each source supports. A saved record is not proof of every part of the story. Cached records remain readable while offline.", 17, Color("a6b9ad")))
 	var catalogue := Journal.catalogue()
 	for entry in catalogue.entries:
+		if not entry.mission in snapshot.completed: continue
 		var saved: bool = entry.id in snapshot.evidence
 		_record_card({"title": entry.title + (" · saved" if saved else " · not recorded here"), "lines": [entry.kind, "Source: " + entry.source, entry.scope]})
 	for entry in catalogue.notes:
@@ -416,9 +428,20 @@ func _drive_controls() -> void:
 		node.add_theme_font_size_override("font_size", 15)
 		node.add_to_group("campaign_driving")
 		grid.add_child(node)
+	if not drive_gate.is_empty():
+		content.add_child(label(Drive.chase_catalogue().instructions, 14, Color("a6b9ad")))
+		var node := button(Drive.chase_catalogue().waitLabel, _drive_input.bind("yield"))
+		node.add_to_group("campaign_driving")
+		node.set_meta("wait_required", true)
+		content.add_child(node)
 
 func _drive_input(input: String) -> void:
 	if busy or show_journal: return
+	if input == "yield":
+		driving_enabled = false
+		drive_mode = "coast"
+		requested.emit("campaign_drive", int(snapshot.stage), input)
+		return
 	driving_enabled = true
 	drive_error = ""
 	if input in ["upper", "lower"]:
@@ -430,6 +453,9 @@ func _drive_input(input: String) -> void:
 func _process(delta: float) -> void:
 	if show_journal or not driving_enabled or not Campaign.active(snapshot) or not snapshot.get("drive") is Dictionary: return
 	if snapshot.drive.ready: return
+	if not drive_gate.is_empty() and not snapshot.drive.get("gateCleared", false) and snapshot.drive.distance >= float(drive_gate.at) - 30 and snapshot.drive.speed <= 2 and snapshot.drive.lane == 1:
+		driving_enabled = false
+		return
 	if drive_mode in ["coast", "brake"] and snapshot.drive.speed == 0:
 		driving_enabled = false
 		return
@@ -467,7 +493,9 @@ func _update_drive() -> void:
 	if is_instance_valid(drive_status) and not drive_error.is_empty(): drive_status.text = "Driving paused · " + drive_error + "\nChoose a control to continue."
 	for node in controls:
 		if is_instance_valid(node) and node.get_meta("drive_required", false): node.disabled = busy or not drive.ready
-	for node in get_tree().get_nodes_in_group("campaign_driving"): node.disabled = busy or drive.ready
+	for node in get_tree().get_nodes_in_group("campaign_driving"):
+		node.disabled = busy or drive.ready
+		if node.get_meta("wait_required", false): node.disabled = busy or drive.ready or drive.get("gateCleared", false) or drive_gate.is_empty() or drive.distance < float(drive_gate.at) - 30 or drive.distance > float(drive_gate.at) or drive.speed > 2 or drive.lane != 1
 
 func stop_driving(reason: String) -> void:
 	driving_enabled = false

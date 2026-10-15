@@ -81,7 +81,7 @@ func _initialize() -> void:
 			check(c.status == "hub" and c.mastery == {"tunde": 6, "ngozi": 6, "kc": 6} and c.completed.count("A22") == 1, "Two KC mastery and completion are awarded once")
 			check(c.evidence == evidence and c.phone == phone and Journal.status(c) == decisions, "Portfolio choices do not alter wedding sources, battery or family disclosure")
 			check(c.choices["A22-piece"] == piece and c.portfolio.route == route and "A22-opportunity" in c.choices, "Both portfolio pieces and opportunity replies are kept")
-			check(not Campaign.command(c, "campaign_choose", 11, "next").ok and not Campaign.command(c, "campaign_continue").ok, "Duplicate completion and unbuilt next chapter remain blocked")
+			check(not Campaign.command(c, "campaign_choose", 11, "next").ok, "Duplicate interview completion remains blocked")
 	call_deferred("scene_checks")
 func all_text(node: Node) -> String:
 	var value := str(node.text) + "\n" if node is Label else ""

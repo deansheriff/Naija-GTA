@@ -1,0 +1,10 @@
+{
+  "waitLabel":"Wait until the marked route clears",
+  "instructions":"Stop in the lower-lane waiting bay before the marked crossing or queue. Choose Wait until the marked route clears, then select a pace control again. Guided approach makes the same required stop. A missed waiting bay offers a free loop.",
+  "messages":{
+    "stop":"Waiting bay reached. Keep stopped and choose Wait until the marked route clears.",
+    "wrongWait":"Stop in the lower-lane waiting bay first. Brake early or use Guided approach; the route cannot clear while the bus is moving.",
+    "cleared":"The marked route is clear. Select a pace control to continue to the final safe bay.",
+    "loop":"The waiting bay was passed too quickly. Take the free loop, stop earlier or use Guided approach. No clue or fare is lost."
+  }
+}

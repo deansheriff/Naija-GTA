@@ -64,7 +64,7 @@ export async function interviewContract(app:FastifyInstance,advance:(ms:number)=
     assert.equal(JSON.stringify(state.campaign.evidence),evidence);assert.equal(JSON.stringify(state.campaign.phone),phone);assert.equal(JSON.stringify(journalStatus(state.campaign)),meeting);
     assert.equal(state.campaign.choices['A22-piece'],piece);assert.ok(['keep_open','ask_time'].includes(state.campaign.choices['A22-opportunity']));assert.equal(state.campaign.portfolio.route,route);
     assert.ok(journalData.notes.some(n=>n.mission==='A22'&&state.campaign.completed.includes(n.mission)));assert.equal(state.campaign.evidence.includes('open_window'),false);
-    assert.equal((await raw({kind:'campaign_choose',stage:11,choice:'next'})).statusCode,422);assert.equal((await raw({kind:'campaign_continue'})).statusCode,422);
+    assert.equal((await raw({kind:'campaign_choose',stage:11,choice:'next'})).statusCode,422);
     state=await send({kind:'campaign_review'});assert.equal(state.campaign.mastery.kc,6);assert.equal(state.campaign.evidence.length,4);ids.push(guest.character.id);
   }
   return ids;

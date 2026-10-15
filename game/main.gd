@@ -1291,6 +1291,7 @@ func _open_campaign() -> void:
 	walking_route.clear()
 	if campaign_view == null:
 		campaign_view = CampaignView.new()
+		campaign_view.ambient_motion = sim.data.settings.get("effects", true)
 		hud.add_child(campaign_view)
 		world.hide()
 		world.process_mode = Node.PROCESS_MODE_DISABLED

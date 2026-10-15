@@ -1,5 +1,5 @@
 extends RefCounted
-const VERSION = 7
+const VERSION = 8
 const STORY_PATH = "res://story/prologue.json"
 const TUNDE_PATH = "res://story/tunde-intro.json"
 const NGOZI_PATH = "res://story/ngozi-intro.json"
@@ -7,8 +7,9 @@ const KC_PATH = "res://story/kc-intro.json"
 const MEETING_PATH = "res://story/family-meeting.json"
 const GENERATOR_PATH = "res://story/generator-wars.json"
 const INTERVIEW_PATH = "res://story/japa-interview.json"
+const CHASE_PATH = "res://story/danfo-chase.json"
 const LEADS = ["tunde", "ngozi", "kc"]
-const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22"]
+const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22", "A23"]
 const Drive = preload("res://core/driving_task.gd")
 const Phone = preload("res://core/phone_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
@@ -16,7 +17,7 @@ const Portfolio = preload("res://core/portfolio_task.gd")
 
 static func story(id: String = "P00") -> Dictionary:
 	if not id in ORDER: return {}
-	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH}[id]
+	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH, "A23": CHASE_PATH}[id]
 	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if id == "P00":
 		content.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
@@ -46,6 +47,9 @@ static func normalize(value: Variant) -> Dictionary:
 		value = value.duplicate(true)
 		value.version = VERSION
 		value.portfolio = null
+	elif value.get("version") == 7:
+		value = value.duplicate(true)
+		value.version = VERSION
 	if value.get("version") != VERSION or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()
 	if not value.get("mission") in ORDER: return value.duplicate(true)
 	var content := story(value.mission)
@@ -80,6 +84,7 @@ static func normalize(value: Variant) -> Dictionary:
 	if result.status == "playing" and content.stages[result.stage].get("kind") == "drive":
 		var drive := Drive.normalize(value.get("drive"))
 		result.drive = drive if not drive.is_empty() else Drive.fresh(0)
+		if content.stages[result.stage].has("driveGate") and not result.drive.get("gateCleared", false): result.drive.ready = false
 	var phone := Phone.normalize(value.get("phone"))
 	if not phone.is_empty(): result.phone = phone
 	elif result.mission == "A13": result.phone = Phone.fresh()
@@ -95,6 +100,7 @@ static func _stage(c: Dictionary, now: int) -> void:
 	var task: Dictionary = story(c.mission).stages[c.stage]
 	c.lead = task.lead
 	c.drive = Drive.fresh(now) if task.get("kind") == "drive" else null
+	if task.has("driveGate") and c.drive is Dictionary: c.drive.gateCleared = false
 	if c.mission == "A13":
 		if not c.phone is Dictionary: c.phone = Phone.fresh()
 		if task.get("kind") == "frame": Phone.reset_frame(c.phone)
@@ -145,11 +151,11 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 		Phone.advance(c.phone, choice, int(task.recordCost))
 		return {"ok": true, "message": "Phone checkpoint saved."}
 	if kind == "campaign_drive":
-		if task.get("kind") != "drive" or not c.drive is Dictionary or not choice in Drive.INPUTS: return {"ok": false, "message": "Use the driving controls shown for this road leg."}
-		Drive.advance(c.drive, choice, now, float(task.target))
+		if task.get("kind") != "drive" or not c.drive is Dictionary or not choice in Drive.INPUTS or (choice == "yield" and not task.has("driveGate")): return {"ok": false, "message": "Use the driving controls shown for this road leg."}
+		Drive.advance(c.drive, choice, now, float(task.target), task.get("driveGate", {}))
 		return {"ok": true, "message": "Driving checkpoint saved."}
 	if kind != "campaign_choose": return fail
-	if task.get("kind") == "drive" and not c.drive.get("ready", false): return {"ok": false, "message": "Reach the lower-lane safe bay and stop first. Guided approach is available."}
+	if task.get("kind") == "drive" and (not c.drive.get("ready", false) or (task.has("driveGate") and not c.drive.get("gateCleared", false))): return {"ok": false, "message": "Reach the lower-lane safe bay and stop first. Guided approach is available."}
 	if task.get("kind") == "frame" and not c.phone.get("ready", false): return {"ok": false, "message": "Save the full centred wide frame first. Guided full frame is available at the same battery cost."}
 	if task.get("kind") == "portfolio" and not c.portfolio.get("ready", false): return {"ok": false, "message": "Check the three portfolio answers first. Free practice, callback and guided answers are available."}
 	for option in task.choices:

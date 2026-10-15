@@ -9,7 +9,7 @@ export async function contentReviewContract(store: GameStore, app: FastifyInstan
   assert.equal(login.statusCode,200);
   const headers={cookie:String(login.headers['set-cookie']).split(';')[0],origin:fixtureOwner.origin,'x-csrf-token':login.json().csrfToken};
   const queue=async()=>{const reply=await app.inject({url:'/api/owner/content',headers});assert.equal(reply.statusCode,200);return reply.json();};
-  const initial=await queue(); assert.equal(initial.units.length,153); assert.equal(initial.counts.total,153);
+  const initial=await queue(); assert.equal(initial.units.length,167); assert.equal(initial.counts.total,167);
   const pendingRecord=initial.units.find((u:any)=>u.id==='A12-bolu_status');assert.ok(pendingRecord.text.includes('KauriPay · story prop\nCircle day: 06'));assert.ok(pendingRecord.text.includes('Status: PENDING'));
   const unit=initial.units.find((u:any)=>u.id==='P00-invitation'); assert.equal(unit.status,'pending');
   assert.ok(unit.text.includes('BURGUNDY'));assert.ok(unit.choices.some((text:string)=>text.includes('Retry hint')));
