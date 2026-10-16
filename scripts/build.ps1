@@ -19,6 +19,8 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/aso-ebi-infiltration.
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/small-small-receipts.json') -Destination (Join-Path $gamePath 'story/small-small-receipts.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/receipt-task.json') -Destination (Join-Path $gamePath 'story/receipt-task.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/fuel-queue-standoff.json') -Destination (Join-Path $gamePath 'story/fuel-queue-standoff.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/promises.json') -Destination (Join-Path $gamePath 'story/promises.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/promise-task.json') -Destination (Join-Path $gamePath 'story/promise-task.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/viral.json') -Destination (Join-Path $gamePath 'story/viral.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/viral-task.json') -Destination (Join-Path $gamePath 'story/viral-task.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/queue-task.json') -Destination (Join-Path $gamePath 'story/queue-task.json') -Force
@@ -81,6 +83,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Receipt comparison/conditional witness approva
 if ($LASTEXITCODE -ne 0) { throw 'Queue ordering/empty-prop reset/transport checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/viral_campaign_test.gd -- --test
 if ($LASTEXITCODE -ne 0) { throw 'Viral/source/correction/withdrawal checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/promises_campaign_test.gd -- --test
+if ($LASTEXITCODE -ne 0) { throw 'Promise comparison/reply/support checks failed.' }
 if ($Target -eq 'test') { exit 0 }
 if ($Target -in @('web','all')) {
     $webPath = Join-Path $projectRoot 'build\web\play'

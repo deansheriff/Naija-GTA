@@ -5,6 +5,7 @@ import {journalData} from './evidence-journal.js';
 import {portfolioData} from './portfolio-task.js';
 import {chaseDrivingData} from './driving-task.js';
 import {receiptData} from './receipt-task.js';
+import {promiseData} from './promise-task.js';
 import {viralData} from './viral-task.js';
 import {queueData} from './queue-task.js';
 
@@ -13,6 +14,7 @@ export type ReviewRecord = {id: number; unit_id: string; content_hash: string; s
 export type ReviewSubmission = {unitId: string; contentHash: string; revision: number; status: ReviewRecord['status']; notes: string};
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const units = [
+  {id:'promise-board',context:'Up NEPA! / Promises, Promises / '+promiseData.title,text:promiseData.instructions+'\n\n'+promiseData.questions.map(q=>q.title+'\n'+q.options.map(o=>o.label).join('\n')).join('\n\n')+'\n\n'+Object.values(promiseData.messages).join('\n\n')+'\n'+promiseData.journalTitle+'\n'+promiseData.supportText,choices:promiseData.actions.map(a=>a.label),channel:'campaign' as const},
   {id:'viral-board',context:'Up NEPA! / Viral / Source and correction controls',text:[...([viralData.rumour,viralData.correction].map(board=>board.title+'\n'+board.instructions+'\n\n'+board.questions.map(q=>q.title+'\n'+q.options.map(o=>o.label).join('\n')).join('\n\n')+'\n\n'+Object.values(board.messages).join('\n\n'))),viralData.disclosure,...viralData.documents,...Object.values(viralData.status)].join('\n\n'),choices:[...viralData.rumour.actions,...viralData.correction.actions].map(a=>a.label).concat(viralData.withdrawLabel),channel:'campaign' as const},
   ...Object.values(missions).flatMap(mission => mission.stages.map(stage => ({id: mission.id + '-' + stage.id, context: `Up NEPA! / ${mission.title} / ${stage.lead} / ${stage.title}`, text: stage.text + '\n\nScene summary:\n' + stage.summary + (stage.records ? '\n\nTable records:\n' + stage.records.map(record => record.title + '\n' + record.lines.join('\n')).join('\n\n') : '') + (stage.subjects ? '\n\nFrame subjects:\n' + stage.subjects.join('\n') : '') + (stage.responses ? '\n\nRoute variations:\n' + Object.entries(stage.responses).flatMap(([id,response])=>response?[id+'\n'+response.text+'\nSummary: '+response.summary]:[]).join('\n\n') : ''), choices: stage.choices.map(choice => choice.label + (choice.hint ? '\nRetry hint: ' + choice.hint : '')), channel: 'campaign' as const}))),
   ...street.units.map(unit => ({...unit, channel: 'street' as const})),

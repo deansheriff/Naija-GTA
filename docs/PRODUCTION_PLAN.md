@@ -31,6 +31,7 @@ The approved story bible/brief remain the creative source. The new authorisation
   - [x] 0.23 Fuel Queue Standoff: saved duplicate-ticket/order and empty-prop aisle tasks, manual/guided checks, walking queue, both negotiation approaches and retained transport reservation; no fuel dispensing, currency cost or witness permission change.
   - [x] 0.24 Viral: two-source rumour check, explicit crop disclosure, saved correction board, current exact-text permission, withdrawal-safe anonymised package and three KC mastery once. Richer staging/cast and real review remain release work.
 - [ ] Act 3: fictional council-contest simulation, power-restoration exposure finale and all four attainable, tested endings.
+  - [x] 0.25 Promises, Promises: three saved promise/record comparisons, all three opening questions/replies, retained source limits/current permission, recorded ally offers and one mastery per lead once. Final setup and settlement remain checks for the story.
 - [ ] Side activities, onboarding, keyboard/touch/accessibility, audio/visual consistency, content completeness and no unrecoverable progression locks.
 - [ ] Release hardening: regression/branch coverage, load/soak tests, deployment recovery, backup retention, operational health/alerts, credentials/recovery and privacy/abuse controls appropriate to the shipped features.
 - [ ] Native release packaging/signing and real browser/Android performance, HTTPS/input, memory and thermal verification.

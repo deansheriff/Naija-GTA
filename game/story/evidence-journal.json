@@ -111,6 +111,14 @@
       "kind": "Fictional staging arrangement",
       "source": "Attendant's corrected queue and allocation sheet",
       "scope": "The bus party retains a reservation for later community staging. It is a story transport prop, not wedding evidence, spendable currency or witness permission. The earlier recorded custody, source limits and consent remain unchanged."
+    },
+    {
+      "id": "forum_packet",
+      "mission": "A31",
+      "title": "Community forum question packet",
+      "kind": "Authored forum preparation",
+      "source": "Three checked records, chosen opening question and source-labelled reply",
+      "scope": "The packet retains an agreement awaiting setup checks, one bus awaiting collection confirmation and an outstanding catering entry awaiting a dated reply. Allies offer rehearsals and record checks; this is not an installation result, settlement proof or real vote count."
     }
   ],
   "states": {

@@ -1,5 +1,5 @@
 extends RefCounted
-const VERSION = 12
+const VERSION = 13
 const STORY_PATH = "res://story/prologue.json"
 const TUNDE_PATH = "res://story/tunde-intro.json"
 const NGOZI_PATH = "res://story/ngozi-intro.json"
@@ -10,13 +10,15 @@ const INTERVIEW_PATH = "res://story/japa-interview.json"
 const CHASE_PATH = "res://story/danfo-chase.json"
 const INFILTRATION_PATH = "res://story/aso-ebi-infiltration.json"
 const RECEIPTS_PATH = "res://story/small-small-receipts.json"
+const PROMISE_PATH = "res://story/promises.json"
+const Promise = preload("res://core/promise_task.gd")
 const VIRAL_PATH = "res://story/viral.json"
 const Viral = preload("res://core/viral_task.gd")
 const QUEUE_PATH = "res://story/fuel-queue-standoff.json"
 const Queue = preload("res://core/queue_task.gd")
 const Receipt = preload("res://core/receipt_task.gd")
 const LEADS = ["tunde", "ngozi", "kc"]
-const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22", "A23", "A24", "A25", "A26", "A27"]
+const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A31"]
 const Drive = preload("res://core/driving_task.gd")
 const Phone = preload("res://core/phone_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
@@ -24,7 +26,7 @@ const Portfolio = preload("res://core/portfolio_task.gd")
 
 static func story(id: String = "P00") -> Dictionary:
 	if not id in ORDER: return {}
-	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH, "A23": CHASE_PATH, "A24": INFILTRATION_PATH, "A25": RECEIPTS_PATH, "A26": QUEUE_PATH, "A27": VIRAL_PATH}[id]
+	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH, "A23": CHASE_PATH, "A24": INFILTRATION_PATH, "A25": RECEIPTS_PATH, "A26": QUEUE_PATH, "A27": VIRAL_PATH, "A31": PROMISE_PATH}[id]
 	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if id == "P00":
 		content.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
@@ -54,7 +56,7 @@ static func normalize(value: Variant) -> Dictionary:
 		value = value.duplicate(true)
 		value.version = VERSION
 		value.portfolio = null
-	elif value.get("version") in [7, 8, 9, 10, 11]:
+	elif value.get("version") in [7, 8, 9, 10, 11, 12]:
 		value = value.duplicate(true)
 		value.version = VERSION
 	if value.get("version") != VERSION or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()
@@ -99,6 +101,9 @@ static func normalize(value: Variant) -> Dictionary:
 		var viral := Viral.normalize(value.get("viral"))
 		result.viral = viral if not viral.is_empty() else Viral.fresh()
 	if value.get("choices", {}).get("A27-withdrawn") == "yes": result.choices["A27-withdrawn"] = "yes"
+	if result.mission == "A31" or value.has("promiseTask"):
+		var promise := Promise.normalize(value.get("promiseTask"))
+		result.promiseTask = promise if not promise.is_empty() else Promise.fresh()
 	Journal.restore_earned(result)
 	if value.get("evidence") is Array: result.evidence = result.evidence.filter(func(fact): return fact in value.evidence)
 	if result.status == "playing" and content.stages[result.stage].get("kind") == "drive":
@@ -128,6 +133,7 @@ static func _stage(c: Dictionary, now: int) -> void:
 	if c.mission == "A25":
 		if not c.get("receipt") is Dictionary: c.receipt = Receipt.fresh()
 		if not c.has("witnessConsent"): c.witnessConsent = null
+	if c.mission == "A31" and not c.get("promiseTask") is Dictionary: c.promiseTask = Promise.fresh()
 	if c.mission == "A27" and not c.get("viral") is Dictionary: c.viral = Viral.fresh()
 	if c.mission == "A26":
 		if not c.get("queueTask") is Dictionary: c.queueTask = Queue.fresh()
@@ -175,6 +181,10 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 	if c.status != "playing" or c.paused or stage != c.stage: return fail
 	var content := story(c.mission)
 	var task: Dictionary = content.stages[c.stage]
+	if kind == "campaign_promises":
+		if task.get("kind") != "promise" or not c.get("promiseTask") is Dictionary or not choice in Promise.inputs(): return fail
+		Promise.advance(c.promiseTask, choice)
+		return {"ok": true, "message": "Promise comparisons saved."}
 	if kind == "campaign_publish":
 		if task.get("kind") != "viral" or not c.get("viral") is Dictionary or not choice in Viral.inputs(task.viralPhase): return fail
 		Viral.advance(c.viral, choice, task.viralPhase)
@@ -205,6 +215,7 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 	if task.get("kind") == "portfolio" and not c.portfolio.get("ready", false): return {"ok": false, "message": "Check the three portfolio answers first. Free practice, callback and guided answers are available."}
 	if task.get("kind") == "receipt" and not c.get("receipt", {}).get("ready", false): return {"ok": false, "message": "Check all three source comparisons first. Guided matching is free."}
 	if task.get("kind") == "queue" and not c.get("queueTask", {}).get("lineReady" if task.queuePhase == "line" else "resetReady", false): return {"ok": false, "message": "Check the current queue task first. Free guidance is available."}
+	if task.get("kind") == "promise" and not c.get("promiseTask", {}).get("ready", false): return fail
 	if task.get("kind") == "viral" and not c.get("viral", {}).get(task.viralPhase, {}).get("ready", false): return fail
 	for option in task.choices:
 		if option.id != choice: continue

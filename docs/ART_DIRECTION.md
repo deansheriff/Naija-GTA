@@ -141,3 +141,6 @@ The existing code-native desk/quiet-corner staging and original Ngozi/KC poses n
 
 
 0.24 adds a code-native source desk/community screen with the original KC pose and explicit checked/read markers. Text cards show the exact current permitted package; private footage is represented by a source description, not exported as a public visual. No raster asset or background task is added. Full directional protagonist/cast animation remains a release requirement.
+
+
+0.25 stages the three original posed leads at a code-native community forum with a clear active-lead underline, written-reply banner and comparison markers. No raster payload is added. This bounded authored tableau does not replace the pending full directional/cast animation work.

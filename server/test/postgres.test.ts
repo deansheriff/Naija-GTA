@@ -1,3 +1,4 @@
+import {promisesContract} from './promises-contract.js';
 import {viralContract} from './viral-contract.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -146,6 +147,8 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     for(const id of queueIds)assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[id])).rows[0].total),1);
     const viralIds=await viralContract(app,ms=>{now+=ms;},async(id,c)=>{await pool.query("UPDATE characters SET state=jsonb_set(state,'{campaign}',$2::jsonb) WHERE id=$1",[id,JSON.stringify(c)]);});
     for(const id of viralIds)assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[id])).rows[0].total),1);
+    const promiseIds=await promisesContract(app,ms=>{now+=ms;},async(id,c)=>{await pool.query("UPDATE characters SET state=jsonb_set(state,'{campaign}',$2::jsonb) WHERE id=$1",[id,JSON.stringify(c)]);});
+    for(const id of promiseIds)assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[id])).rows[0].total),1);
     await assert.rejects(pool.query("UPDATE content_reviews SET notes='changed'"),/append-only/);
     await assert.rejects(pool.query("UPDATE owner_audit SET reason='changed'"),/append-only/);
     const counts=await Promise.all(Array.from({length:12},()=>store.ops.consumeRate('a'.repeat(64),now+60000)));

@@ -1,0 +1,244 @@
+{
+  "version": 1,
+  "id": "A31",
+  "title": "Promises, Promises",
+  "mastery": {
+    "tunde": 1,
+    "ngozi": 1,
+    "kc": 1
+  },
+  "evidence": [],
+  "summary": "Compare three fictional promises with their records, choose an opening question and keep a reply plus staged support offers.",
+  "stages": [
+    {
+      "id": "arrival",
+      "lead": "tunde",
+      "scene": "forum",
+      "title": "A rehearsal with a very large banner",
+      "text": "The fictional neighbourhood forum rehearses its council-contest questions. The banner cannot fit the Chief’s titles.\nTunde: Can we ask the question before the second banner arrives?\nNgozi: Bring the written records first.\n\nThis is the story’s authored forum, separate from street polls and real votes.",
+      "summary": "The fictional neighbourhood forum rehearses its council-contest questions. The banner cannot fit the Chief’s titles.",
+      "choices": [
+        {
+          "id": "records",
+          "label": "Bring the staging agreement, transport sheet and catering copy",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "lights",
+      "lead": "ngozi",
+      "scene": "forum",
+      "title": "An agreement is a starting point",
+      "text": "The community ally confirms that Generator Wars recorded permission, shared hours and a proposed staging location. The team still needs to inspect the setup before the final gathering. A signature does not turn on every light.",
+      "summary": "The community ally confirms that Generator Wars recorded permission, shared hours and a proposed staging location. The team still needs to inspect the setup before the final gathering. A signature does not turn on every light.",
+      "choices": [
+        {
+          "id": "limited",
+          "label": "Record the agreement and ask what remains to be checked",
+          "correct": true
+        }
+      ],
+      "records": [
+        {
+          "title": "Community staging agreement",
+          "lines": [
+            "Permission and shared hours recorded.",
+            "Location proposed for staged gathering.",
+            "Installation and final cue checks remain outstanding."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "transport",
+      "lead": "tunde",
+      "scene": "forum",
+      "title": "The fleet is one bus long",
+      "text": "The depot ally confirms the corrected queue and one-bus reservation. The attendant will confirm collection and the staging team will inspect the safe bay.\nTunde: A fleet can begin with one.\nNgozi: Then write one.",
+      "summary": "The depot ally confirms the corrected queue and one-bus reservation. The attendant will confirm collection and the staging team will inspect the safe bay.",
+      "choices": [
+        {
+          "id": "one_bus",
+          "label": "Keep one bus on the transport plan",
+          "correct": true
+        }
+      ],
+      "records": [
+        {
+          "title": "Transport allocation sheet",
+          "lines": [
+            "One bus party · checked ticket 14.",
+            "Reservation retained; collection to be confirmed.",
+            "Safe bay and clear aisle require final rehearsal."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "catering",
+      "lead": "ngozi",
+      "scene": "forum",
+      "title": "The entry has not disappeared",
+      "text": "The permitted catering copy still shows an outstanding entry. The diary lists promises and the PB-1 prop carries an issue discrepancy. Those records justify questions; they do not independently prove every allegation. Keep private accounts and custody records separate.",
+      "summary": "The permitted catering copy still shows an outstanding entry. The diary lists promises and the PB-1 prop carries an issue discrepancy. Those records justify questions; they do not independently prove every allegation. Keep private accounts and custody records separate.",
+      "choices": [
+        {
+          "id": "dated_record",
+          "label": "Ask for the dated settlement record and keep a reply space",
+          "correct": true
+        }
+      ],
+      "requiresEvidence": [
+        "catering_invoice",
+        "diary",
+        "note_discrepancy"
+      ],
+      "records": [
+        {
+          "title": "Permitted CAT-18 extract",
+          "lines": [
+            "Outstanding catering entry.",
+            "No dated settlement is attached to this story copy.",
+            "A later settlement or correction must be compared with its source."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "comparison",
+      "lead": "kc",
+      "scene": "forum",
+      "title": "Ask what the records can carry",
+      "text": "The forwarded slogans are louder than the three records. Match each claim to its actual limit before choosing the forum’s opening question.",
+      "summary": "The forwarded slogans are louder than the three records. Match each claim to its actual limit before choosing the forum’s opening question.",
+      "choices": [
+        {
+          "id": "checked",
+          "label": "Keep the three checked promise comparisons",
+          "correct": true
+        }
+      ],
+      "kind": "promise",
+      "requiresEvidence": [
+        "catering_invoice"
+      ]
+    },
+    {
+      "id": "question",
+      "lead": "kc",
+      "scene": "forum",
+      "title": "One opening question. Three useful routes.",
+      "text": "Choose which checked record opens the forum. All three questions remain in the packet and all routes retain the same support and reward.",
+      "summary": "Choose which checked record opens the forum. All three questions remain in the packet and all routes retain the same support and reward.",
+      "choices": [
+        {
+          "id": "lights",
+          "label": "What checks remain before the staged lights can run?",
+          "correct": true
+        },
+        {
+          "id": "bus",
+          "label": "When will the one-bus collection and safe bay be confirmed?",
+          "correct": true
+        },
+        {
+          "id": "pay",
+          "label": "Where is the dated settlement for the outstanding catering entry?",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "reply",
+      "lead": "ngozi",
+      "scene": "forum",
+      "title": "Leave room for an answer",
+      "text": "The representative’s reply is attached as a statement to compare later, not substituted for a receipt or installation check.\nNgozi: We have made a space for the answer. The space is not the answer.",
+      "summary": "The representative’s reply is attached as a statement to compare later, not substituted for a receipt or installation check.",
+      "choices": [
+        {
+          "id": "attach",
+          "label": "Attach the reply with its source and outstanding checks",
+          "correct": true
+        }
+      ],
+      "previousChoice": "A31-question",
+      "responses": {
+        "lights": {
+          "text": "Representative: The team can confirm a rehearsal slot. We have not supplied an installation completion record.",
+          "summary": "The reply offers a slot; installation remains to be checked."
+        },
+        "bus": {
+          "text": "Representative: The attendant will confirm the reserved bus collection. The sheet lists one bus.",
+          "summary": "The reply keeps one reservation and a pending collection check."
+        },
+        "pay": {
+          "text": "Representative: Bring the dated entry to the settlement review. No settlement record is supplied in this reply.",
+          "summary": "The reply offers review; no settlement is established."
+        }
+      }
+    },
+    {
+      "id": "sources",
+      "lead": "kc",
+      "scene": "forum",
+      "title": "Keep the corrected package current",
+      "text": "KC carries the current Viral package, including its disclosure and source limits. If NE-1 permission is withdrawn, the document version remains current. A forum reply grants no new witness rights.",
+      "summary": "KC carries the current Viral package, including its disclosure and source limits. If NE-1 permission is withdrawn, the document version remains current. A forum reply grants no new witness rights.",
+      "choices": [
+        {
+          "id": "current",
+          "label": "Keep the current permitted package beside the questions",
+          "correct": true
+        }
+      ],
+      "publicationPreview": true
+    },
+    {
+      "id": "allies",
+      "lead": "tunde",
+      "scene": "forum",
+      "title": "Support you can write down",
+      "text": "The community ally offers a rehearsal slot. The depot ally offers a collection confirmation. The catering team offers a permitted record check. These are recorded offers of help, not a vote count, installed lights or proof of settlement.",
+      "summary": "The community ally offers a rehearsal slot. The depot ally offers a collection confirmation. The catering team offers a permitted record check. These are recorded offers of help, not a vote count, installed lights or proof of settlement.",
+      "choices": [
+        {
+          "id": "recorded",
+          "label": "Record the three offers and their outstanding checks",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "readiness",
+      "lead": "ngozi",
+      "scene": "forum",
+      "title": "Ready for the checks, not finished with them",
+      "text": "The packet now lists three questions, a source-labelled reply, current permitted material and the allies’ offers. Before the Switch will check missing records, permission, property custody, staging and the creative follow-up before any finale commitment.",
+      "summary": "The packet now lists three questions, a source-labelled reply, current permitted material and the allies’ offers. Before the Switch will check missing records, permission, property custody, staging and the creative follow-up before any finale commitment.",
+      "choices": [
+        {
+          "id": "packet_ready",
+          "label": "Mark the question packet ready for Before the Switch",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "lead": "kc",
+      "scene": "forum",
+      "title": "The title is shorter than the evidence list",
+      "text": "Promises, Promises complete. Each lead gains one mastery once. The forum packet keeps the chosen opening question, all three source limits and the reply. No real vote or street currency changes.\n\nBefore the Switch follows.",
+      "summary": "Promises, Promises complete. Each lead gains one mastery once. The forum packet keeps the chosen opening question, all three source limits and the reply. No real vote or street currency changes.",
+      "choices": [
+        {
+          "id": "next",
+          "label": "Save the forum packet and its outstanding checks",
+          "correct": true
+        }
+      ]
+    }
+  ]
+}

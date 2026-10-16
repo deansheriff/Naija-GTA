@@ -8,6 +8,8 @@ const MeetingView = preload("res://world/meeting_view.gd")
 const GeneratorView = preload("res://world/generator_view.gd")
 const InterviewView = preload("res://world/interview_view.gd")
 const BirthdayView = preload("res://world/birthday_view.gd")
+const ForumView = preload("res://world/forum_view.gd")
+const Promise = preload("res://core/promise_task.gd")
 const ViralView = preload("res://world/viral_view.gd")
 const Viral = preload("res://core/viral_task.gd")
 const QueueView = preload("res://world/queue_view.gd")
@@ -137,6 +139,8 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 	structural.erase("receipt")
 	structural.erase("queueTask")
 	structural.erase("viral")
+	structural.erase("promiseTask")
+	structural["promise_ready"] = campaign.get("promiseTask") is Dictionary and campaign.promiseTask.ready
 	structural["viral_rumour_ready"] = campaign.get("viral") is Dictionary and campaign.viral.rumour.ready
 	structural["viral_correction_ready"] = campaign.get("viral") is Dictionary and campaign.viral.correction.ready
 	# At a safe stop, replace the driving controls with the route decision.
@@ -212,10 +216,13 @@ func build() -> void:
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission in ["A11", "A23"] or (c.mission == "A21" and task.get("kind") == "drive")
-	var stage: Control = ViralView.new() if c.mission == "A27" else QueueView.new() if c.mission == "A26" else RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission in ["A24", "A25"] else Stage.new()
+	var stage: Control = ForumView.new() if c.mission == "A31" else ViralView.new() if c.mission == "A27" else QueueView.new() if c.mission == "A26" else RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission in ["A24", "A25"] else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
-	if c.mission == "A27":
+	if c.mission == "A31":
+		stage.lead = c.lead
+		stage.update_receipt(c.get("promiseTask", {}))
+	elif c.mission == "A27":
 		stage.scene_id = task.get("scene", "screen")
 		stage.update_state(c.get("viral", {}), Viral.publication(c))
 	elif c.mission == "A26":
@@ -274,7 +281,7 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Promises, Promises is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Before the Switch is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
@@ -291,7 +298,7 @@ func build() -> void:
 		feedback = label(feedback_text, 16, Color("d4ed85"))
 		content.add_child(feedback)
 		if task.get("kind") == "portfolio": _portfolio_controls()
-		if task.get("kind") == "receipt": _receipt_controls()
+		if task.get("kind") in ["receipt", "promise"]: _receipt_controls()
 		if task.get("kind") == "viral": _viral_controls(task.viralPhase)
 		if task.get("kind") == "queue": _queue_controls(task.queuePhase)
 		if c.paused:
@@ -305,7 +312,7 @@ func build() -> void:
 				choice_button.set_meta("portfolio_required", task.get("kind") == "portfolio")
 				choice_button.set_meta("viral_required", task.get("viralPhase", "") if task.get("kind") == "viral" else "")
 				if option.get("requiresWitnessConsent", false) and not Receipt.has_witness_consent(c): choice_button.set_meta("unavailable_choice", true)
-				choice_button.set_meta("receipt_required", task.get("kind") == "receipt")
+				choice_button.set_meta("receipt_required", task.get("kind") in ["receipt", "promise"])
 				choice_button.set_meta("queue_required", task.get("queuePhase", "") if task.get("kind") == "queue" else "")
 				if option.has("requiresChoice") and c.choices.get(option.requiresChoice.id) != option.requiresChoice.value: choice_button.set_meta("unavailable_choice", true)
 				content.add_child(choice_button)
@@ -367,10 +374,11 @@ func _update_queue() -> void:
 		if is_instance_valid(node) and not str(node.get_meta("queue_required", "")).is_empty(): node.disabled = busy or not (q.lineReady if phase == "line" else q.resetReady)
 
 func _receipt_controls() -> void:
-	var data := Receipt.catalogue()
+	var data := Promise.catalogue() if snapshot.mission == "A31" else Receipt.catalogue()
+	var model: Dictionary = snapshot.promiseTask if snapshot.mission == "A31" else snapshot.receipt
 	content.add_child(label(data.title, 22, Color("edc06d")))
 	content.add_child(label(data.instructions, 16, Color("a6b9ad")))
-	if not snapshot.receipt.ready:
+	if not model.ready:
 		for q in data.questions:
 			content.add_child(label(q.title, 19))
 			for option in q.options:
@@ -381,7 +389,7 @@ func _receipt_controls() -> void:
 				content.add_child(node)
 	receipt_feedback = label("", 17, Color("d4ed85"))
 	content.add_child(receipt_feedback)
-	if not snapshot.receipt.ready:
+	if not model.ready:
 		for action in data.actions:
 			var node := button(action.label, _receipt_input.bind(str(action.id)))
 			node.set_meta("receipt_input", action.id)
@@ -390,11 +398,11 @@ func _receipt_controls() -> void:
 
 func _receipt_input(input: String) -> void:
 	if busy or show_journal: return
-	requested.emit("campaign_compare", int(snapshot.stage), input)
+	requested.emit("campaign_promises" if snapshot.mission == "A31" else "campaign_compare", int(snapshot.stage), input)
 
 func _update_receipt() -> void:
-	if not snapshot.get("receipt") is Dictionary: return
-	var task: Dictionary = snapshot.receipt
+	var task: Variant = snapshot.get("promiseTask") if snapshot.mission == "A31" else snapshot.get("receipt")
+	if not task is Dictionary: return
 	if is_instance_valid(stage_view) and stage_view.has_method("update_receipt"): stage_view.update_receipt(task)
 	if is_instance_valid(receipt_feedback): receipt_feedback.text = str(task.hint) + "\nChecks: " + str(task.attempts)
 	for node in get_tree().get_nodes_in_group("campaign_receipt"):
@@ -479,6 +487,11 @@ func _build_journal() -> void:
 	if "A25" in snapshot.completed:
 		var scope: String = "approve_ne1" if Receipt.has_witness_consent(snapshot) else "private_records" if snapshot.choices.get("A25-public_review") == "private_records" else "unknown"
 		_record_card({"title": "Current witness-text review", "lines": [catalogue.reviewScopes[scope]]})
+	if "A31" in snapshot.completed:
+		var forum := Campaign.story("A31")
+		var opening: String = snapshot.choices.get("A31-question", "")
+		for option in forum.stages[5].choices:
+			if option.id == opening: _record_card({"title": Promise.catalogue().journalTitle, "lines": [option.label, forum.stages[6].responses[opening].text, Promise.catalogue().supportText]})
 	if "A27" in snapshot.completed: _publication_card()
 	if Receipt.has_witness_consent(snapshot):
 		content.add_child(button(Viral.catalogue().withdrawLabel, func(): requested.emit("campaign_withdraw", -1, "")))

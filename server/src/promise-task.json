@@ -1,0 +1,72 @@
+{
+  "title": "Three promises, three written records",
+  "instructions": "Match each promise to what its written record actually supports. A question may be firm while keeping the source limits. Select three interpretations and check. Guidance selects the same answers and still needs a check.",
+  "questions": [
+    {
+      "id": "lights",
+      "title": "Promise: every community light is already restored.",
+      "options": [
+        {
+          "id": "record",
+          "label": "The agreement records a staging location and shared hours; it does not verify a completed installation.",
+          "correct": true
+        },
+        {
+          "id": "claim",
+          "label": "A staging agreement proves all lights are working.",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "bus",
+      "title": "Promise: a fleet is ready for the gathering.",
+      "options": [
+        {
+          "id": "record",
+          "label": "The allocation sheet reserves one bus; collection arrangements still need confirmation.",
+          "correct": true
+        },
+        {
+          "id": "claim",
+          "label": "A one-bus reservation proves a fleet is ready.",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pay",
+      "title": "Promise: every catering entry is paid.",
+      "options": [
+        {
+          "id": "record",
+          "label": "CAT-18 records an outstanding entry; ask for a dated settlement record and a reply.",
+          "correct": true
+        },
+        {
+          "id": "claim",
+          "label": "The unpaid entry proves every other allegation.",
+          "correct": false
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "check",
+      "label": "Check the three promises"
+    },
+    {
+      "id": "assist",
+      "label": "Guided promise comparison · free"
+    }
+  ],
+  "messages": {
+    "selected": "Interpretation saved. Read the written records before checking.",
+    "guided": "Record-based interpretations are selected. Read them, then check.",
+    "correction": "One or more promises overreach the written record. Distinguish an agreement, a reservation and an outstanding entry. Revise or use guidance, then check again.",
+    "ready": "Checked. The records support three clear questions, not a verdict on every claim."
+  },
+  "journalTitle": "Forum opening and reply",
+  "supportText": "Recorded offers: community rehearsal slot, one-bus collection confirmation and permitted catering-record check. Setup, safe bay and dated settlement checks remain outstanding."
+}

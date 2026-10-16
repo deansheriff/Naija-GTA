@@ -1,20 +1,22 @@
 extends RefCounted
 static func catalogue() -> Dictionary:
 	return JSON.parse_string(FileAccess.get_file_as_string("res://story/receipt-task.json"))
-static func inputs() -> Array:
+static func inputs(data: Dictionary = {}) -> Array:
+	if data.is_empty(): data = catalogue()
 	var result: Array = []
-	for q in catalogue().questions:
+	for q in data.questions:
 		for option in q.options: result.append(q.id + ":" + option.id)
-	for action in catalogue().actions: result.append(action.id)
+	for action in data.actions: result.append(action.id)
 	return result
 static func fresh() -> Dictionary:
 	return {"answers": {}, "attempts": 0, "ready": false, "hint": ""}
-static func normalize(value: Variant) -> Dictionary:
+static func normalize(value: Variant, data: Dictionary = {}) -> Dictionary:
+	if data.is_empty(): data = catalogue()
 	if not value is Dictionary or not value.get("answers") is Dictionary: return {}
 	if not (value.get("attempts") is int or value.get("attempts") is float): return {}
 	var result := fresh()
 	var consistent := true
-	for q in catalogue().questions:
+	for q in data.questions:
 		for option in q.options:
 			if value.answers.get(q.id) == option.id: result.answers[q.id] = option.id
 			if option.correct and value.answers.get(q.id) != option.id: consistent = false
@@ -25,8 +27,8 @@ static func normalize(value: Variant) -> Dictionary:
 static func has_witness_consent(c: Dictionary) -> bool:
 	var consent: Variant = c.get("witnessConsent")
 	return c.get("choices", {}).get("A27-withdrawn") != "yes" and c.get("choices", {}).get("A24-consent") == "redacted_review" and c.get("choices", {}).get("A25-public_review") == "approve_ne1" and consent is Dictionary and consent.get("active") == true and consent.get("scope") == "redacted_text" and consent.get("textHash") == str(catalogue().witnessText).sha256_text()
-static func advance(task: Dictionary, input: String) -> void:
-	var data := catalogue()
+static func advance(task: Dictionary, input: String, data: Dictionary = {}) -> void:
+	if data.is_empty(): data = catalogue()
 	if task.ready: return
 	if input == "assist":
 		for q in data.questions:
