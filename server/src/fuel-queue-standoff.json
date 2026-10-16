@@ -1,0 +1,270 @@
+{
+  "version": 1,
+  "id": "A26",
+  "title": "Fuel Queue Standoff",
+  "mastery": {
+    "tunde": 1,
+    "ngozi": 1,
+    "kc": 1
+  },
+  "evidence": [],
+  "summary": "Park clear of the queue, resolve a duplicate ticket through the desk, restore arrival order, reset an empty prop and record the fictional finale transport allocation.",
+  "stages": [
+    {
+      "id": "arrival",
+      "lead": "tunde",
+      "scene": "line",
+      "title": "A small container with ambitions",
+      "text": "At the community depot, three parties wait for a recorded transport allocation.\nTunde: Everybody says their container is small. One has a veranda.\nNgozi: We need one bus allocation, not a new argument.\n\nReservation requests are free. The attendant records the bus party's place before any later collection.",
+      "summary": "Join the marked queue for a free community transport reservation.",
+      "choices": [
+        {
+          "id": "join",
+          "label": "Join the marked queue and ask for its arrival book",
+          "correct": true
+        },
+        {
+          "id": "front",
+          "label": "Drive around everyone to the front",
+          "correct": false,
+          "hint": "Join the marked queue. Its desk can resolve ticket errors without cutting in."
+        }
+      ]
+    },
+    {
+      "id": "bay",
+      "lead": "tunde",
+      "scene": "line",
+      "title": "The bus can wait outside the argument",
+      "text": "Tunde parks in the signed waiting bay, clear of the pedestrian aisle and service exit.\nPassenger: Do we keep our place if the engine is quiet?\nTunde: The ticket does not run on petrol.",
+      "summary": "Keep the bus parked in the waiting bay while the desk resolves the queue.",
+      "choices": [
+        {
+          "id": "park",
+          "label": "Park in the marked bay and keep the aisle clear",
+          "correct": true
+        },
+        {
+          "id": "block",
+          "label": "Block the exit so the bus cannot be forgotten",
+          "correct": false,
+          "hint": "The desk records the bus party's place. Leave the exit and pedestrian aisle clear."
+        }
+      ]
+    },
+    {
+      "id": "line",
+      "lead": "ngozi",
+      "scene": "line",
+      "kind": "queue",
+      "queuePhase": "line",
+      "title": "Two fourteens do not make a queue",
+      "text": "The cart party has a duplicate ticket 14. Its arrival is later than the bus and household parties. Ask the desk to verify the stamp, then arrange the line using the arrival book. Nobody is expelled because of a printing error.\nNgozi: One number has started two careers.",
+      "summary": "Verify the duplicate, retain all parties and check the line against the arrival book.",
+      "records": [
+        {
+          "title": "Arrival book · service desk",
+          "lines": [
+            "Bus party: 09:01 · ticket 14",
+            "Household party: 09:03 · ticket 15",
+            "Cart party: 09:05 · duplicate stamp 14",
+            "Desk correction: ask before changing a ticket",
+            "Front: nearest the service desk"
+          ]
+        }
+      ],
+      "choices": [
+        {
+          "id": "ordered",
+          "label": "Keep the checked line and let the parties through",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "approach",
+      "lead": "ngozi",
+      "scene": "line",
+      "title": "Three chairmen and one attendant",
+      "text": "The attendant asks for one agreed allocation sheet. Either talk through the checked order now, or take a patient reset and read it back when everyone is ready. Both keep the same transport allocation.\nNgozi: We have one queue and three chairmen. Let us reduce the speeches before the chairs.",
+      "summary": "Choose a spoken agreement or patient reset; both preserve the checked order and allocation.",
+      "choices": [
+        {
+          "id": "talk",
+          "label": "Talk through the checked order with the attendant",
+          "correct": true
+        },
+        {
+          "id": "patient",
+          "label": "Take a patient reset, then read the order back",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "agreement",
+      "lead": "ngozi",
+      "scene": "line",
+      "title": "An agreement that fits on one sheet",
+      "previousChoice": "A26-approach",
+      "responses": {
+        "talk": {
+          "text": "Ngozi reads back the desk correction and each arrival. The attendant confirms nobody loses a place because of the duplicate.",
+          "summary": "The spoken agreement retains all three corrected tickets."
+        },
+        "patient": {
+          "text": "The group pauses. The attendant restates the same corrected order when everyone is ready.\nTunde: A break with no new chairman. Progress.",
+          "summary": "The patient reset reaches the same allocation without loss or penalty."
+        }
+      },
+      "text": "The sheet reserves a bus transport allocation for later fictional community staging. It is not an extra reward for rushing or a consumable bought with the player's money.",
+      "summary": "Keep the identical transport reservation on either negotiation path.",
+      "choices": [
+        {
+          "id": "same_allocation",
+          "label": "Keep the agreed bus transport reservation",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "bucket",
+      "lead": "kc",
+      "scene": "reset",
+      "title": "The bucket's dramatic entrance",
+      "text": "An empty prop bucket tips onto its side when a chair leg nudges it. Nobody is hurt; nothing spills.\nKC: That bucket had a stronger entrance than my last video.\nNgozi: Help it exit the aisle.\n\nPut the empty bucket upright and return the chairs to their marked strip before the aisle check.",
+      "summary": "Reset a harmless empty prop and clear the marked aisle with no injury, spill or timed loss.",
+      "choices": [
+        {
+          "id": "help",
+          "label": "Help reset the empty prop and chairs",
+          "correct": true
+        },
+        {
+          "id": "film_first",
+          "label": "Keep filming while the aisle stays blocked",
+          "correct": false,
+          "hint": "Help clear the aisle first. There is no required recording or lost reward for taking time."
+        }
+      ]
+    },
+    {
+      "id": "reset",
+      "lead": "kc",
+      "scene": "reset",
+      "kind": "queue",
+      "queuePhase": "reset",
+      "title": "A clear aisle is the useful ending",
+      "text": "The bucket is empty. Stand it upright first, return the chairs to their marked strip, then check. Guidance performs the same staged reset and still needs confirmation. Take as much time as you need; each labelled action is saved.",
+      "summary": "Use the saved empty-bucket/chair controls and explicitly check the clear aisle.",
+      "choices": [
+        {
+          "id": "clear",
+          "label": "Keep the checked clear aisle",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "count",
+      "lead": "kc",
+      "scene": "reset",
+      "title": "Three parties still accounted for",
+      "text": "The attendant's sheet still lists bus 14, household 15 and cart 16 in arrival order. The reset did not remove anyone's ticket, source record or allocation.\nKC: A correction with no surprise villain.\nNgozi: Try that format again.",
+      "summary": "The queue correction and aisle reset retain all three parties and earlier source records.",
+      "choices": [
+        {
+          "id": "retain",
+          "label": "Retain all three parties and the corrected record",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "allocation",
+      "lead": "tunde",
+      "scene": "allocation",
+      "title": "One bus. A written reservation.",
+      "text": "The attendant records the finale transport allocation against the bus party's checked ticket. Keep the allocation sheet for the staging team. The attendant will confirm collection arrangements before the gathering.\nTunde: The convoy is one bus.\nNgozi: It is a very organised bus.",
+      "summary": "Record the fictional transport reservation without spending or adding sandbox currency.",
+      "records": [
+        {
+          "title": "Community transport reservation",
+          "lines": [
+            "Bus party: checked ticket 14",
+            "Purpose: later fictional community staging",
+            "Status: reserved · allocation sheet retained",
+            "Reservation recorded at no StreetCoin charge"
+          ]
+        }
+      ],
+      "choices": [
+        {
+          "id": "record",
+          "label": "Keep the source-labelled transport reservation",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "sources",
+      "lead": "ngozi",
+      "scene": "allocation",
+      "title": "A queue is not a witness waiver",
+      "text": "The transport sheet does not change Nneka's permission, the diary's source or the bag's custody. Keep those records separate. Later public work still needs the approved words and current permission, or anonymised service documents.",
+      "summary": "Transport progress does not grant witness permission or alter prior evidence/custody.",
+      "choices": [
+        {
+          "id": "separate",
+          "label": "Keep transport, evidence and permission as separate records",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "lead": "ngozi",
+      "scene": "allocation",
+      "title": "A useful place to wait",
+      "text": "Ngozi keeps the earlier community staging agreement beside the transport reservation and clear-aisle plan. The site and transport teams will confirm their arrangements before the final gathering.\nNgozi: We are collecting practical arrangements.\nTunde: Can we frame one?\nNgozi: After we keep the original.",
+      "summary": "Carry the recorded staging agreement and transport reservation into planning for the gathering.",
+      "choices": [
+        {
+          "id": "carry",
+          "label": "Carry the recorded arrangements into the next chapter",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "handover",
+      "lead": "kc",
+      "scene": "allocation",
+      "title": "Before the next headline",
+      "text": "KC keeps a written summary of the correction, without filming unwilling queue members. The next story task is to check a rumour, correct his old crop and choose permitted material for a fictional public dossier. KC marks the handover as a draft for a later community presentation.",
+      "summary": "Prepare for Viral while keeping queue members' privacy and prior permission limits.",
+      "choices": [
+        {
+          "id": "summary",
+          "label": "Keep the written handover and check sources before a headline",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "lead": "tunde",
+      "scene": "allocation",
+      "title": "A reservation, not another argument",
+      "text": "Fuel Queue Standoff complete. Each lead gains one mastery once. The transport reservation joins the journal as a story arrangement, not wedding evidence or spendable currency. Ticket order, negotiation approach and aisle reset are saved.\n\nViral follows.",
+      "summary": "Save the transport arrangement and one mastery each without StreetCoins, evidence loss or witness permission changes.",
+      "choices": [
+        {
+          "id": "next",
+          "label": "Save the checked queue and transport arrangement",
+          "correct": true
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,8 @@ import interview from './japa-interview.json' with {type:'json'};
 import chase from './danfo-chase.json' with {type:'json'};
 import infiltration from './aso-ebi-infiltration.json' with {type:'json'};
 import receipts from './small-small-receipts.json' with {type:'json'};
+import fuelQueue from './fuel-queue-standoff.json' with {type:'json'};
+import {freshQueue,advanceQueue,queueInputs,type QueueState} from './queue-task.js';
 import {freshReceipt,advanceReceipt,receiptInputs,witnessTextHash,type ReceiptState,type WitnessConsent} from './receipt-task.js';
 import {freshPortfolio,advancePortfolio,portfolioInputs,type PortfolioState} from './portfolio-task.js';
 import {journalAvailable,restoreEarnedRecords,earnedRecords} from './evidence-journal.js';
@@ -17,19 +19,19 @@ export const prologue=story;
 export const leads=['tunde','ngozi','kc'] as const;
 export type Lead=typeof leads[number];
 export type StoryChoice={id:string;label:string;correct:boolean;hint?:string;requiresChoice?:{id:string;value:string}};
-export type StoryStage={id:string;lead:string;scene:string;title:string;text:string;summary:string;kind?:string;target?:number;driveGate?:DriveGate;recordCost?:number;subjects?:string[];requiresEvidence?:string[];effect?:string;previousChoice?:string;portfolioResponse?:boolean;responses?:Partial<Record<string,{text:string;summary:string}>>;records?:{title:string;lines:string[]}[];choices:StoryChoice[]};
+export type StoryStage={id:string;lead:string;scene:string;title:string;text:string;summary:string;kind?:string;queuePhase?:string;target?:number;driveGate?:DriveGate;recordCost?:number;subjects?:string[];requiresEvidence?:string[];effect?:string;previousChoice?:string;portfolioResponse?:boolean;responses?:Partial<Record<string,{text:string;summary:string}>>;records?:{title:string;lines:string[]}[];choices:StoryChoice[]};
 export type Mission={id:string;title:string;summary:string;stages:StoryStage[];mastery:Partial<Record<Lead,number>>;evidence:string[]};
-export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde,A12:ngozi,A13:kc,A14:meeting,A21:generator,A22:interview,A23:chase,A24:infiltration,A25:receipts};
-export const missionOrder=['P00','A11','A12','A13','A14','A21','A22','A23','A24','A25'];
-export const CAMPAIGN_VERSION=10;
-export type Campaign={version:number;mission:string;status:'unstarted'|'playing'|'hub';stage:number;lead:Lead;completed:string[];mastery:Record<Lead,number>;evidence:string[];paused:boolean;choices:Record<string,string>;drive:DrivingState|null;phone:PhoneState|null;portfolio:PortfolioState|null;receipt?:ReceiptState|null;witnessConsent?:WitnessConsent|null};
+export const missions:Record<string,Mission>={P00:{...story,mastery:{tunde:1,ngozi:1,kc:1},evidence:['wedding_clip']},A11:tunde,A12:ngozi,A13:kc,A14:meeting,A21:generator,A22:interview,A23:chase,A24:infiltration,A25:receipts,A26:fuelQueue};
+export const missionOrder=['P00','A11','A12','A13','A14','A21','A22','A23','A24','A25','A26'];
+export const CAMPAIGN_VERSION=11;
+export type Campaign={version:number;mission:string;status:'unstarted'|'playing'|'hub';stage:number;lead:Lead;completed:string[];mastery:Record<Lead,number>;evidence:string[];paused:boolean;choices:Record<string,string>;drive:DrivingState|null;phone:PhoneState|null;portfolio:PortfolioState|null;receipt?:ReceiptState|null;witnessConsent?:WitnessConsent|null;queueTask?:QueueState|null};
 export class CampaignError extends Error {}
 export function freshCampaign():Campaign{return {version:CAMPAIGN_VERSION,mission:'P00',status:'unstarted',stage:0,lead:'tunde',completed:[],mastery:{tunde:0,ngozi:0,kc:0},evidence:[],paused:true,choices:{},drive:null,phone:null,portfolio:null};}
 export function upgradeCampaign(value:Campaign):Campaign {
   if(value.version===1)return {...freshCampaign(),...value,version:CAMPAIGN_VERSION,mission:'P00',choices:{},drive:null,phone:null};
   if(value.version===2||value.version===3)return {...value,version:CAMPAIGN_VERSION,phone:null,portfolio:null};
   if(value.version===4||value.version===5||value.version===6)return {...value,version:CAMPAIGN_VERSION,portfolio:null};
-  if(value.version===7||value.version===8||value.version===9)return {...value,version:CAMPAIGN_VERSION};
+  if(value.version===7||value.version===8||value.version===9||value.version===10)return {...value,version:CAMPAIGN_VERSION};
   return value;
 }
 export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:string,now=Date.now()):void {
@@ -43,6 +45,10 @@ export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:
     if(c.mission==='A13'){c.phone??=freshPhone();if(task.kind==='frame')resetFrame(c.phone);}
     if(c.mission==='A22')c.portfolio??=freshPortfolio();
     if(c.mission==='A25'){c.receipt??=freshReceipt();c.witnessConsent??=null;}
+    if(c.mission==='A26'){
+      c.queueTask??=freshQueue();
+      if(task.queuePhase==='reset')c.queueTask.hint='';
+    }
   };
   if(command==='campaign_start'){
     if(c.status!=='unstarted')throw new CampaignError('Your campaign has already started. Resume its checkpoint.');
@@ -67,6 +73,10 @@ export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:
   }
   if(c.status!=='playing'||c.paused||stage!==c.stage)throw new CampaignError('This choice does not match your active campaign checkpoint. Reopen the story.');
   const task=mission.stages[c.stage];
+  if(command==='campaign_queue'){
+    if(task.kind!=='queue'||!c.queueTask||!queueInputs(task.queuePhase!).includes(choice!))throw new CampaignError('Use a listed queue control for this checkpoint.');
+    advanceQueue(c.queueTask,choice!,task.queuePhase!);return;
+  }
   if(command==='campaign_compare'){
     if(task.kind!=='receipt'||!c.receipt||!receiptInputs.includes(choice!))throw new CampaignError('Use a listed source-comparison control for this checkpoint.');
     advanceReceipt(c.receipt,choice!);return;
@@ -88,6 +98,7 @@ export function campaignCommand(c:Campaign,command:string,stage?:number,choice?:
   if(task.kind==='frame'&&!c.phone?.ready)throw new CampaignError('Save the full centred wide frame first. Guided full frame is available at the same battery cost.');
   if(task.kind==='portfolio'&&!c.portfolio?.ready)throw new CampaignError('Check the three portfolio answers first. Free practice, callback and guided answers are available.');
   if(task.kind==='receipt'&&!c.receipt?.ready)throw new CampaignError('Check all three source comparisons first. Guided matching is free.');
+  if(task.kind==='queue'&&!(task.queuePhase==='line'?c.queueTask?.lineReady:c.queueTask?.resetReady))throw new CampaignError('Check the current queue task first. Free guidance is available.');
   const selected=task.choices.find(option=>option.id===choice);
   if(!selected)throw new CampaignError('Choose one of the options shown for this task.');
   if(selected.requiresChoice&&c.choices[selected.requiresChoice.id]!==selected.requiresChoice.value)throw new CampaignError('The saved witness boundary does not permit this review. Use the anonymised-record route.');

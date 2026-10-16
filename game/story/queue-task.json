@@ -1,0 +1,82 @@
+{
+  "title": "A queue needs one order",
+  "instructions": "Front is nearest the service desk. Compare the arrival book, verify the duplicate at the desk, move each party earlier or later, then check. Guided ordering is free and still needs a check.",
+  "resetInstructions": "The empty bucket has tipped into the marked aisle. Stand it upright first, return the chairs to their marked strip, then check the aisle. These props are empty; follow the labelled actions at your own pace.",
+  "parties": [
+    {
+      "id": "bus",
+      "label": "Bus party",
+      "arrival": "09:01",
+      "ticket": "14"
+    },
+    {
+      "id": "home",
+      "label": "Household party",
+      "arrival": "09:03",
+      "ticket": "15"
+    },
+    {
+      "id": "cart",
+      "label": "Cart party",
+      "arrival": "09:05",
+      "ticket": "14 (duplicate)",
+      "correctedTicket": "16"
+    }
+  ],
+  "order": [
+    "bus",
+    "home",
+    "cart"
+  ],
+  "initialOrder": [
+    "cart",
+    "home",
+    "bus"
+  ],
+  "lineActions": [
+    {
+      "id": "verify",
+      "label": "Ask the desk to verify the duplicate ticket"
+    },
+    {
+      "id": "assist",
+      "label": "Guided ordering · free"
+    },
+    {
+      "id": "check",
+      "label": "Check tickets and arrival order"
+    }
+  ],
+  "resetActions": [
+    {
+      "id": "bucket",
+      "label": "Stand the empty bucket upright"
+    },
+    {
+      "id": "aisle",
+      "label": "Return chairs to the marked strip"
+    },
+    {
+      "id": "assist",
+      "label": "Guided aisle reset · free"
+    },
+    {
+      "id": "check",
+      "label": "Check the clear aisle"
+    }
+  ],
+  "messages": {
+    "moved": "Position saved. Front is at the service desk; compare the arrival book before checking.",
+    "edge": "That party is already at this end of the line. The arrival book and desk correction remain available.",
+    "verified": "The desk confirms the cart party's duplicate stamp. Its corrected ticket is 16; arrival remains 09:05. Keep all three parties in the line.",
+    "guided": "The desk correction and arrival order are prepared. Read the book, then check the line.",
+    "lineCorrection": "The duplicate still needs desk verification, or the line disagrees with the arrival book. All parties keep their places in the task; correct the order or use guidance, then check again.",
+    "lineReady": "Tickets checked: 14, 15, 16 in arrival order. The parties can walk through the service exit.",
+    "bucket": "The empty bucket is upright. Return the chairs to their marked strip, then check the aisle.",
+    "bucketFirst": "Stand the empty bucket upright first so the marked aisle can be checked clearly.",
+    "aisle": "Chairs returned to their marked strip. Check the clear aisle when ready.",
+    "resetGuided": "The empty bucket and chairs are reset. Check the aisle to confirm.",
+    "resetCorrection": "The empty bucket and chairs still need a reset. Follow the two labelled actions, or use guidance, then check again.",
+    "resetReady": "Aisle checked and clear. The agreed transport allocation can be recorded."
+  }
+}

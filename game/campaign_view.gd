@@ -8,6 +8,8 @@ const MeetingView = preload("res://world/meeting_view.gd")
 const GeneratorView = preload("res://world/generator_view.gd")
 const InterviewView = preload("res://world/interview_view.gd")
 const BirthdayView = preload("res://world/birthday_view.gd")
+const QueueView = preload("res://world/queue_view.gd")
+const Queue = preload("res://core/queue_task.gd")
 const Receipt = preload("res://core/receipt_task.gd")
 const Portfolio = preload("res://core/portfolio_task.gd")
 const Drive = preload("res://core/driving_task.gd")
@@ -48,6 +50,8 @@ var portfolio_view: Control
 var portfolio_status: Label
 var portfolio_feedback: Label
 var receipt_feedback: Label
+var queue_feedback: Label
+var queue_order_label: Label
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -128,12 +132,15 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 	structural.erase("phone")
 	structural.erase("portfolio")
 	structural.erase("receipt")
+	structural.erase("queueTask")
 	# At a safe stop, replace the driving controls with the route decision.
 	# Moving snapshots continue to update the existing view in place.
 	structural["drive_ready"] = campaign.get("drive") is Dictionary and campaign.drive.ready
 	structural["phone_ready"] = campaign.get("phone") is Dictionary and campaign.phone.ready
 	structural["portfolio_ready"] = campaign.get("portfolio") is Dictionary and campaign.portfolio.ready
 	structural["receipt_ready"] = campaign.get("receipt") is Dictionary and campaign.receipt.ready
+	structural["queue_line_ready"] = campaign.get("queueTask") is Dictionary and campaign.queueTask.lineReady
+	structural["queue_reset_ready"] = campaign.get("queueTask") is Dictionary and campaign.queueTask.resetReady
 	var next_fingerprint := JSON.stringify(structural)
 	if campaign.get("drive") is Dictionary and snapshot.get("drive") is Dictionary and campaign.drive.misses > snapshot.drive.misses:
 		driving_enabled = false
@@ -147,6 +154,7 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 		_update_phone()
 		_update_portfolio()
 		_update_receipt()
+		_update_queue()
 		if restore_focus:
 			if is_instance_valid(focus_before_wait) and focus_before_wait.is_visible_in_tree() and not focus_before_wait.is_queued_for_deletion() and not (focus_before_wait is BaseButton and focus_before_wait.disabled): focus_before_wait.grab_focus()
 			else:
@@ -180,6 +188,8 @@ func build() -> void:
 	portfolio_status = null
 	portfolio_feedback = null
 	receipt_feedback = null
+	queue_feedback = null
+	queue_order_label = null
 	feedback = null
 	connection_notice.hide()
 	journal_button.text = "Return to scene" if show_journal else "Evidence journal"
@@ -194,10 +204,15 @@ func build() -> void:
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission in ["A11", "A23"] or (c.mission == "A21" and task.get("kind") == "drive")
-	var stage: Control = RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission in ["A24", "A25"] else Stage.new()
+	var stage: Control = QueueView.new() if c.mission == "A26" else RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission in ["A24", "A25"] else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
-	if road_scene:
+	if c.mission == "A26":
+		stage.phase = task.get("queuePhase", task.get("scene", "line"))
+		if stage.phase == "line" and task.get("kind") != "queue" and c.get("queueTask", {}).get("lineReady", false): stage.phase = "served"
+		stage.ambient_motion = ambient_motion
+		stage.update_state(c.get("queueTask", {}))
+	elif road_scene:
 		road_view = stage
 		stage.ambient_motion = ambient_motion
 		if c.mission == "A21": stage.route_label = "GENERATOR WARS · " + str(task.title).to_upper()
@@ -248,7 +263,7 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Fuel Queue Standoff is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Viral is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
@@ -265,6 +280,7 @@ func build() -> void:
 		content.add_child(feedback)
 		if task.get("kind") == "portfolio": _portfolio_controls()
 		if task.get("kind") == "receipt": _receipt_controls()
+		if task.get("kind") == "queue": _queue_controls(task.queuePhase)
 		if c.paused:
 			content.add_child(button("Resume this checkpoint", func(): requested.emit("campaign_resume", -1, "")))
 		else:
@@ -275,6 +291,7 @@ func build() -> void:
 				choice_button.set_meta("frame_required", task.get("kind") == "frame")
 				choice_button.set_meta("portfolio_required", task.get("kind") == "portfolio")
 				choice_button.set_meta("receipt_required", task.get("kind") == "receipt")
+				choice_button.set_meta("queue_required", task.get("queuePhase", "") if task.get("kind") == "queue" else "")
 				if option.has("requiresChoice") and c.choices.get(option.requiresChoice.id) != option.requiresChoice.value: choice_button.set_meta("unavailable_choice", true)
 				content.add_child(choice_button)
 	for node in controls:
@@ -285,6 +302,53 @@ func build() -> void:
 	_update_phone()
 	_update_portfolio()
 	_update_receipt()
+	_update_queue()
+
+func _queue_controls(phase: String) -> void:
+	var data := Queue.catalogue()
+	content.add_child(label(data.title if phase == "line" else "Reset the marked aisle", 22, Color("edc06d")))
+	content.add_child(label(data.instructions if phase == "line" else data.resetInstructions, 16, Color("a6b9ad")))
+	queue_order_label = label("", 17, Color("d4ed85"))
+	content.add_child(queue_order_label)
+	var ready: bool = snapshot.queueTask.lineReady if phase == "line" else snapshot.queueTask.resetReady
+	if not ready and phase == "line":
+		for party in data.parties:
+			content.add_child(label(party.label + " · arrived " + party.arrival, 18))
+			var row := HBoxContainer.new()
+			content.add_child(row)
+			for entry in [["Earlier", "earlier:"], ["Later", "later:"]]:
+				var node := button(party.label + " · " + entry[0], _queue_input.bind(entry[1] + party.id))
+				node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				node.add_to_group("campaign_queue")
+				row.add_child(node)
+	queue_feedback = label("", 17, Color("d4ed85"))
+	content.add_child(queue_feedback)
+	if not ready:
+		for action in data.lineActions if phase == "line" else data.resetActions:
+			var node := button(action.label, _queue_input.bind(str(action.id)))
+			node.add_to_group("campaign_queue")
+			content.add_child(node)
+
+func _queue_input(input: String) -> void:
+	if busy or show_journal: return
+	requested.emit("campaign_queue", int(snapshot.stage), input)
+
+func _update_queue() -> void:
+	if not snapshot.get("queueTask") is Dictionary: return
+	var q: Dictionary = snapshot.queueTask
+	if is_instance_valid(stage_view) and stage_view.has_method("update_state") and snapshot.mission == "A26": stage_view.update_state(q)
+	var phase: String = Campaign.story("A26").stages[snapshot.stage].get("queuePhase", "") if snapshot.mission == "A26" and snapshot.status == "playing" else ""
+	if is_instance_valid(queue_order_label):
+		var parties: Array = Queue.catalogue().parties
+		var order := PackedStringArray()
+		for id in q.order:
+			for party in parties:
+				if party.id == id: order.append(party.label + " · " + ("16" if id == "cart" and q.duplicateResolved else str(party.ticket)))
+		queue_order_label.text = "Front to back: " + " / ".join(order) if phase == "line" else "Empty bucket: " + ("upright" if q.bucketUpright else "on its side") + " · chairs: " + ("on marked strip" if q.aisleClear else "need reset")
+	if is_instance_valid(queue_feedback): queue_feedback.text = str(q.hint) + "\nChecks: " + str(q.checks)
+	for node in get_tree().get_nodes_in_group("campaign_queue"): node.disabled = busy or (q.lineReady if phase == "line" else q.resetReady)
+	for node in controls:
+		if is_instance_valid(node) and not str(node.get_meta("queue_required", "")).is_empty(): node.disabled = busy or not (q.lineReady if phase == "line" else q.resetReady)
 
 func _receipt_controls() -> void:
 	var data := Receipt.catalogue()

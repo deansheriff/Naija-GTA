@@ -20,6 +20,7 @@ import {interviewContract} from './interview-contract.js';
 import {chaseContract} from './chase-contract.js';
 import {infiltrationContract} from './infiltration-contract.js';
 import {receiptsContract} from './receipts-contract.js';
+import {queueContract} from './queue-contract.js';
 import {operationsContract,fixtureOwner} from './operations-contract.js';
 
 // Embedded PostgreSQL validates real SQL locally. CI uses a multi-connection PostgreSQL service.
@@ -140,6 +141,8 @@ test('PostgreSQL adapter: migration, cloud recovery, row conflicts, receipts, le
     for(const id of infiltrationIds)assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[id])).rows[0].total),1);
     const receiptsIds=await receiptsContract(app,ms=>{now+=ms;},async(id,c)=>{await pool.query("UPDATE characters SET state=jsonb_set(state,'{campaign}',$2::jsonb) WHERE id=$1",[id,JSON.stringify(c)]);});
     for(const id of receiptsIds)assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[id])).rows[0].total),1);
+    const queueIds=await queueContract(app,ms=>{now+=ms;},async(id,c)=>{await pool.query("UPDATE characters SET state=jsonb_set(state,'{campaign}',$2::jsonb) WHERE id=$1",[id,JSON.stringify(c)]);});
+    for(const id of queueIds)assert.equal(Number((await pool.query('SELECT COUNT(*) AS total FROM ledger WHERE character_id=$1',[id])).rows[0].total),1);
     await assert.rejects(pool.query("UPDATE content_reviews SET notes='changed'"),/append-only/);
     await assert.rejects(pool.query("UPDATE owner_audit SET reason='changed'"),/append-only/);
     const counts=await Promise.all(Array.from({length:12},()=>store.ops.consumeRate('a'.repeat(64),now+60000)));

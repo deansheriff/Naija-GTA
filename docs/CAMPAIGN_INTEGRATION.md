@@ -1,6 +1,6 @@
 # Up NEPA! — systems and checkpoint integration
 
-Fifth narrative deliverable, after mission list, progression, Prologue/Act 1 scripts and dialogue bank. This specifies the full target; shipped subsets must be identified separately. Through 0.22, the campaign uses JSON version 10, root character version 1 and SQL migration 3, with earlier wedding/road/record/phone progress retained. The wedding, Act 1 main checkpoint route and Generator Wars/Japa Interview/Danfo Chase/Aso-Ebi/Small Small Receipts are implemented; full animation, remaining Spread/Election Day chapters, side activities, replay and release validation still follow.
+Fifth narrative deliverable, after mission list, progression, Prologue/Act 1 scripts and dialogue bank. This specifies the full target; shipped subsets must be identified separately. Through 0.23, the campaign uses JSON version 11, root character version 1 and SQL migration 3, with earlier wedding/road/record/phone progress retained. The wedding, Act 1 main checkpoint route and Generator Wars/Japa Interview/Danfo Chase/Aso-Ebi/Small Small Receipts/Fuel Queue Standoff are implemented; full animation, remaining Spread/Election Day chapters, side activities, replay and release validation still follow.
 
 ## Authority and saves
 

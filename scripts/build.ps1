@@ -18,6 +18,8 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/chase-driving.json') 
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/aso-ebi-infiltration.json') -Destination (Join-Path $gamePath 'story/aso-ebi-infiltration.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/small-small-receipts.json') -Destination (Join-Path $gamePath 'story/small-small-receipts.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/receipt-task.json') -Destination (Join-Path $gamePath 'story/receipt-task.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/fuel-queue-standoff.json') -Destination (Join-Path $gamePath 'story/fuel-queue-standoff.json') -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/queue-task.json') -Destination (Join-Path $gamePath 'story/queue-task.json') -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot 'server/src/evidence-journal.json') -Destination (Join-Path $gamePath 'story/evidence-journal.json') -Force
 & $enginePath --headless --path $gamePath --editor --import --quit
 if ($LASTEXITCODE -ne 0) { throw 'Godot import failed.' }
@@ -73,6 +75,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Danfo Chase/crossing/queue/source checks faile
 if ($LASTEXITCODE -ne 0) { throw 'Aso-Ebi/invitation/permission/source checks failed.' }
 & $enginePath --headless --path $gamePath --script res://tests/receipts_campaign_test.gd -- --test
 if ($LASTEXITCODE -ne 0) { throw 'Receipt comparison/conditional witness approval checks failed.' }
+& $enginePath --headless --path $gamePath --script res://tests/queue_campaign_test.gd -- --test
+if ($LASTEXITCODE -ne 0) { throw 'Queue ordering/empty-prop reset/transport checks failed.' }
 if ($Target -eq 'test') { exit 0 }
 if ($Target -in @('web','all')) {
     $webPath = Join-Path $projectRoot 'build\web\play'
