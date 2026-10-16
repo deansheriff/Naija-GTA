@@ -1,0 +1,244 @@
+{
+  "version": 1,
+  "id": "A27",
+  "title": "Viral",
+  "mastery": {
+    "kc": 3
+  },
+  "evidence": [],
+  "summary": "Check two sources, disclose the misleading crop and present a permitted written package with a withdrawal-safe document route.",
+  "stages": [
+    {
+      "id": "arrival",
+      "lead": "kc",
+      "scene": "desk",
+      "title": "Forwarded many times. Checked how often?",
+      "text": "KC receives a forwarded claim: 'The 21:14 stamp proves theft.' He sets it beside two source descriptions.\nNgozi: A stamp can tell time without telling the whole story.\nKC: My old crop helped the wrong story travel. I need to correct that too.",
+      "summary": "KC receives a forwarded claim: 'The 21:14 stamp proves theft.' He sets it beside two source descriptions.",
+      "choices": [
+        {
+          "id": "compare",
+          "label": "Compare the two source descriptions",
+          "correct": true
+        }
+      ],
+      "records": [
+        {
+          "title": "Service record SR-18",
+          "lines": [
+            "21:14 assistance request for Bisi.",
+            "This time applies to the request, not the full bag sequence."
+          ]
+        },
+        {
+          "title": "Full private source · description",
+          "lines": [
+            "A helping action is visible outside KC’s old crop.",
+            "The original stays private. It does not establish ownership or every event."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rumour",
+      "lead": "kc",
+      "scene": "desk",
+      "title": "A claim can travel further than its source",
+      "text": "Read the two records, select what each supports and explicitly check. Free guidance selects the same answers. No timer, battery charge or penalty applies.",
+      "summary": "Read the two records, select what each supports and explicitly check. Free guidance selects the same answers. No timer, battery charge or penalty applies.",
+      "choices": [
+        {
+          "id": "limited",
+          "label": "Keep both checked source limits",
+          "correct": true
+        }
+      ],
+      "kind": "viral",
+      "viralPhase": "rumour",
+      "records": [
+        {
+          "title": "Service record SR-18",
+          "lines": [
+            "21:14 assistance request for Bisi.",
+            "This time applies to the request, not the full bag sequence."
+          ]
+        },
+        {
+          "title": "Full private source · description",
+          "lines": [
+            "A helping action is visible outside KC’s old crop.",
+            "The original stays private. It does not establish ownership or every event."
+          ]
+        }
+      ],
+      "requiresEvidence": [
+        "service_slip",
+        "original_clip"
+      ]
+    },
+    {
+      "id": "ownership",
+      "lead": "kc",
+      "scene": "desk",
+      "title": "The edit was mine",
+      "text": "KC keeps the earlier confession on record, including any delay. The correction now names his own action without blaming a worker or pretending the crop was accidental.\nKC: The missing bit was not hiding. I removed it.",
+      "summary": "KC keeps the earlier confession on record, including any delay. The correction now names his own action without blaming a worker or pretending the crop was accidental.",
+      "choices": [
+        {
+          "id": "prepare",
+          "label": "Prepare a clear correction beside the earlier edit",
+          "correct": true
+        }
+      ],
+      "previousChoice": "A13-disclose",
+      "responses": {
+        "admit": {
+          "text": "KC had admitted the crop earlier. He now makes the correction readable to the same fictional audience.",
+          "summary": "Follow the earlier admission with a visible correction."
+        },
+        "defer": {
+          "text": "KC had delayed the admission. He now says plainly that he made the crop; the delay remains part of the record.",
+          "summary": "Repair the delayed confession with a clear admission."
+        }
+      }
+    },
+    {
+      "id": "correction",
+      "lead": "kc",
+      "scene": "desk",
+      "title": "Keep the disclosure attached",
+      "text": "Choose a plain admission, a permitted public visual and a caption that keeps uncertainty. The source description can be checked privately; raw private footage is not part of the public package.",
+      "summary": "Choose a plain admission, a permitted public visual and a caption that keeps uncertainty. The source description can be checked privately; raw private footage is not part of the public package.",
+      "choices": [
+        {
+          "id": "save_correction",
+          "label": "Save the checked correction and disclosure",
+          "correct": true
+        }
+      ],
+      "kind": "viral",
+      "viralPhase": "correction",
+      "requiresEvidence": [
+        "original_clip"
+      ]
+    },
+    {
+      "id": "permission",
+      "lead": "kc",
+      "scene": "desk",
+      "title": "Permission has a present tense",
+      "text": "NE-1 covers only its exact approved redacted words. It never covers a name, face, voice or new quotation. Keep that permission only if it is current, withdraw it, or use permitted anonymised documents. Every route can finish this chapter.",
+      "summary": "NE-1 covers only its exact approved redacted words. It never covers a name, face, voice or new quotation. Keep that permission only if it is current, withdraw it, or use permitted anonymised documents. Every route can finish this chapter.",
+      "choices": [
+        {
+          "id": "retain",
+          "label": "Keep current NE-1 exact-text permission",
+          "correct": true,
+          "requiresWitnessConsent": true
+        },
+        {
+          "id": "withdraw",
+          "label": "Withdraw NE-1 permission and use documents",
+          "correct": true
+        },
+        {
+          "id": "documents",
+          "label": "Use anonymised documents without changing the earlier decision",
+          "correct": true
+        }
+      ],
+      "effect": "publication_permission"
+    },
+    {
+      "id": "route",
+      "lead": "kc",
+      "scene": "desk",
+      "title": "Choose the material, not the loudest headline",
+      "text": "Both source routes carry the same correction and chapter reward. The witness route uses the exact NE-1 redacted written text only. The document route uses permitted anonymised SR-18/CAT-18 extracts. Private accounts, the original recording and the diary remain outside this package.",
+      "summary": "Both source routes carry the same correction and chapter reward. The witness route uses the exact NE-1 redacted written text only. The document route uses permitted anonymised SR-18/CAT-18 extracts. Private accounts, the original recording and the diary remain outside this package.",
+      "choices": [
+        {
+          "id": "witness",
+          "label": "Use the exact permitted NE-1 written account",
+          "correct": true,
+          "requiresWitnessConsent": true,
+          "requiresChoice": {
+            "id": "A27-permission",
+            "value": "retain"
+          }
+        },
+        {
+          "id": "documents",
+          "label": "Use the anonymised document version",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "preview",
+      "lead": "kc",
+      "scene": "desk",
+      "title": "Read what the audience will receive",
+      "text": "The current presentation is shown below. Check its disclosure, exact words and source limits. Withdrawing permission switches the current presentation to documents. No private original, extra quote or worker identity is included.",
+      "summary": "The current presentation is shown below. Check its disclosure, exact words and source limits. Withdrawing permission switches the current presentation to documents. No private original, extra quote or worker identity is included.",
+      "choices": [
+        {
+          "id": "checked",
+          "label": "Keep this reviewed presentation",
+          "correct": true
+        }
+      ],
+      "publicationPreview": true,
+      "requiresEvidence": [
+        "service_slip",
+        "catering_invoice"
+      ]
+    },
+    {
+      "id": "present",
+      "lead": "kc",
+      "scene": "screen",
+      "title": "The community screen is ready",
+      "text": "KC presents the reviewed package to the fictional community audience. This story scene does not send a post to a real service. The source limits and correction stay beside the material.",
+      "summary": "KC presents the reviewed package to the fictional community audience. This story scene does not send a post to a real service. The source limits and correction stay beside the material.",
+      "choices": [
+        {
+          "id": "show",
+          "label": "Present the corrected package in the story",
+          "correct": true
+        }
+      ],
+      "publicationPreview": true
+    },
+    {
+      "id": "audience",
+      "lead": "kc",
+      "scene": "screen",
+      "title": "Three views. Two are yours.",
+      "text": "The first audience counter reads three.\nTunde: Two are you checking the caption.\nKC: The third one read it. That is a start.\nNgozi keeps the transport reservation and staging agreement ready for the community questions. The correction does not settle every allegation or change the property inventory.",
+      "summary": "The first audience counter reads three.",
+      "choices": [
+        {
+          "id": "keep",
+          "label": "Keep the correction and source limits with the dossier",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "lead": "kc",
+      "scene": "screen",
+      "title": "Attention is not the same as trust",
+      "text": "Viral complete. KC gains three mastery once. His correction and current source package join the journal as a presentation record. Prior choices, property custody, transport and private sources stay recorded.\n\nPromises, Promises follows.",
+      "summary": "Viral complete. KC gains three mastery once. His correction and current source package join the journal as a presentation record. Prior choices, property custody, transport and private sources stay recorded.",
+      "choices": [
+        {
+          "id": "next",
+          "label": "Save the corrected dossier and continue the story",
+          "correct": true
+        }
+      ]
+    }
+  ]
+}

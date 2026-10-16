@@ -4,7 +4,7 @@ export const receiptData=data;
 export const witnessTextHash=createHash('sha256').update(data.witnessText).digest('hex');
 export type ReceiptState={answers:Record<string,string>;attempts:number;ready:boolean;hint:string};
 export type WitnessConsent={textHash:string;scope:'redacted_text';active:boolean};
-export function hasWitnessConsent(c:{choices:Record<string,string>;witnessConsent?:WitnessConsent|null}):boolean{return c.choices['A24-consent']==='redacted_review'&&c.choices['A25-public_review']==='approve_ne1'&&c.witnessConsent?.active===true&&c.witnessConsent.scope==='redacted_text'&&c.witnessConsent.textHash===witnessTextHash;}
+export function hasWitnessConsent(c:{choices:Record<string,string>;witnessConsent?:WitnessConsent|null}):boolean{return c.choices['A27-withdrawn']!=='yes'&&c.choices['A24-consent']==='redacted_review'&&c.choices['A25-public_review']==='approve_ne1'&&c.witnessConsent?.active===true&&c.witnessConsent.scope==='redacted_text'&&c.witnessConsent.textHash===witnessTextHash;}
 export const receiptInputs=[...data.questions.flatMap(q=>q.options.map(o=>q.id+':'+o.id)),...data.actions.map(a=>a.id)];
 export function freshReceipt():ReceiptState{return {answers:{},attempts:0,ready:false,hint:''};}
 export function advanceReceipt(task:ReceiptState,input:string):void{

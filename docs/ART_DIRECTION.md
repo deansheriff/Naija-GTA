@@ -138,3 +138,6 @@ The existing code-native desk/quiet-corner staging and original Ngozi/KC poses n
 ## Fuel Queue Standoff - 0.23
 
 `game/world/queue_view.gd` reuses the original three pedestrian roles, traffic atlas and measured alpha bounds. The service desk, slot markings, empty bucket, chairs, parking bay and reservation sheet are code-native geometry. The reset uses the existing KC pose; served parties stay absent in subsequent scenes. Existing `ActorVisual` distance-based strides retain facing while moving between positions; checked parties walk fully off-scene without recycling. Ambient animation off snaps essential task positions and pauses optional gait. This is a bounded animated queue tableau, not a general crowd/collision/dispensing simulation. The parked bus uses a foot baseline/shadow independent of screen width. No new raster or external reference is bundled; full protagonist/supporting-cast animation remains separate production work.
+
+
+0.24 adds a code-native source desk/community screen with the original KC pose and explicit checked/read markers. Text cards show the exact current permitted package; private footage is represented by a source description, not exported as a public visual. No raster asset or background task is added. Full directional protagonist/cast animation remains a release requirement.

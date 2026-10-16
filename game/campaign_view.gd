@@ -8,6 +8,8 @@ const MeetingView = preload("res://world/meeting_view.gd")
 const GeneratorView = preload("res://world/generator_view.gd")
 const InterviewView = preload("res://world/interview_view.gd")
 const BirthdayView = preload("res://world/birthday_view.gd")
+const ViralView = preload("res://world/viral_view.gd")
+const Viral = preload("res://core/viral_task.gd")
 const QueueView = preload("res://world/queue_view.gd")
 const Queue = preload("res://core/queue_task.gd")
 const Receipt = preload("res://core/receipt_task.gd")
@@ -50,6 +52,7 @@ var portfolio_view: Control
 var portfolio_status: Label
 var portfolio_feedback: Label
 var receipt_feedback: Label
+var viral_feedback: Label
 var queue_feedback: Label
 var queue_order_label: Label
 
@@ -133,6 +136,9 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 	structural.erase("portfolio")
 	structural.erase("receipt")
 	structural.erase("queueTask")
+	structural.erase("viral")
+	structural["viral_rumour_ready"] = campaign.get("viral") is Dictionary and campaign.viral.rumour.ready
+	structural["viral_correction_ready"] = campaign.get("viral") is Dictionary and campaign.viral.correction.ready
 	# At a safe stop, replace the driving controls with the route decision.
 	# Moving snapshots continue to update the existing view in place.
 	structural["drive_ready"] = campaign.get("drive") is Dictionary and campaign.drive.ready
@@ -155,6 +161,7 @@ func display(campaign: Dictionary, waiting: bool = false, reason: String = "Savi
 		_update_portfolio()
 		_update_receipt()
 		_update_queue()
+		_update_viral()
 		if restore_focus:
 			if is_instance_valid(focus_before_wait) and focus_before_wait.is_visible_in_tree() and not focus_before_wait.is_queued_for_deletion() and not (focus_before_wait is BaseButton and focus_before_wait.disabled): focus_before_wait.grab_focus()
 			else:
@@ -188,6 +195,7 @@ func build() -> void:
 	portfolio_status = null
 	portfolio_feedback = null
 	receipt_feedback = null
+	viral_feedback = null
 	queue_feedback = null
 	queue_order_label = null
 	feedback = null
@@ -204,10 +212,13 @@ func build() -> void:
 	var story := Campaign.story(c.mission)
 	var task: Dictionary = story.stages[c.stage] if c.status == "playing" else {}
 	var road_scene: bool = c.mission in ["A11", "A23"] or (c.mission == "A21" and task.get("kind") == "drive")
-	var stage: Control = QueueView.new() if c.mission == "A26" else RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission in ["A24", "A25"] else Stage.new()
+	var stage: Control = ViralView.new() if c.mission == "A27" else QueueView.new() if c.mission == "A26" else RoadView.new() if road_scene else CanteenView.new() if c.mission == "A12" else PhoneView.new() if c.mission == "A13" else MeetingView.new() if c.mission == "A14" else GeneratorView.new() if c.mission == "A21" else InterviewView.new() if c.mission == "A22" else BirthdayView.new() if c.mission in ["A24", "A25"] else Stage.new()
 	stage_view = stage
 	stage.custom_minimum_size.y = 220 if get_viewport_rect().size.x >= 850 else 170
-	if c.mission == "A26":
+	if c.mission == "A27":
+		stage.scene_id = task.get("scene", "screen")
+		stage.update_state(c.get("viral", {}), Viral.publication(c))
+	elif c.mission == "A26":
 		stage.phase = task.get("queuePhase", task.get("scene", "line"))
 		if stage.phase == "line" and task.get("kind") != "queue" and c.get("queueTask", {}).get("lineReady", false): stage.phase = "served"
 		stage.ambient_motion = ambient_motion
@@ -263,7 +274,7 @@ func build() -> void:
 			content.add_child(button("Continue · " + next_story.title + " (" + next_lead + ")", func(): requested.emit("campaign_continue", -1, "")))
 		for who in Campaign.LEADS:
 			content.add_child(button("Switch to " + NAMES[who], func(): requested.emit("campaign_switch", -1, who)))
-		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Viral is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
+		content.add_child(label(("The next chapter is ready above." if next_index < Campaign.ORDER.size() else "Promises, Promises is the next main chapter in production.") + " Return to the street while keeping this checkpoint.", 17, Color("a6b9ad")))
 	else:
 		content.add_child(label(story.title.to_upper() + " · " + str(c.stage + 1) + " / " + str(story.stages.size()), 14, Color("a6b9ad")))
 		content.add_child(label(task.title, 28, Color("edc06d")))
@@ -274,12 +285,14 @@ func build() -> void:
 		if not response.is_empty(): scene_text = str(response.summary if show_summary else response.text) + "\n\n" + scene_text.strip_edges()
 		content.add_child(label(scene_text))
 		for record in task.get("records", []): _record_card(record)
+		if task.get("publicationPreview", false): _publication_card()
 		content.add_child(button("Full scene" if show_summary else "Read summary", func(): show_summary = not show_summary; build(), false))
 		feedback_text = "Choose below. There is no timer or penalty for a retry."
 		feedback = label(feedback_text, 16, Color("d4ed85"))
 		content.add_child(feedback)
 		if task.get("kind") == "portfolio": _portfolio_controls()
 		if task.get("kind") == "receipt": _receipt_controls()
+		if task.get("kind") == "viral": _viral_controls(task.viralPhase)
 		if task.get("kind") == "queue": _queue_controls(task.queuePhase)
 		if c.paused:
 			content.add_child(button("Resume this checkpoint", func(): requested.emit("campaign_resume", -1, "")))
@@ -290,6 +303,8 @@ func build() -> void:
 				choice_button.set_meta("drive_required", task.get("kind") == "drive")
 				choice_button.set_meta("frame_required", task.get("kind") == "frame")
 				choice_button.set_meta("portfolio_required", task.get("kind") == "portfolio")
+				choice_button.set_meta("viral_required", task.get("viralPhase", "") if task.get("kind") == "viral" else "")
+				if option.get("requiresWitnessConsent", false) and not Receipt.has_witness_consent(c): choice_button.set_meta("unavailable_choice", true)
 				choice_button.set_meta("receipt_required", task.get("kind") == "receipt")
 				choice_button.set_meta("queue_required", task.get("queuePhase", "") if task.get("kind") == "queue" else "")
 				if option.has("requiresChoice") and c.choices.get(option.requiresChoice.id) != option.requiresChoice.value: choice_button.set_meta("unavailable_choice", true)
@@ -303,6 +318,7 @@ func build() -> void:
 	_update_portfolio()
 	_update_receipt()
 	_update_queue()
+	_update_viral()
 
 func _queue_controls(phase: String) -> void:
 	var data := Queue.catalogue()
@@ -463,6 +479,10 @@ func _build_journal() -> void:
 	if "A25" in snapshot.completed:
 		var scope: String = "approve_ne1" if Receipt.has_witness_consent(snapshot) else "private_records" if snapshot.choices.get("A25-public_review") == "private_records" else "unknown"
 		_record_card({"title": "Current witness-text review", "lines": [catalogue.reviewScopes[scope]]})
+	if "A27" in snapshot.completed: _publication_card()
+	if Receipt.has_witness_consent(snapshot):
+		content.add_child(button(Viral.catalogue().withdrawLabel, func(): requested.emit("campaign_withdraw", -1, "")))
+	if snapshot.choices.get("A27-withdrawn") == "yes": _record_card({"title": "NE-1 withdrawn", "lines": [Viral.catalogue().status.withdrawn]})
 	var status := Journal.status(snapshot)
 	_record_card({"title": "Meeting decisions", "lines": [status.disclosure, status.custody, status.pact]})
 	content.add_child(label("Restore earned records rechecks sources from completed chapters. It does not grant an unearned clue, mastery or StreetCoins.", 16, Color("a6b9ad")))
@@ -636,3 +656,49 @@ func _update_feedback() -> void:
 		connection_notice.visible = busy and not is_instance_valid(feedback)
 		connection_notice.text = wait_reason
 	if is_instance_valid(feedback): feedback.text = wait_reason if busy else feedback_text
+
+func _publication_card() -> void:
+	var pack := Viral.publication(snapshot)
+	_record_card({"title": "Current corrected presentation · " + pack.route, "lines": [pack.disclosure, pack.scope] + pack.lines})
+func _viral_controls(phase: String) -> void:
+	var data: Dictionary = Viral.catalogue()[phase]
+	var task: Dictionary = snapshot.viral[phase]
+	content.add_child(label(data.title, 22, Color("edc06d")))
+	content.add_child(label(data.instructions, 16, Color("a6b9ad")))
+	if not task.ready:
+		for q in data.questions:
+			content.add_child(label(q.title, 19))
+			for option in q.options:
+				var input: String = q.id + ":" + option.id
+				var node := button(option.label, _viral_input.bind(input))
+				node.set_meta("viral_input", input)
+				node.set_meta("base_label", option.label)
+				node.add_to_group("campaign_viral")
+				content.add_child(node)
+	viral_feedback = label("", 17, Color("d4ed85"))
+	content.add_child(viral_feedback)
+	if not task.ready:
+		for action in data.actions:
+			var node := button(action.label, _viral_input.bind(str(action.id)))
+			node.add_to_group("campaign_viral")
+			node.set_meta("viral_input", action.id)
+			content.add_child(node)
+func _viral_input(input: String) -> void:
+	if busy or show_journal: return
+	requested.emit("campaign_publish", int(snapshot.stage), input)
+func _update_viral() -> void:
+	if not snapshot.get("viral") is Dictionary: return
+	if is_instance_valid(stage_view) and stage_view.has_method("update_state") and snapshot.mission == "A27": stage_view.update_state(snapshot.viral, Viral.publication(snapshot))
+	if snapshot.mission != "A27" or snapshot.status != "playing": return
+	var phase: String = Campaign.story("A27").stages[snapshot.stage].get("viralPhase", "")
+	if phase.is_empty(): return
+	var task: Dictionary = snapshot.viral[phase]
+	if is_instance_valid(viral_feedback): viral_feedback.text = str(task.hint) + "\nChecks: " + str(task.attempts)
+	for node in get_tree().get_nodes_in_group("campaign_viral"):
+		node.disabled = busy or task.ready
+		var input: String = node.get_meta("viral_input")
+		if ":" in input:
+			var parts := input.split(":")
+			node.text = ("Selected · " if task.answers.get(parts[0]) == parts[1] else "") + str(node.get_meta("base_label"))
+	for node in controls:
+		if is_instance_valid(node) and not str(node.get_meta("viral_required", "")).is_empty(): node.disabled = busy or not task.ready

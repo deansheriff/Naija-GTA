@@ -1,0 +1,137 @@
+{
+  "rumour": {
+    "title": "Two sources before a headline",
+    "instructions": "The forwarded claim says the 21:14 stamp proves theft. Compare the service record and original-source description below. Select both limited interpretations, then check.",
+    "questions": [
+      {
+        "id": "stamp",
+        "title": "What does SR-18 establish?",
+        "options": [
+          {
+            "id": "limited",
+            "label": "A 21:14 assistance request; it does not establish theft or every movement.",
+            "correct": true
+          },
+          {
+            "id": "overreach",
+            "label": "The stamp proves who stole the bag.",
+            "correct": false
+          }
+        ]
+      },
+      {
+        "id": "original",
+        "title": "What does the full private source add?",
+        "options": [
+          {
+            "id": "limited",
+            "label": "A helping action omitted by the crop; it does not establish ownership or every moment.",
+            "correct": true
+          },
+          {
+            "id": "overreach",
+            "label": "The camera proves the entire account and ownership.",
+            "correct": false
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "check",
+        "label": "Check both source limits"
+      },
+      {
+        "id": "assist",
+        "label": "Guided source check · free"
+      }
+    ],
+    "messages": {
+      "selected": "Selection saved. Read both sources before checking.",
+      "guided": "The labelled answers are selected. Read them and explicitly check.",
+      "correction": "A selection overreaches the source or leaves the correction incomplete. Revise it or use guidance, then check again.",
+      "ready": "Checked. Keep these source limits in the presentation."
+    }
+  },
+  "correction": {
+    "title": "A correction that stays with the clip",
+    "instructions": "Choose the disclosure, public visual and caption. The original remains private. Each selection saves; guidance still needs an explicit check.",
+    "questions": [
+      {
+        "id": "disclosure",
+        "title": "What should KC disclose?",
+        "options": [
+          {
+            "id": "limited",
+            "label": "I cropped out a helping action. My edit gave a misleading impression.",
+            "correct": true
+          },
+          {
+            "id": "overreach",
+            "label": "A new video is available; quietly replace the old one.",
+            "correct": false
+          }
+        ]
+      },
+      {
+        "id": "visual",
+        "title": "Which visual can this presentation use?",
+        "options": [
+          {
+            "id": "limited",
+            "label": "A labelled diagram and permitted document extracts, without private faces or voices.",
+            "correct": true
+          },
+          {
+            "id": "overreach",
+            "label": "Upload the private original and name every worker.",
+            "correct": false
+          }
+        ]
+      },
+      {
+        "id": "caption",
+        "title": "What should the caption say?",
+        "options": [
+          {
+            "id": "limited",
+            "label": "Records support parts of the account; the 21:14 stamp is an assistance request, not proof of theft.",
+            "correct": true
+          },
+          {
+            "id": "overreach",
+            "label": "We have proved every part of the story.",
+            "correct": false
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "check",
+        "label": "Check the correction package"
+      },
+      {
+        "id": "assist",
+        "label": "Guided correction · free"
+      }
+    ],
+    "messages": {
+      "selected": "Selection saved. Read both sources before checking.",
+      "guided": "The labelled answers are selected. Read them and explicitly check.",
+      "correction": "A selection overreaches the source or leaves the correction incomplete. Revise it or use guidance, then check again.",
+      "ready": "Checked. Keep these source limits in the presentation."
+    }
+  },
+  "disclosure": "KC correction: I cropped out a helping action. My edit gave a misleading impression. The original remains private; this presentation uses a labelled diagram and permitted written extracts.",
+  "documents": [
+    "Anonymised service extract SR-18: 21:14 assistance request. The stamp does not time the whole bag sequence.",
+    "Permitted catering extract CAT-18: an unpaid catering entry. It does not establish ownership of the bag or prove every allegation."
+  ],
+  "status": {
+    "witness": "NE-1 exact approved written account; current redacted-text permission only. No name, image, voice or additional quotation.",
+    "documents": "Anonymised permitted document extracts. No witness quotation, name, image or voice. This route remains available after withdrawal.",
+    "withdrawn": "NE-1 permission withdrawn. The document version is current; any earlier witness-text version is withdrawn from this story presentation."
+  },
+  "withdrawLabel": "Withdraw NE-1 permission · use document version"
+}

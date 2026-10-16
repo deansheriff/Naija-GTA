@@ -1,5 +1,5 @@
 extends RefCounted
-const VERSION = 11
+const VERSION = 12
 const STORY_PATH = "res://story/prologue.json"
 const TUNDE_PATH = "res://story/tunde-intro.json"
 const NGOZI_PATH = "res://story/ngozi-intro.json"
@@ -10,11 +10,13 @@ const INTERVIEW_PATH = "res://story/japa-interview.json"
 const CHASE_PATH = "res://story/danfo-chase.json"
 const INFILTRATION_PATH = "res://story/aso-ebi-infiltration.json"
 const RECEIPTS_PATH = "res://story/small-small-receipts.json"
+const VIRAL_PATH = "res://story/viral.json"
+const Viral = preload("res://core/viral_task.gd")
 const QUEUE_PATH = "res://story/fuel-queue-standoff.json"
 const Queue = preload("res://core/queue_task.gd")
 const Receipt = preload("res://core/receipt_task.gd")
 const LEADS = ["tunde", "ngozi", "kc"]
-const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22", "A23", "A24", "A25", "A26"]
+const ORDER = ["P00", "A11", "A12", "A13", "A14", "A21", "A22", "A23", "A24", "A25", "A26", "A27"]
 const Drive = preload("res://core/driving_task.gd")
 const Phone = preload("res://core/phone_task.gd")
 const Journal = preload("res://core/evidence_journal.gd")
@@ -22,7 +24,7 @@ const Portfolio = preload("res://core/portfolio_task.gd")
 
 static func story(id: String = "P00") -> Dictionary:
 	if not id in ORDER: return {}
-	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH, "A23": CHASE_PATH, "A24": INFILTRATION_PATH, "A25": RECEIPTS_PATH, "A26": QUEUE_PATH}[id]
+	var path: String = {"P00": STORY_PATH, "A11": TUNDE_PATH, "A12": NGOZI_PATH, "A13": KC_PATH, "A14": MEETING_PATH, "A21": GENERATOR_PATH, "A22": INTERVIEW_PATH, "A23": CHASE_PATH, "A24": INFILTRATION_PATH, "A25": RECEIPTS_PATH, "A26": QUEUE_PATH, "A27": VIRAL_PATH}[id]
 	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if id == "P00":
 		content.mastery = {"tunde": 1, "ngozi": 1, "kc": 1}
@@ -52,7 +54,7 @@ static func normalize(value: Variant) -> Dictionary:
 		value = value.duplicate(true)
 		value.version = VERSION
 		value.portfolio = null
-	elif value.get("version") in [7, 8, 9, 10]:
+	elif value.get("version") in [7, 8, 9, 10, 11]:
 		value = value.duplicate(true)
 		value.version = VERSION
 	if value.get("version") != VERSION or not value.get("status") in ["unstarted", "playing", "hub"]: return fresh()
@@ -93,6 +95,10 @@ static func normalize(value: Variant) -> Dictionary:
 	if result.mission == "A26" or value.has("queueTask"):
 		var queue := Queue.normalize(value.get("queueTask"))
 		result.queueTask = queue if not queue.is_empty() else Queue.fresh()
+	if result.mission == "A27" or value.has("viral"):
+		var viral := Viral.normalize(value.get("viral"))
+		result.viral = viral if not viral.is_empty() else Viral.fresh()
+	if value.get("choices", {}).get("A27-withdrawn") == "yes": result.choices["A27-withdrawn"] = "yes"
 	Journal.restore_earned(result)
 	if value.get("evidence") is Array: result.evidence = result.evidence.filter(func(fact): return fact in value.evidence)
 	if result.status == "playing" and content.stages[result.stage].get("kind") == "drive":
@@ -122,6 +128,7 @@ static func _stage(c: Dictionary, now: int) -> void:
 	if c.mission == "A25":
 		if not c.get("receipt") is Dictionary: c.receipt = Receipt.fresh()
 		if not c.has("witnessConsent"): c.witnessConsent = null
+	if c.mission == "A27" and not c.get("viral") is Dictionary: c.viral = Viral.fresh()
 	if c.mission == "A26":
 		if not c.get("queueTask") is Dictionary: c.queueTask = Queue.fresh()
 		if task.get("queuePhase") == "reset": c.queueTask.hint = ""
@@ -141,6 +148,12 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 		c.paused = kind == "campaign_pause"
 		if c.drive is Dictionary: c.drive.lastAt = now
 		return {"ok": true, "message": "Campaign checkpoint saved."}
+	if kind == "campaign_withdraw":
+		if not "A25" in c.completed: return fail
+		c.witnessConsent = null
+		c.evidence.erase("witness_consent")
+		c.choices["A27-withdrawn"] = "yes"
+		return {"ok": true, "message": "NE-1 permission withdrawn. The document version is current."}
 	if kind == "campaign_review":
 		if not Journal.available(c): return {"ok": false, "message": "The evidence journal opens at Family Meeting."}
 		Journal.restore_earned(c)
@@ -162,6 +175,10 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 	if c.status != "playing" or c.paused or stage != c.stage: return fail
 	var content := story(c.mission)
 	var task: Dictionary = content.stages[c.stage]
+	if kind == "campaign_publish":
+		if task.get("kind") != "viral" or not c.get("viral") is Dictionary or not choice in Viral.inputs(task.viralPhase): return fail
+		Viral.advance(c.viral, choice, task.viralPhase)
+		return {"ok": true, "message": "Source and correction checkpoint saved."}
 	if kind == "campaign_queue":
 		if task.get("kind") != "queue" or not c.get("queueTask") is Dictionary or not choice in Queue.inputs(task.queuePhase): return {"ok": false, "message": "Use a listed queue control for this checkpoint."}
 		Queue.advance(c.queueTask, choice, task.queuePhase)
@@ -188,12 +205,18 @@ static func command(c: Dictionary, kind: String, stage: int = -1, choice: String
 	if task.get("kind") == "portfolio" and not c.portfolio.get("ready", false): return {"ok": false, "message": "Check the three portfolio answers first. Free practice, callback and guided answers are available."}
 	if task.get("kind") == "receipt" and not c.get("receipt", {}).get("ready", false): return {"ok": false, "message": "Check all three source comparisons first. Guided matching is free."}
 	if task.get("kind") == "queue" and not c.get("queueTask", {}).get("lineReady" if task.queuePhase == "line" else "resetReady", false): return {"ok": false, "message": "Check the current queue task first. Free guidance is available."}
+	if task.get("kind") == "viral" and not c.get("viral", {}).get(task.viralPhase, {}).get("ready", false): return fail
 	for option in task.choices:
 		if option.id != choice: continue
+		if option.get("requiresWitnessConsent", false) and not Receipt.has_witness_consent(c): return {"ok": false, "message": "Current exact-text permission is unavailable. Use the anonymised document route."}
 		if option.has("requiresChoice") and c.choices.get(option.requiresChoice.id) != option.requiresChoice.value: return {"ok": false, "message": "The saved witness boundary does not permit this review. Use the anonymised-record route."}
 		if not option.correct: return {"ok": false, "message": option.get("hint", "Try the labelled objective again.")}
 		for fact in task.get("requiresEvidence", []):
 			if not fact in c.evidence: return {"ok": false, "message": "A source record is missing. Open the evidence journal and choose Restore earned records."}
+		if task.get("effect") == "publication_permission" and choice == "withdraw":
+			c.witnessConsent = null
+			c.evidence.erase("witness_consent")
+			c.choices["A27-withdrawn"] = "yes"
 		if task.get("effect") == "witness_review": c.witnessConsent = {"textHash": str(Receipt.catalogue().witnessText).sha256_text(), "scope": "redacted_text", "active": true} if choice == "approve_ne1" else null
 		if task.get("effect") == "charge_phone" and c.phone is Dictionary: c.phone.battery = 4
 		c.choices[c.mission + "-" + task.id] = choice

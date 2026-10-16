@@ -21,7 +21,7 @@ The approved story bible/brief remain the creative source. The new authorisation
   - [x] 0.16 Four Percent: manual/guided framing, action-only battery costs/free recovery, three charging responses, disclosure choice and private original evidence; earlier saves preserved.
   - [x] 0.17 Family Meeting: ensemble checkpoints, evidence journal/earned-source recovery, custody/pacts/disclosure and cached offline navigation.
   - [ ] Full directional protagonist/cast art, deeper mission staging and animation validation.
-- [ ] Act 2: Generator Wars, Japa Interview, Danfo Chase, Aso-Ebi Infiltration, the revised receipt/witness collection mission, Fuel Queue Standoff and Viral. Carry evidence/relationship consequences forward.
+- [x] Act 2 checkpoint route: Generator Wars, Japa Interview, Danfo Chase, Aso-Ebi Infiltration, the revised receipt/witness collection mission, Fuel Queue Standoff and Viral. Carry evidence/relationship consequences forward.
   - [x] 0.18 Generator Wars: recorded loan/return, three stopped junction legs, labelled outdoor-site board, both shared-session orders and saved community staging agreement. A visible sandbox installation/community-grid simulation remains later work.
   - [x] 0.18.1 Story-version compatibility and pending-choice protection across old/mismatched server deployments.
   - [x] 0.19 Japa Interview: saved three-question portfolio, equivalent first/practice/callback routes, permitted excerpt/practice piece, honest credits and retained follow-up opportunity.
@@ -29,6 +29,7 @@ The approved story bible/brief remain the creative source. The new authorisation
   - [x] 0.21 Aso-Ebi Infiltration: labelled invitation, truthful family-table answers, catering help, supervised reference index, Nneka's attributed private account and either permission boundary; diary inspection/public witness review remain later work.
   - [x] 0.22 Small Small Receipts: three-source comparison, witnessed folder/diary inspection, persistent claim board and prop discrepancy, conditional exact-text approval and equal anonymised-record route; later publication/withdrawal checks remain subsequent chapters.
   - [x] 0.23 Fuel Queue Standoff: saved duplicate-ticket/order and empty-prop aisle tasks, manual/guided checks, walking queue, both negotiation approaches and retained transport reservation; no fuel dispensing, currency cost or witness permission change.
+  - [x] 0.24 Viral: two-source rumour check, explicit crop disclosure, saved correction board, current exact-text permission, withdrawal-safe anonymised package and three KC mastery once. Richer staging/cast and real review remain release work.
 - [ ] Act 3: fictional council-contest simulation, power-restoration exposure finale and all four attainable, tested endings.
 - [ ] Side activities, onboarding, keyboard/touch/accessibility, audio/visual consistency, content completeness and no unrecoverable progression locks.
 - [ ] Release hardening: regression/branch coverage, load/soak tests, deployment recovery, backup retention, operational health/alerts, credentials/recovery and privacy/abuse controls appropriate to the shipped features.

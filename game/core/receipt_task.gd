@@ -24,7 +24,7 @@ static func normalize(value: Variant) -> Dictionary:
 	return result
 static func has_witness_consent(c: Dictionary) -> bool:
 	var consent: Variant = c.get("witnessConsent")
-	return c.get("choices", {}).get("A24-consent") == "redacted_review" and c.get("choices", {}).get("A25-public_review") == "approve_ne1" and consent is Dictionary and consent.get("active") == true and consent.get("scope") == "redacted_text" and consent.get("textHash") == str(catalogue().witnessText).sha256_text()
+	return c.get("choices", {}).get("A27-withdrawn") != "yes" and c.get("choices", {}).get("A24-consent") == "redacted_review" and c.get("choices", {}).get("A25-public_review") == "approve_ne1" and consent is Dictionary and consent.get("active") == true and consent.get("scope") == "redacted_text" and consent.get("textHash") == str(catalogue().witnessText).sha256_text()
 static func advance(task: Dictionary, input: String) -> void:
 	var data := catalogue()
 	if task.ready: return
